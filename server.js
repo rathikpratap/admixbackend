@@ -7,7 +7,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors({
-    origin: 'http://login.admixmedia.in'
+    origin: 'http://login.admixmedia.in',
+    credentials:true,
 }));
 
 require('./config');
