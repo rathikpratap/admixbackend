@@ -15,6 +15,7 @@ const customerSchema = new mongoose.Schema({
     custState : {type:String},
     projectStatus : {type:String},
     salesPerson : {type:String},
+    remark : {type:String}
 });
 
 module.exports = mongoose.model('customers', customerSchema);

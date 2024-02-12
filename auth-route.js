@@ -18,7 +18,9 @@ router.post('/register', async (req, res) => {
         signupUsername: req.body.signupUsername,
         signupEmail: req.body.signupEmail,
         signupNumber: req.body.signupNumber,
-        signupPassword: hash
+        signupGender: req.body.signupGender,
+        signupPassword: hash,
+        signupAddress: req.body.signupAddress
       })
 
       await user.save()
@@ -48,7 +50,7 @@ router.post('/login',(req, res) =>{
         const payload ={
           userId: user._id
         }
-        const token = jwt.sign(payload, "webBatch")
+        const token = jwt.sign(payload, "webBatch", {expiresIn: '1h'})
         person = req.body.loginUsername;
         return res.json({success: true, token:token, message: "Login Successful"})
         
@@ -78,7 +80,8 @@ router.get('/list',async (req,res)=>{
     const products = await Customer.find({ 
         $and: [
              { salesPerson: person },
-            { remainingAmount: { $gt: 0 } }
+            //{ remainingAmount: { $gt: 0 } },
+            { projectStatus : { $not: { $regex : /^Completed$/i}}}
         ]
     });
     if(products) {
@@ -94,7 +97,8 @@ router.get('/completeProject',async (req, res)=>{
     const completeProducts = await Customer.find({
         $and: [
             { salesPerson: person },
-            { remainingAmount: { $eq : 0}}
+            { remainingAmount: { $eq : 0}},
+            { projectStatus : { $regex: /^Completed$/i }}
         ]
     });
     if(completeProducts){
@@ -102,6 +106,39 @@ router.get('/completeProject',async (req, res)=>{
     }else{
         res.send({result: "No Data Found"})
     }
+})
+
+// All Sales Person Project
+
+router.get('/allProjects', async (req, res)=>{
+  const allProjects = await Customer.find({ salesPerson: person});
+  if(allProjects){
+    return res.json(allProjects)
+  }else{
+    res.send({result: "No Data Found"})
+  }
+})
+
+// All Projects Admin
+
+router.get('/allProjectsAdmin', async (req, res)=>{
+  const allProjectsAdmin = await Customer.find();
+  if(allProjectsAdmin){
+    return res.json(allProjectsAdmin)
+  }else{
+    res.send({result: "No Data Found"})
+  }
+})
+
+// All Employees
+
+router.get('/allEmployee', async (req, res)=>{
+  const allEmployee = await User.find();
+  if(allEmployee){
+    return res.json(allEmployee)
+  }else{
+    res.send({result: "No Users Found"})
+  }
 })
 
 //All Ongoing Projects
@@ -155,6 +192,18 @@ router.put('/update/:id', async (req,res)=>{
     }
 })
 
+//Search Data
+
+router.get('/searchCustomer/:mobile', async (req,res)=>{
+  let data = await Customer.find(
+    {
+      "$or": [
+        { custNumb: {$regex: req.params.mobile}}
+      ]
+    }
+  )
+  res.send(data);
+})
 
 // New Customer
 
@@ -174,6 +223,7 @@ router.post('/customer', async (req,res) => {
     custState : req.body.custState,
     projectStatus : req.body.projectStatus,
     salesPerson : req.body.salesPerson,
+    remark : req.body.remark
 
   })
 

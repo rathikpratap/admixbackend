@@ -11,6 +11,8 @@ app.use(cors({
     credentials:true,
 }));
 
+//app.use(cors());
+
 require('./config');
 
 const port = process.env.PORT || 3000;
