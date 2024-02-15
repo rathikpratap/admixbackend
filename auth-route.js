@@ -2,25 +2,24 @@ const router = require('express').Router();
 
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
-const bcrypt = require('bcrypt');
+//const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const checkAuth = require('./middleware/chech-auth');
 
 let person = '';
 
 router.post('/register', async (req, res) => {
-  bcrypt.hash(req.body.signupPassword, 10, async (err, hash) => {
-    if (err) {
-      return res.json({ success: false, message: "Hash Error!!" })
-    } else {
+  
+    
       const user = new User({
         signupName: req.body.signupName,
         signupUsername: req.body.signupUsername,
         signupEmail: req.body.signupEmail,
         signupNumber: req.body.signupNumber,
         signupGender: req.body.signupGender,
-        signupPassword: hash,
-        signupAddress: req.body.signupAddress
+        signupPassword: req.body.signupPassword,
+        signupAddress: req.body.signupAddress,
+        signupRole: req.body.signupRole
       })
 
       await user.save()
@@ -29,39 +28,65 @@ router.post('/register', async (req, res) => {
         })
         .catch((err) => {
           if (err.code === 11000) {
-            return res.json({ success: false, message: err })
+            return res.json({ success: false, message: "Data Already Match" })
           }
           res.json({ success: false, message: "Authentication Failed" })
         })
-    }});
+    ;
   }
 )
 
 // Login Bellow 
 
-router.post('/login',(req, res) =>{
-  User.find({signupUsername:req.body.loginUsername}).exec().then((result)=>{
-    if(result.length < 1){
-      return res.json({ success: false, message: "User not found!!"})
-    }
-    const user = result[0];
-    bcrypt.compare(req.body.loginPswd, user.signupPassword, (err, ret)=>{
-      if(ret){
-        const payload ={
-          userId: user._id
-        }
-        const token = jwt.sign(payload, "webBatch", {expiresIn: '1h'})
-        person = req.body.loginUsername;
-        return res.json({success: true, token:token, message: "Login Successful"})
+//router.post('/login',(req, res) =>{
+//  User.find({signupUsername:req.body.loginUsername}).exec().then((result)=>{
+//    if(result.length < 1){
+//      return res.json({ success: false, message: "User not found!!"})
+//    }
+//    const user = result[0];
+//    bcrypt.compare(req.body.loginPswd, user.signupPassword, (err, ret)=>{
+//      if(ret){
+//        const payload ={
+//          userId: user._id
+//        }
+//        const token = jwt.sign(payload, "webBatch", {expiresIn: '1h'})
+//        person = req.body.loginUsername;
+//        return res.json({success: true, token:token, message: "Login Successful"})
         
-      }else{
-        return res.json({success:false, message: "Password not Matched"})
-      }
-    })
-  }).catch(err => {
-    res.json({success: false, message: "Authentication Failed"})
-  })
-})
+//      }else{
+//        return res.json({success:false, message: "Password not Matched"})
+//      }
+//    })
+//  }).catch(err => {
+//    res.json({success: false, message: "Authentication Failed"})
+//  })
+//})
+
+router.post('/login', (req, res) => {
+  User.findOne({ signupUsername: req.body.loginUsername }).exec()
+      .then(user => {
+          if (!user) {
+              return res.json({ success: false, message: "User not found!!" });
+          }
+
+          // Assuming user.signupPassword is the hashed password stored in the database
+          if (req.body.loginPswd === user.signupPassword) { // Compare hashed passwords directly
+              const payload = {
+                  userId: user._id
+              };
+              const token = jwt.sign(payload, "webBatch", { expiresIn: '1h' });
+              person = req.body.loginUsername;
+              return res.json({ success: true, token: token, message: "Login Successful" });
+          } else {
+              return res.json({ success: false, message: "Password not Matched" });
+          }
+      })
+      .catch(err => {
+          res.json({ success: false, message: "Authentication Failed" });
+      });
+});
+
+
 
 router.get('/profile', checkAuth, async (req,res)=>{
   const userId = await req.userData.userId;
@@ -178,6 +203,38 @@ router.get('/read-cust/:id', async (req, res)=>{
     }
 })
 
+//get Employee
+
+router.get('/read-emp/:id', async(req, res)=>{
+  try{
+    const empDetails = await User.findById(req.params.id);
+    if(empDetails) {
+      console.log("Employee ==>",empDetails);
+      return res.json(empDetails);
+    } else{
+      return res.json({result: "No Employee Found"});
+    }
+  } catch(error){
+    return res.status(500).json({error: error.message});
+  }
+})
+
+// delete Emp
+
+router.delete('/delete-emp/:id', async(req, res)=>{
+  try{
+    const deleteData = await User.findByIdAndDelete(req.params.id);
+    if(deleteData){
+      console.log("Delete ==>", deleteData);
+      return res.json(deleteData);
+    }else{
+      return res.json({result: "No Data Deleted"});
+    }
+  } catch(error){
+    return res.status(500).json({error: error.message});
+  }
+})
+
 // Edit Customer Details
 
 router.put('/update/:id', async (req,res)=>{
@@ -192,6 +249,22 @@ router.put('/update/:id', async (req,res)=>{
     }
 })
 
+// Edit Employee
+
+router.put('/updateEmp/:id', async (req,res)=>{
+  console.log("req.body ==>", req.body);
+  const EmpDet = await User.findByIdAndUpdate(req.params.id,{
+    $set: req.body
+  })
+  if(EmpDet){
+    return res.json(EmpDet)
+  }else{
+    res.send({result: "No Employee Found"})
+  }
+})
+
+
+
 //Search Data
 
 router.get('/searchCustomer/:mobile', async (req,res)=>{
@@ -205,7 +278,10 @@ router.get('/searchCustomer/:mobile', async (req,res)=>{
   res.send(data);
 })
 
+
 // New Customer
+
+
 
 router.post('/customer', async (req,res) => {
   const customer = new Customer({
