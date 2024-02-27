@@ -20,13 +20,13 @@ const customerSchema = new mongoose.Schema({
     remark : {type:String}
 });
 
-customerSchema.pre('save', function(next) {
-    if (this.isModified('closingDate')) {
-        const ISTOffset = 5.5 * 60 * 60 * 1000;
-        this.closingDate.setTime(this.closingDate.getTime() + ISTOffset);
-    }
-    next();
-});
+//customerSchema.pre('save', function(next) {
+//    if (this.isModified('closingDate')) {
+//        const ISTOffset = 5.5 * 60 * 60 * 1000;
+//        this.closingDate.setTime(this.closingDate.getTime() + ISTOffset);
+//    }
+//    next();
+//});
 
 
 module.exports = mongoose.model('customers', customerSchema);
