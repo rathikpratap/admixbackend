@@ -500,9 +500,8 @@ router.get('/dataByRange/:startDate/:endDate', async(req, res)=>{
 //Excel Upload
 
 router.post('/uploadFile', upload.single('file'), async (req,res)=>{
-  await Customer.deleteMany();
+  //await Customer.deleteMany();
   try{
-    
     const workbook = XLSX.read(req.file.buffer, {type: 'buffer'});
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
