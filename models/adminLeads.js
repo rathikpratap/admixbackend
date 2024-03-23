@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const adAccountSchema = new mongoose.Schema({
+const transferSchema = new mongoose.Schema({
     id: String,
     created_time: Date,
     campaign_Name: String,
@@ -13,4 +13,4 @@ const adAccountSchema = new mongoose.Schema({
     salesperson: String
 });
 
-module.exports = mongoose.model('Lead', adAccountSchema);
+module.exports = mongoose.model('transferLead', transferSchema);

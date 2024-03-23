@@ -4,6 +4,8 @@ const User = require('./models/user');
 const Customer = require('./models/newcustomer');
 const ClosingCategory = require('./models/closingCategory');
 const Lead = require('./models/Leads');
+const salesLead = require('./models/salesLead');
+const transferLead = require('./models/adminLeads');
 const {Country, State, City} = require('country-state-city');
 //const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -15,6 +17,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage});
 
 let person = '';
+let person1 = '';
 
 router.post('/register', async (req, res) => {
   const user = new User({
@@ -50,10 +53,11 @@ router.post('/login', (req, res) => {
           }
           if (req.body.loginPswd === user.signupPassword) {
               const payload = {
-                  userId: user._id
+                  userId: user._id,
+                  name: user.signupUsername
               };
               const token = jwt.sign(payload, "webBatch", { expiresIn: '1h' });
-              person = req.body.loginUsername;
+              //person = req.body.loginUsername;
               return res.json({ success: true, token: token, message: "Login Successful" });
           } else {
               return res.json({ success: false, message: "Password not Matched" });
@@ -66,8 +70,10 @@ router.post('/login', (req, res) => {
 
 router.get('/profile', checkAuth, async (req,res)=>{
   const userId = await req.userData.userId;
+  person = req.userData.name;
   
   User.findById(userId).exec().then((result)=>{
+    console.log("data=====>>>>", person)
     return res.json({success: true, data:result})
   }).catch(err=>{
     res.json({success: false, message: "Server Error!!"})
@@ -77,7 +83,7 @@ router.get('/profile', checkAuth, async (req,res)=>{
 // Table Database Ongoing
 
 router.get('/list', async (req, res) => {
-  console.log("person ==>", person);
+  console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth()+1;
   try {
       const products = await Customer.find({
@@ -151,6 +157,13 @@ router.get('/allProjectsAdmin', async (req, res)=>{
   });
   return res.json(allProjects)
 })
+
+//database Length
+
+router.get('/dataLength', async (req, res)=>{
+  const dataLength = await Customer.countDocuments();
+  return res.json(dataLength);
+});
 
 // All Employees
 
@@ -234,18 +247,39 @@ router.get('/allCompleteProjects', async (req, res) => {
 
 //get Customer
 
+//router.get('/read-cust/:id', async (req, res)=>{
+//    try {
+//        const details = await Customer.findById(req.params.id);
+//        if (details) {
+//            return res.json(details);
+//        } else {
+//            return res.json({ result: "No Data" });
+//        }
+//    } catch (error) {
+//        return res.status(500).json({ error: error.message });
+//    }
+//})
+
 router.get('/read-cust/:id', async (req, res)=>{
-    try {
-        const details = await Customer.findById(req.params.id);
-        if (details) {
-            return res.json(details);
-        } else {
-            return res.json({ result: "No Data" });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
-    }
-})
+  try {
+      // Search in the Customer collection
+      const customerDetails = await Customer.findById(req.params.id);
+      
+      // Search in other collections, for example, OtherCollection
+      const otherDetails = await salesLead.findById(req.params.id);
+
+      // Check if any data found in either collection
+      if (customerDetails) {
+          return res.json( customerDetails );
+      } else if(otherDetails){
+        return res.json(otherDetails);
+      } else {
+          return res.json({ result: "No Data" });
+      }
+  } catch (error) {
+      return res.status(500).json({ error: error.message });
+  }
+});
 
 //get Employee
 
@@ -296,17 +330,65 @@ router.delete('/delete-cust/:id', async(req, res)=>{
 
 // Edit Customer Details
 
-router.put('/update/:id', async (req,res)=>{
-  console.log("req.body ==>",req.body);
-  const custDet = await Customer.findByIdAndUpdate(req.params.id,{
-      $set: req.body
-  })
-  if(custDet){
+//router.put('/update/:id', async (req,res)=>{
+//  console.log("req.body ==>",req.body);
+//  const custDet = await Customer.findByIdAndUpdate(req.params.id,{
+//      $set: req.body
+//  })
+//  if(custDet){
+//      return res.json(custDet)
+//  }else{
+//      res.send({result:"No No Data"})
+//  }
+//})
+
+router.put('/update/:id', async(req, res)=>{
+  try{
+    let custDet = await Customer.findById(req.params.id);
+    let leadDet = await salesLead.findById(req.params.id);
+    if(custDet){
+      custDet = await Customer.findByIdAndUpdate(req.params.id,{
+        $set : req.body
+      })
       return res.json(custDet)
-  }else{
-      res.send({result:"No No Data"})
+    } else if( leadDet){
+        if(req.body.projectStatus === 'Not Interested'){
+          leadDet = await salesLead.findByIdAndUpdate(req.params.id,{
+            $set : req.body
+          })
+          return res.json(leadDet)
+        }else {
+          const newCustomer = new Customer({
+            _id: leadDet._id,
+            custName: leadDet.custName,
+            custNumb: leadDet.custNumb,
+            custBussiness: leadDet.custBussiness,
+            closingDate: leadDet.closingDate,
+            closingPrice: req.body.closingPrice,
+            closingCateg: req.body.closingCateg,
+            AdvPay: req.body.AdvPay,
+            remainingAmount: req.body.remainingAmount,
+            custCountry: req.body.custCountry,
+            custCity: req.body.custCity,
+            custState: req.body.custState,
+            projectStatus: req.body.projectStatus,
+            youtubeLink: req.body.youtubeLink,
+            restAmount: req.body.restAmount,
+            restPaymentDate: req.body.restPaymentDate,
+            remark: req.body.remark,
+            salesPerson: leadDet.salesPerson
+          });
+          await newCustomer.save();
+          await salesLead.findByIdAndDelete(req.params.id);
+          return res.json(newCustomer);
+        }
+    }else{
+      return res.json({ result: "No Data"});
+    }
+  } catch(error){
+    return res.status(500).json({ error: error.message});
   }
-})
+});
 
 // Edit Employee
 
@@ -330,6 +412,17 @@ router.get('/searchCustomer/:mobile', async (req,res)=>{
       "$or": [
         { custNumb: {$regex: req.params.mobile}},
         { custName: {$regex: req.params.mobile}}
+      ]
+    }
+  )
+  res.send(data);
+})
+
+router.get('/customerProject/:projectStatus', async (req,res)=>{
+  let data = await salesLead.find(
+    {
+      "$or": [
+        { projectStatus: {$regex: req.params.projectStatus}}
       ]
     }
   )
@@ -398,8 +491,9 @@ router.get('/cities/:countryCode/:stateCode', (req, res) => {
 //month-wise data
 
 router.get('/totalEntries', async (req, res) => {
+  
   const currentMonth = new Date().getMonth() + 1;
-  console.log("person ==>", person);
+  console.log("Month person1 ==>", person);
   try {
     let query;
     if (person === 'Shiva Varshney') {
@@ -419,7 +513,7 @@ router.get('/totalEntries', async (req, res) => {
       };
     }
 
-    const totalEntries = await Customer.find(query);
+   const totalEntries = await Customer.find(query);
     const totalAmount = totalEntries.reduce((sum,doc)=> sum + doc.closingPrice, 0);
     const totalRecv = totalEntries.reduce((sum, doc)=> sum + doc.AdvPay, 0);
     const totalDue = totalEntries.reduce((sum,doc)=> sum + doc.remainingAmount, 0);
@@ -429,6 +523,7 @@ router.get('/totalEntries', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
 
 // Current Day Entry
 
@@ -707,11 +802,13 @@ router.get('/getCategory', async(req, res)=>{
 
 // Facebook integration Api
 
-const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
+const accessToken = 'EAANSY8Y9OkYBOyAtzy7KEsYlXahNipB3qwuB57NFQZBRzyzTiKxIslR0TdHK494kYGhr75bMCRU1xVAKbN4hSYZAPM414uuiUG74uFY4DOrq4QlhHvMMOOMcobJYwI3IVZBbzcROuqNkTaq3HkpuqddvpWT6xoD4xccOQct94FHg9qyAxatGJrt';
 
 router.get('/facebook-leads', async (req, res) => {
+  await Lead.deleteMany();
   try {
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cname%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email ='';
     
@@ -727,6 +824,7 @@ router.get('/facebook-leads', async (req, res) => {
           if (leads && leads.data) {
             for (const lead of leads.data) {
               const { created_time: createdTime, field_data } = lead;
+
               
               for (const field of field_data) {
                 if (field.name === 'full_name') {
@@ -750,7 +848,8 @@ router.get('/facebook-leads', async (req, res) => {
                 phone: phone,
                 email: email,
                 company_name: company_name,
-                state: state 
+                state: state,
+                salesperson: "" 
               });
               await newLead.save();
             }
@@ -780,13 +879,175 @@ router.get('/getFacebook-leads', async(req, res)=>{
 
 // Leads Transfer
 
-//router.put('/getFacebook-leads/:id', async(req, res)=>{
+//router.post('/update-salespersons', async (req,res)=>{
 //  try{
-//    const {id} = req.params;
-//    const { salesperson } = req.body;
-//    await Lead.findByIdAndUpdate(id,{salesperson});
-//    await
+//    const items = req.body.items;
+//    const updatedItems = items.map(item=> ({
+//      _id: item._id,
+//      closingDate: item.created_time,
+//      campaign_Name: item.campaign_Name,
+//      ad_Name: item.ad_Name,
+//      custName: item.name,
+//      custEmail: item.email,
+//      custBussiness: item.company_name,
+//      custNumb: item.phone,
+//      state: item.state,
+//      salesPerson: item.salesperson
+//    }));
+//  await salesLead.insertMany(updatedItems);
+    
+//    res.json({message: "Items Updated Successfully"});
+//  }catch(err){
+//    res.status(500).json({ message: err.message});
 //  }
-//})
+//});
+
+router.post('/update-salespersons', async (req, res) => {
+  try {
+    const items = req.body.items;
+    const updatedItems = [];
+
+    for (const item of items) {
+      let existingItem = await transferLead.findById(item._id);
+
+      if (existingItem) {
+        // Update the salesperson field
+        existingItem.salesperson = item.salesperson;
+        await existingItem.save();
+
+        // Check if the item exists in the salesLead collection
+        const salesLeadItem = await salesLead.findOne({ _id: existingItem._id });
+
+        if (!salesLeadItem) {
+          // Prepare the updated item for insertion into the salesLead collection
+          const updatedItem = {
+            _id: existingItem._id,
+            closingDate: existingItem.created_time,
+            campaign_Name: existingItem.campaign_Name,
+            ad_Name: existingItem.ad_Name,
+            custName: existingItem.name,
+            custEmail: existingItem.email,
+            custBussiness: existingItem.company_name,
+            custNumb: existingItem.phone,
+            state: existingItem.state,
+            salesPerson: existingItem.salesperson
+          };
+
+          updatedItems.push(updatedItem);
+        }
+      }
+    }
+
+    // Insert updated items into the salesLead collection
+    if (updatedItems.length > 0) {
+      await salesLead.insertMany(updatedItems);
+    }
+
+    res.json({ message: "Items Updated Successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Leads Data by Range
+
+router.get('/leadsByRange/:startDate/:endDate', async(req, res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate()+1);
+  try{
+    let query ={
+      created_time : {
+        $gte: startDate , $lte: endDate
+      }
+    };
+    const rangeTotalData = await transferLead.find(query);
+    console.log("Leads Data===>", rangeTotalData);
+    res.json({rangeTotalData: rangeTotalData});
+  } catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+//Get Sales Leads
+
+router.get('/getSales-leads', async(req, res)=>{
+  try{
+    const fetchedLeads = await salesLead.find({salesPerson: person});
+    res.json(fetchedLeads);
+  }catch(error){
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to Fetch Leads'})
+  }
+});
+
+// SalesLead by Range
+
+router.get('/salesleadsByRange/:startDate/:endDate', async(req, res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate()+1);
+  try{
+    let query ={
+      closingDate : {
+        $gte: startDate , $lte: endDate
+      }
+    };
+    const rangeTotalData = await salesLead.find(query);
+    console.log("Leads Data===>", rangeTotalData);
+    res.json({rangeTotalData: rangeTotalData});
+  } catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+//transfer Admin Leads
+
+router.get('/transferLeads', async(req, res)=>{
+  try{
+    const fbLead = await Lead.find();
+    let successCount=0;
+    let skipCount=0;
+    for( doc of fbLead){
+
+      let existingLead = await transferLead.findOne({created_time: doc.created_time});
+
+      if(!existingLead){
+        const adminLead = new transferLead({
+          id: doc.id,
+          created_time: doc.created_time,
+          campaign_Name: doc.campaign_Name,
+          ad_Name: doc.ad_Name,
+          name: doc.name,
+          email: doc.email,
+          company_name: doc.company_name,
+          phone: doc.phone,
+          state: doc.state,
+          salesperson: doc.salesperson
+        })
+        await adminLead.save();
+        successCount++;
+      }else{
+        skipCount++;
+      }
+    }
+    res.status(200).json({ success: true, message: "Data Transfer Successful", successCount: successCount, skipCount: skipCount });
+  }catch(error){
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+//get All Admin Leads
+router.get('/getAdmin-leads', async(req, res)=>{
+  try{
+    const fetchedLeads = await transferLead.find();
+    res.json(fetchedLeads);
+  }catch(error){
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to Fetch Leads'})
+  }
+});
 
 module.exports = router
