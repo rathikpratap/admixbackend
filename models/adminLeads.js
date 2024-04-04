@@ -10,7 +10,9 @@ const transferSchema = new mongoose.Schema({
     company_name: String,
     phone: Number,
     state: String,
-    salesperson: String
+    salesTeam: String,
+    projectStatus: String,
+    remark: String
 });
 
 module.exports = mongoose.model('transferLead', transferSchema);

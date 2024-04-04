@@ -19,7 +19,16 @@ const customerSchema = new mongoose.Schema({
     youtubeLink : {type:String},
     remark : {type:String},
     restAmount : {type:Number},
-    restPaymentDate : {type:Date}
+    restPaymentDate : {type:Date},
+    editor: {type:String},
+    scriptWriter: {type: String},
+    voiceOver:{type: String},
+    wordsCount: {type:Number},
+    script: {type:String},
+    scriptDeliveryDate: {type:Date},
+    scriptStatus: {type: String},
+    payment: {type:Number},
+    salesTeam: {type:String}
 });
 
 //customerSchema.pre('save', function(next) {

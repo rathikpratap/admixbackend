@@ -3,6 +3,7 @@ const router = require('express').Router();
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
 const ClosingCategory = require('./models/closingCategory');
+const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
 const salesLead = require('./models/salesLead');
 const transferLead = require('./models/adminLeads');
@@ -17,7 +18,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage});
 
 let person = '';
-let person1 = '';
+let personTeam = '';
 
 router.post('/register', async (req, res) => {
   const user = new User({
@@ -28,7 +29,9 @@ router.post('/register', async (req, res) => {
     signupGender: req.body.signupGender,
     signupPassword: req.body.signupPassword,
     signupAddress: req.body.signupAddress,
-    signupRole: req.body.signupRole
+    signupRole: req.body.signupRole,
+    signupPayment: req.body.signupPayment,
+    salesTeam: req.body.salesTeam
   })
   await user.save()
     .then((_) => {
@@ -54,7 +57,8 @@ router.post('/login', (req, res) => {
           if (req.body.loginPswd === user.signupPassword) {
               const payload = {
                   userId: user._id,
-                  name: user.signupUsername
+                  name: user.signupUsername,
+                  Saleteam: user.salesTeam
               };
               const token = jwt.sign(payload, "webBatch", { expiresIn: '1h' });
               //person = req.body.loginUsername;
@@ -71,9 +75,11 @@ router.post('/login', (req, res) => {
 router.get('/profile', checkAuth, async (req,res)=>{
   const userId = await req.userData.userId;
   person = req.userData.name;
+  personTeam = req.userData.Saleteam;
   
   User.findById(userId).exec().then((result)=>{
     console.log("data=====>>>>", person)
+    console.log("SALESPERSON===>>>>", personTeam);
     return res.json({success: true, data:result})
   }).catch(err=>{
     res.json({success: false, message: "Server Error!!"})
@@ -94,7 +100,7 @@ router.get('/list', async (req, res) => {
           },
           //remainingAmount: { $gt: 0 },
           projectStatus: { $ne: 'Completed' }
-      });
+      }).sort({ closingDate: -1 });
 
       if (products.length > 0) {
           res.json(products);
@@ -120,7 +126,7 @@ router.get('/completeProject', async (req, res) => {
           },
           //remainingAmount: 0,
           projectStatus: { $regex: /^Completed$/i }
-      });
+      }).sort({ closingDate: -1 });
 
       if (completeProducts.length > 0) {
           res.json(completeProducts);
@@ -141,7 +147,7 @@ router.get('/allProjects', async(req,res)=>{
       $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
       $lte: new Date(new Date().getFullYear(), currentMonth, 0)
     }
-  });
+  }).sort({ closingDate: -1 });
   return res.json(allProjects)
 })
 
@@ -154,7 +160,7 @@ router.get('/allProjectsAdmin', async (req, res)=>{
       $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
       $lte: new Date(new Date().getFullYear(), currentMonth, 0)
     }
-  });
+  }).sort({ closingDate: -1 });
   return res.json(allProjects)
 })
 
@@ -176,16 +182,7 @@ router.get('/allEmployee', async (req, res)=>{
   }
 })
 
-//All Ongoing Projects
-
-//router.get('/allOngoingProjects', async (req, res)=>{
-//    const allOngoing = await Customer.find({ remainingAmount: {$gt: 0}});
-//    if(allOngoing){
-//        return res.json(allOngoing)
-//    }else{
-//        res.send({result: "No Data Found"})
-//    }
-//})
+//All Ongoing Projects Admin
 
 router.get('/allOngoingProjects', async (req, res) => {
   console.log("person ==>", person);
@@ -198,7 +195,7 @@ router.get('/allOngoingProjects', async (req, res) => {
           },
           //remainingAmount: { $gt: 0 },
           projectStatus: { $ne: 'Completed' }
-      });
+      }).sort({ closingDate: -1 });
 
       if (products.length > 0) {
           res.json(products);
@@ -232,7 +229,7 @@ router.get('/allCompleteProjects', async (req, res) => {
           },
           //remainingAmount: 0,
           projectStatus: { $regex: /^Completed$/i }
-      });
+      }).sort({ closingDate: -1 });
 
       if (completeProducts.length > 0) {
           res.json(completeProducts);
@@ -328,22 +325,25 @@ router.delete('/delete-cust/:id', async(req, res)=>{
   }
 })
 
-// Edit Customer Details
+// Edit Customer Details By editor
 
-//router.put('/update/:id', async (req,res)=>{
-//  console.log("req.body ==>",req.body);
-//  const custDet = await Customer.findByIdAndUpdate(req.params.id,{
-//      $set: req.body
-//  })
-//  if(custDet){
-//      return res.json(custDet)
-//  }else{
-//      res.send({result:"No No Data"})
-//  }
-//})
+router.put('/updateEditor/:id', async (req,res)=>{
+  console.log("req.body ==>",req.body);
+  const custDet = await Customer.findByIdAndUpdate(req.params.id,{
+      $set: req.body
+  })
+  if(custDet){
+      return res.json(custDet)
+  }else{
+      res.send({result:"No No Data"})
+  }
+})
+
+// Edit Customer Details
 
 router.put('/update/:id', async(req, res)=>{
   try{
+    console.log("UPDATE SALESPERSON==>",person);
     let custDet = await Customer.findById(req.params.id);
     let leadDet = await salesLead.findById(req.params.id);
     if(custDet){
@@ -360,10 +360,11 @@ router.put('/update/:id', async(req, res)=>{
         }else {
           const newCustomer = new Customer({
             _id: leadDet._id,
+            custCode: req.body.custCode,
             custName: leadDet.custName,
             custNumb: leadDet.custNumb,
             custBussiness: leadDet.custBussiness,
-            closingDate: leadDet.closingDate,
+            closingDate: req.body.closingDate,
             closingPrice: req.body.closingPrice,
             closingCateg: req.body.closingCateg,
             AdvPay: req.body.AdvPay,
@@ -376,7 +377,11 @@ router.put('/update/:id', async(req, res)=>{
             restAmount: req.body.restAmount,
             restPaymentDate: req.body.restPaymentDate,
             remark: req.body.remark,
-            salesPerson: leadDet.salesPerson
+            salesPerson: person,
+            salesTeam: leadDet.salesTeam,
+            editor: req.body.editor,
+            scriptWriter: req.body.scriptWriter,
+            voiceOver: req.body.voiceOver,
           });
           await newCustomer.save();
           await salesLead.findByIdAndDelete(req.params.id);
@@ -443,13 +448,18 @@ router.post('/customer', async (req,res) => {
     closingCateg : req.body.closingCateg,
     AdvPay : req.body.AdvPay,
     remainingAmount: req.body.remainingAmount,
+    restAmount: req.body.restAmount,
     custCountry: req.body.custCountry,
     custCity : req.body.custCity,
     custState : req.body.custState,
     projectStatus : req.body.projectStatus,
     salesPerson : req.body.salesPerson,
     youtubeLink : req.body.youtubeLink,
-    remark : req.body.remark
+    remark : req.body.remark,
+    editor: req.body.editor,
+    scriptWriter: req.body.scriptWriter,
+    voiceOver: req.body.voiceOver,
+    salesTeam: req.body.salesTeam
 
   })
 
@@ -490,71 +500,153 @@ router.get('/cities/:countryCode/:stateCode', (req, res) => {
 
 //month-wise data
 
-router.get('/totalEntries', async (req, res) => {
-  
+router.get('/totalEntries', async(req, res)=>{
   const currentMonth = new Date().getMonth() + 1;
-  console.log("Month person1 ==>", person);
-  try {
+  try{
     let query;
-    if (person === 'Shiva Varshney') {
-      query = {
-        closingDate: {
-          $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-          $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-        }
-      };
-    } else {
-      query = {
-        salesPerson: person,
-        closingDate: {
-          $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-          $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-        }
-      };
-    }
-
-   const totalEntries = await Customer.find(query);
+    query = {
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      }
+    };
+    const totalEntries = await Customer.find(query);
     const totalAmount = totalEntries.reduce((sum,doc)=> sum + doc.closingPrice, 0);
-    const totalRecv = totalEntries.reduce((sum, doc)=> sum + doc.AdvPay, 0);
+    const totalRecv = totalEntries.reduce((sum, doc)=> sum + doc.AdvPay + doc.restAmount, 0);
     const totalDue = totalEntries.reduce((sum,doc)=> sum + doc.remainingAmount, 0);
     res.json({totalEntries,totalAmount, totalRecv, totalDue});
-  } catch (error) {
+  }catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
 
+router.get('/totalEntriesEmp', async(req, res)=>{
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    let query;
+    query = {
+      salesPerson: person,
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      }
+    };
+    const totalEntries = await Customer.find(query);
+    const totalAmount = totalEntries.reduce((sum,doc)=> sum + doc.closingPrice, 0);
+    const totalRecv = totalEntries.reduce((sum, doc)=> sum + doc.AdvPay + doc.restAmount , 0);
+    const totalDue = totalEntries.reduce((sum,doc)=> sum + doc.remainingAmount, 0);
+    res.json({totalEntries,totalAmount, totalRecv, totalDue});
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// router.get('/totalEntries', async (req, res) => {
+  
+//   const currentMonth = new Date().getMonth() + 1;
+//   console.log("Month person1 ==>", person);
+//   try {
+//     let query;
+//     if (person === 'Shiva Varshney') {
+//       query = {
+//         closingDate: {
+//           $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//           $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//         }
+//       };
+//     } else {
+//       query = {
+//         salesPerson: person,
+//         closingDate: {
+//           $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//           $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//         }
+//       };
+//     }
+
+//    const totalEntries = await Customer.find(query);
+//     const totalAmount = totalEntries.reduce((sum,doc)=> sum + doc.closingPrice, 0);
+//     const totalRecv = totalEntries.reduce((sum, doc)=> sum + doc.AdvPay, 0);
+//     const totalDue = totalEntries.reduce((sum,doc)=> sum + doc.remainingAmount, 0);
+//     res.json({totalEntries,totalAmount, totalRecv, totalDue});
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
 
 // Current Day Entry
 
-router.get('/todayEntries', async( req, res)=>{
+router.get('/todayEntries', async(req, res)=>{
   const currentDate = new Date();
   try{
     let query;
-    if(person === 'Shiva Varshney'){
-      query = {
-        closingDate : {
-          $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
-          $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
-        }
-      };
-    } else{
-      query = {
-        salesPerson : person,
-        closingDate : {
-          $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
-          $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
-        }
-      };
-    }
+    query = {
+      closingDate : {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
     const totalDayEntry = await Customer.find(query);
     console.log("Total Entries===>>",totalDayEntry)
     res.json({totalDayEntry});
-  } catch(error){
+  }catch(error){
     console.log(error);
     res.status(500).json({message: "Server Error"});
   }
 });
+
+router.get('/todayEntriesEmp', async(req, res)=>{
+  const currentDate = new Date();
+  try{
+    let query;
+    query = {
+      salesPerson : person,
+      closingDate : {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
+    const totalDayEntry = await Customer.find(query);
+    console.log("Total Entries===>>",totalDayEntry)
+    res.json({totalDayEntry});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+//router.get('/todayEntries', async( req, res)=>{
+//  const currentDate = new Date();
+//  try{
+//    let query;
+//    if(person === 'Shiva Varshney'){
+//      query = {
+//        closingDate : {
+//          $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+//          $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+//        }
+//      };
+//    } else{
+//      query = {
+//        salesPerson : person,
+ //       closingDate : {
+ //         $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+ //         $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+ //       }
+ //     };
+ //   }
+ //   const totalDayEntry = await Customer.find(query);
+ //   console.log("Total Entries===>>",totalDayEntry)
+ //   res.json({totalDayEntry});
+ // } catch(error){
+ //   console.log(error);
+ //   res.status(500).json({message: "Server Error"});
+ // }
+//});
 
 //Data By Date Range
 
@@ -643,6 +735,8 @@ router.get('/downloadFile', async( req, res)=>{
       'closingCateg' : customer.closingCateg,
       'AdvPay' : customer.AdvPay,
       'remainingAmount': customer.remainingAmount,
+      'restAmount' : customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
       'custCountry': customer.custCountry,
       'custCity' : customer.custCity,
       'custState' : customer.custState,
@@ -693,6 +787,8 @@ router.get('/downloadRangeFile/:startDate/:endDate', async(req,res)=>{
       'closingCateg' : customer.closingCateg,
       'AdvPay' : customer.AdvPay,
       'remainingAmount': customer.remainingAmount,
+      'restAmount' : customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
       'custCountry': customer.custCountry,
       'custCity' : customer.custCity,
       'custState' : customer.custState,
@@ -748,6 +844,8 @@ router.get('/downloadDueFile/:startDate/:endDate', async(req,res)=>{
       'closingCateg' : customer.closingCateg,
       'AdvPay' : customer.AdvPay,
       'remainingAmount': customer.remainingAmount,
+      'restAmount' : customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
       'custCountry': customer.custCountry,
       'custCity' : customer.custCity,
       'custState' : customer.custState,
@@ -800,15 +898,47 @@ router.get('/getCategory', async(req, res)=>{
   }
 });
 
+// New Sales Team
+
+router.post('/newSalesTeam', async(req, res)=>{
+  try{
+    const salesTeam = new newSalesTeam({
+      salesTeamName : req.body.salesTeamName
+    })
+    await salesTeam.save().then((_)=>{
+      res.json({success: true, message: "New Sales Team Added"})
+    }).catch((err)=>{
+      if (err.code === 11000) {
+        return res.json({success: false, message: "Sales Team Already Exist"})
+      }
+    });
+  }catch(error){
+    console.error('Error Adding Sales Team', error);
+    res.status(500).json({error: 'Failed to add Sales Team'});
+  }
+});
+
+//get Sales Team
+
+router.get('/getSalesTeam', async(req, res)=>{
+  try{
+    const salesTeams = await newSalesTeam.find();
+    res.json(salesTeams);
+  }catch(error){
+    console.error("Error Fetching Sales Team", error);
+    res.status(500).json({error: 'Failed to Fetch Sales Team Data '})
+  }
+});
+
 // Facebook integration Api
 
-const accessToken = 'EAANSY8Y9OkYBOyAtzy7KEsYlXahNipB3qwuB57NFQZBRzyzTiKxIslR0TdHK494kYGhr75bMCRU1xVAKbN4hSYZAPM414uuiUG74uFY4DOrq4QlhHvMMOOMcobJYwI3IVZBbzcROuqNkTaq3HkpuqddvpWT6xoD4xccOQct94FHg9qyAxatGJrt';
+const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
 
 router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
   try {
     
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cname%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email ='';
     
@@ -849,7 +979,7 @@ router.get('/facebook-leads', async (req, res) => {
                 email: email,
                 company_name: company_name,
                 state: state,
-                salesperson: "" 
+                salesTeam: "" 
               });
               await newLead.save();
             }
@@ -868,7 +998,7 @@ router.get('/facebook-leads', async (req, res) => {
 
 router.get('/getFacebook-leads', async(req, res)=>{
   try{
-    const fetchedLeads = await Lead.find();
+    const fetchedLeads = await Lead.find().sort({ created_time: -1 });
     res.json(fetchedLeads);
   }catch(error){
     console.error("Error Fetching Leads", error);
@@ -912,13 +1042,15 @@ router.post('/update-salespersons', async (req, res) => {
 
       if (existingItem) {
         // Update the salesperson field
-        existingItem.salesperson = item.salesperson;
+        existingItem.salesTeam = item.salesTeam;
         await existingItem.save();
 
         // Check if the item exists in the salesLead collection
         const salesLeadItem = await salesLead.findOne({ _id: existingItem._id });
 
-        if (!salesLeadItem) {
+        const customerLeadItem = await Customer.findOne({_id: existingItem._id});
+
+        if (!salesLeadItem && !customerLeadItem) {
           // Prepare the updated item for insertion into the salesLead collection
           const updatedItem = {
             _id: existingItem._id,
@@ -930,10 +1062,15 @@ router.post('/update-salespersons', async (req, res) => {
             custBussiness: existingItem.company_name,
             custNumb: existingItem.phone,
             state: existingItem.state,
-            salesPerson: existingItem.salesperson
+            salesTeam: existingItem.salesTeam,
+            projectStatus: ""
           };
 
           updatedItems.push(updatedItem);
+        }else if (!salesLeadItem.salesTeam) {
+          // Update salesTeam if not saved in salesLead
+          salesLeadItem.salesTeam = existingItem.salesTeam;
+          await salesLeadItem.save();
         }
       }
     }
@@ -945,7 +1082,7 @@ router.post('/update-salespersons', async (req, res) => {
 
     res.json({ message: "Items Updated Successfully" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ message: "All Leads are Transfered Before." });
   }
 });
 
@@ -961,7 +1098,7 @@ router.get('/leadsByRange/:startDate/:endDate', async(req, res)=>{
         $gte: startDate , $lte: endDate
       }
     };
-    const rangeTotalData = await transferLead.find(query);
+    const rangeTotalData = await transferLead.find(query).sort({ created_time: -1 });
     console.log("Leads Data===>", rangeTotalData);
     res.json({rangeTotalData: rangeTotalData});
   } catch(error){
@@ -970,11 +1107,24 @@ router.get('/leadsByRange/:startDate/:endDate', async(req, res)=>{
   }
 });
 
+//get Teams Leads
+
+router.get('/getTeams-leads/', async(req,res)=>{
+  try{
+    //const team = req.params.data;
+    console.log("Sales Team===>>",personTeam);
+    const fetchedLeads = await salesLead.find({salesTeam: personTeam}).sort({ closingDate: -1 });
+    res.json(fetchedLeads);
+  }catch(error){
+    res.status(500).json({error: 'Dailed to fetch Leads'})
+  }
+})
+
 //Get Sales Leads
 
 router.get('/getSales-leads', async(req, res)=>{
   try{
-    const fetchedLeads = await salesLead.find({salesPerson: person});
+    const fetchedLeads = await Customer.find({salesTeam: personTeam}).sort({ closingDate: -1 });
     res.json(fetchedLeads);
   }catch(error){
     console.error("Error Fetching Leads", error);
@@ -994,7 +1144,7 @@ router.get('/salesleadsByRange/:startDate/:endDate', async(req, res)=>{
         $gte: startDate , $lte: endDate
       }
     };
-    const rangeTotalData = await salesLead.find(query);
+    const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
     console.log("Leads Data===>", rangeTotalData);
     res.json({rangeTotalData: rangeTotalData});
   } catch(error){
@@ -1025,7 +1175,7 @@ router.get('/transferLeads', async(req, res)=>{
           company_name: doc.company_name,
           phone: doc.phone,
           state: doc.state,
-          salesperson: doc.salesperson
+          salesTeam: doc.salesTeam
         })
         await adminLead.save();
         successCount++;
@@ -1042,11 +1192,61 @@ router.get('/transferLeads', async(req, res)=>{
 //get All Admin Leads
 router.get('/getAdmin-leads', async(req, res)=>{
   try{
-    const fetchedLeads = await transferLead.find();
+    const fetchedLeads = await transferLead.find().sort({ created_time: -1 });
     res.json(fetchedLeads);
   }catch(error){
     console.error("Error Fetching Leads", error);
     res.status(500).json({error: 'Failed to Fetch Leads'})
+  }
+});
+
+//Update Editors
+
+router.post('/updateEditor', async(req,res)=>{
+  try{
+    const items = req.body.items;
+    for(const item of items){
+      let existingItem = await Customer.findById(item._id);
+      if(existingItem){
+        existingItem.editor = item.editor;
+        existingItem.scriptWriter = item.scriptWriter;
+        existingItem.voiceOver = item.voiceOver;
+        existingItem.projectStatus = item.projectStatus;
+        await existingItem.save();
+      }
+    }
+    res.json({message: "Editor Updated"});
+  }catch(err){
+    res.status(500).json({message: err.message});
+  }
+})
+
+//Script writer Projects
+
+router.get('/scriptProjects', async(req, res)=>{
+  const allProjects = await Customer.find({editor : person}).sort({ closingDate: -1 });
+  if(allProjects){
+    return res.json(allProjects)
+  } else{
+    res.send({result: "No Data Found"})
+  }
+});
+
+router.post('/update-projectStatus', async(req,res)=>{
+  try{
+    const items = req.body.items;
+    for( const item of items){
+      let existingItem = await salesLead.findById(item._id);
+
+      if(existingItem){
+        existingItem.projectStatus = item.projectStatus;
+        existingItem.remark = item.remark;
+        await existingItem.save();
+      }
+    }
+    return res.json(items);
+  }catch(error){
+    return res.status(500).json({error: error.message})
   }
 });
 

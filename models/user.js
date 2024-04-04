@@ -9,7 +9,9 @@ const registerSchema = new mongoose.Schema({
     signupGender : {type:String},
     signupPassword: {type:String},
     signupAddress: {type:String},
-    signupRole: {type:String}
+    signupRole: {type:String},
+    signupPayment: {type: Number},
+    salesTeam: {type:String}
 });
 
 module.exports = mongoose.model('User', registerSchema);

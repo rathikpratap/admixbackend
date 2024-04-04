@@ -10,8 +10,9 @@ const salesLeadSchema = new mongoose.Schema({
     custBussiness: String,
     custNumb: Number,
     state: String,
-    salesPerson: String,
-    projectStatus: String
+    salesTeam: String,
+    projectStatus: String,
+    remark: String
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);

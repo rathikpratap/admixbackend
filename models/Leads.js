@@ -10,7 +10,7 @@ const adAccountSchema = new mongoose.Schema({
     company_name: String,
     phone: Number,
     state: String,
-    salesperson: String
+    salesTeam: String
 });
 
 module.exports = mongoose.model('Lead', adAccountSchema);
