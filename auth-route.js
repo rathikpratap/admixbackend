@@ -938,7 +938,7 @@ router.get('/getSalesTeam', async(req, res)=>{
 //const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
 
 //Real accessToken
-const accessToken = 'EAANSY8Y9OkYBOyAtzy7KEsYlXahNipB3qwuB57NFQZBRzyzTiKxIslR0TdHK494kYGhr75bMCRU1xVAKbN4hSYZAPM414uuiUG74uFY4DOrq4QlhHvMMOOMcobJYwI3IVZBbzcROuqNkTaq3HkpuqddvpWT6xoD4xccOQct94FHg9qyAxatGJrt'
+const accessToken = 'EAANSY8Y9OkYBO7vz07vvfmqhXXKOjQLUx0VW4BWMkj3xZAUWnDJlqZCd90Piy6PP2brcpAsdMKBFwavYTZBEq2nMXbHZBSkTZCisEZCcXtFJMYx5kNYCgg4TzZCev6T8LgG7PNjL0LySRtfFbaZCWvRZBxu6ZBVRtjae2YP5HkkeZCFsf7gBGNpp9ZCNZCQLk'
 
 router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
@@ -946,7 +946,7 @@ router.get('/facebook-leads', async (req, res) => {
     
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
 
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cname%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email ='';
     
