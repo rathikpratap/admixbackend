@@ -58,11 +58,13 @@ router.post('/login', (req, res) => {
               const payload = {
                   userId: user._id,
                   name: user.signupUsername,
-                  Saleteam: user.salesTeam
+                  Saleteam: user.salesTeam,
+                  //
+                  signupRole: user.signupRole
               };
               const token = jwt.sign(payload, "webBatch", { expiresIn: '1h' });
               //person = req.body.loginUsername;
-              return res.json({ success: true, token: token, message: "Login Successful" });
+              return res.json({ success: true, token: token, role: user.signupRole, message: "Login Successful" });
           } else {
               return res.json({ success: false, message: "Password not Matched" });
           }
@@ -932,7 +934,11 @@ router.get('/getSalesTeam', async(req, res)=>{
 
 // Facebook integration Api
 
-const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
+//local accessToken
+//const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
+
+//Real accessToken
+const accessToken = 'EAANSY8Y9OkYBOyAtzy7KEsYlXahNipB3qwuB57NFQZBRzyzTiKxIslR0TdHK494kYGhr75bMCRU1xVAKbN4hSYZAPM414uuiUG74uFY4DOrq4QlhHvMMOOMcobJYwI3IVZBbzcROuqNkTaq3HkpuqddvpWT6xoD4xccOQct94FHg9qyAxatGJrt'
 
 router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
@@ -1224,6 +1230,17 @@ router.post('/updateEditor', async(req,res)=>{
 //Script writer Projects
 
 router.get('/scriptProjects', async(req, res)=>{
+  const allProjects = await Customer.find({scriptWriter : person}).sort({ closingDate: -1 });
+  if(allProjects){
+    return res.json(allProjects)
+  } else{
+    res.send({result: "No Data Found"})
+  }
+});
+
+//Editor Projects
+
+router.get('/editorProjects', async(req, res)=>{
   const allProjects = await Customer.find({editor : person}).sort({ closingDate: -1 });
   if(allProjects){
     return res.json(allProjects)
@@ -1231,6 +1248,19 @@ router.get('/scriptProjects', async(req, res)=>{
     res.send({result: "No Data Found"})
   }
 });
+
+// VoiceOver Projects
+
+router.get('/voProjects', async(req, res)=>{
+  const allProjects = await Customer.find({voiceOver : person}).sort({ closingDate: -1 });
+  if(allProjects){
+    return res.json(allProjects)
+  } else{
+    res.send({result: "No Data Found"})
+  }
+});
+
+// update Project Status from Admin Panel
 
 router.post('/update-projectStatus', async(req,res)=>{
   try{
