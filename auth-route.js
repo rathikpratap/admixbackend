@@ -944,7 +944,9 @@ router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
   try {
     
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cname%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email ='';
     
