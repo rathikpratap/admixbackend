@@ -384,6 +384,38 @@ router.put('/update/:id', async(req, res)=>{
             editor: req.body.editor,
             scriptWriter: req.body.scriptWriter,
             voiceOver: req.body.voiceOver,
+            wordsCount: req.body.wordsCount,
+            scriptDuration: req.body.scriptDuration,
+            script: req.body.script,
+            scriptDeliveryDate: req.body.scriptDeliveryDate,
+            scriptStatus: req.body.scriptStatus,
+            scriptPayment: req.body.scriptPayment,
+            scriptOtherChanges: req.body.scriptOtherChanges,
+            scriptChangesPayment: req.body.scriptChangesPayment,
+            videoDuration: req.body.videoDuration,
+            videoDeliveryDate: req.body.videoDeliveryDate,
+            videoType: req.body.videoType,
+            editorStatus: req.body.editorStatus,
+            editorPayment: req.body.editorPayment,
+            editorOtherChanges: req.body.editorOtherChanges,
+            editorChangesPayment: req.body.editorChangesPayment,
+            voiceDuration: req.body.voiceDuration,
+            voiceDeliveryDate: req.body.voiceDeliveryDate,
+            voiceOverType: req.body.voiceOverType,
+            voiceOverStatus: req.body.voiceOverStatus,
+            voicePayment: req.body.voicePayment,
+            voiceOtherChanges: req.body.voiceOtherChanges,
+            voiceChangesPayment: req.body.voiceChangesPayment,
+            totalEditorPayment: req.body.totalEditorPayment,
+            totalScriptPayment: req.body.totalScriptPayment,
+            totalVoicePayment: req.body.totalVoicePayment,
+            videoDurationMinutes: req.body.videoDurationMinutes,
+            videoDurationSeconds: req.body.videoDurationSeconds,
+            voiceDurationMinutes: req.body.voiceDurationMinutes,
+            voiceDurationSeconds: req.body.voiceDurationSeconds,
+            scriptDurationMinutes: req.body.scriptDurationMinutes,
+            scriptDurationSeconds: req.body.scriptDurationSeconds,
+            totalProjectPayment: totalEditorPayment + totalScriptPayment + totalVoicePayment
           });
           await newCustomer.save();
           await salesLead.findByIdAndDelete(req.params.id);
@@ -943,7 +975,7 @@ const accessToken = 'EAANSY8Y9OkYBO7vz07vvfmqhXXKOjQLUx0VW4BWMkj3xZAUWnDJlqZCd90
 router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
   try {
-    
+    //Local
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
 
     const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
