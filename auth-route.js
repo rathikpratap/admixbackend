@@ -460,7 +460,6 @@ router.put('/update/:id', async (req, res) => {
           voiceDurationSeconds: req.body.voiceDurationSeconds,
           scriptDurationMinutes: req.body.scriptDurationMinutes,
           scriptDurationSeconds: req.body.scriptDurationSeconds,
-          totalProjectPayment: totalEditorPayment + totalScriptPayment + totalVoicePayment
         });
         await newCustomer.save();
         await salesLead.findByIdAndDelete(req.params.id);
@@ -1015,18 +1014,18 @@ router.get('/getSalesTeam', async (req, res) => {
 // Facebook integration Api
 
 //local accessToken
-//const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
+const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
 
 //Real accessToken
-const accessToken = 'EAANSY8Y9OkYBO7vz07vvfmqhXXKOjQLUx0VW4BWMkj3xZAUWnDJlqZCd90Piy6PP2brcpAsdMKBFwavYTZBEq2nMXbHZBSkTZCisEZCcXtFJMYx5kNYCgg4TzZCev6T8LgG7PNjL0LySRtfFbaZCWvRZBxu6ZBVRtjae2YP5HkkeZCFsf7gBGNpp9ZCNZCQLk'
+//const accessToken = 'EAANSY8Y9OkYBO7vz07vvfmqhXXKOjQLUx0VW4BWMkj3xZAUWnDJlqZCd90Piy6PP2brcpAsdMKBFwavYTZBEq2nMXbHZBSkTZCisEZCcXtFJMYx5kNYCgg4TzZCev6T8LgG7PNjL0LySRtfFbaZCWvRZBxu6ZBVRtjae2YP5HkkeZCFsf7gBGNpp9ZCNZCQLk'
 
 router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
   try {
     //Local
-    //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     //Real
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email = '';
 
@@ -1434,6 +1433,7 @@ router.get('/salesleadsByRange/:startDate/:endDate', async (req, res) => {
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
+      salesTeam: personTeam,
       closingDate: {
         $gte: startDate, $lte: endDate
       }
