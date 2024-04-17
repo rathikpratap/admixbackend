@@ -460,6 +460,7 @@ router.put('/update/:id', async (req, res) => {
           voiceDurationSeconds: req.body.voiceDurationSeconds,
           scriptDurationMinutes: req.body.scriptDurationMinutes,
           scriptDurationSeconds: req.body.scriptDurationSeconds,
+          numberOfVideos: req.body.numberOfVideos
         });
         await newCustomer.save();
         await salesLead.findByIdAndDelete(req.params.id);

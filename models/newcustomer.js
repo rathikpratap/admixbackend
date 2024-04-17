@@ -55,7 +55,8 @@ const customerSchema = new mongoose.Schema({
     totalProjectPayment: {type: Number},
     totalEditorPayment: {type: Number},
     totalScriptPayment: {type: Number},
-    totalVoicePayment: {type: Number}
+    totalVoicePayment: {type: Number},
+    numberOfVideos: {type: String}
 });
 
 //customerSchema.pre('save', function(next) {
