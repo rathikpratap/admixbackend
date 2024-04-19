@@ -891,6 +891,46 @@ router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
 
 });
 
+// Download Sales Range Data
+
+router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  console.log("DOwnload PersonTeam===>", personTeam)
+  try {
+    let query = {
+        closingDate: {
+          $gte: startDate, $lte: endDate
+        }
+      };
+    
+    const rangeFileData = await salesLead.find(query);
+    const data = rangeFileData.map(customer => ({
+      'campaign_Name': customer.campaign_Name,
+      'ad_Name': customer.ad_Name,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custEmail': customer.custEmail,
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'state': customer.state,
+      'projectStatus': customer.projectStatus,
+      'salesTeam': customer.salesTeam,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'customers.xlsx');
+    res.download('customers.xlsx');
+  } catch (err) {
+    console.error('Error Downloading File', err);
+    res.status(500).json({ error: 'Failed to download File' });
+  }
+
+});
+
 // Download Due Data
 
 router.get('/downloadDueFile/:startDate/:endDate', async (req, res) => {
