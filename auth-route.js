@@ -14,6 +14,7 @@ const checkAuth = require('./middleware/chech-auth');
 const axios = require('axios');
 const multer = require('multer');
 const XLSX = require('xlsx');
+const adminLeads = require('./models/adminLeads');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -1083,32 +1084,107 @@ router.get('/facebook-leads', async (req, res) => {
             for (const lead of leads.data) {
               const { created_time: createdTime, field_data } = lead;
 
-              for (const field of field_data) {
-                if (field.name === 'full_name') {
-                  cust_name = field.values[0];
-                } else if (field.name === 'email') {
-                  email = field.values[0];
-                } else if (field.name === 'company_name') {
-                  company_name = field.values[0];
-                } else if (field.name === 'phone_number') {
-                  phone = field.values[0];
-                } else if (field.name === 'state') {
-                  state = field.values[0];
+                for (const field of field_data) {
+                  if (field.name === 'full_name') {
+                    cust_name = field.values[0];
+                  } else if (field.name === 'email') {
+                    email = field.values[0];
+                  } else if (field.name === 'company_name') {
+                    company_name = field.values[0];
+                  } else if (field.name === 'phone_number') {
+                    phone = field.values[0];
+                  } else if (field.name === 'state') {
+                    state = field.values[0];
+                  }
                 }
+                const newLead = new Lead({
+                  id: leadData.id,
+                  campaign_Name: campName,
+                  ad_Name: adName,
+                  created_time: createdTime,
+                  name: cust_name,
+                  phone: phone,
+                  email: email,
+                  company_name: company_name,
+                  state: state,
+                  salesTeam: ""
+                });
+                await newLead.save();
+            }
+          }
+        }
+      }
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error fetching and saving Facebook leads:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// sales automatic facebook leads
+
+router.get('/salesFacebook-leads', async (req, res) => {
+  //await Lead.deleteMany();
+  try {
+    //Local
+    //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    //Real
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    const leadsData = response.data.adaccounts.data;
+    let cust_name, company_name, phone, state, email = '';
+
+    for (const leadData of leadsData) {
+      const campaigns = leadData.campaigns.data;
+
+      for (const campaign of campaigns) {
+        const { id: campId, name: campName, ads } = campaign;
+
+        for (const ad of ads.data) {
+          const { name: adName, leads } = ad;
+
+          if (leads && leads.data) {
+            for (const lead of leads.data) {
+              const { created_time: createdTime, field_data } = lead;
+
+              let existingLead = await salesLead.findOne({ closingDate: lead.created_time})
+
+              let customerExist = await Customer.findOne(lead._id);
+
+              const customerLead = await Customer.findOne({_id: customerExist._id});
+
+              if(!existingLead && !customerLead){
+
+                for (const field of field_data) {
+                  if (field.name === 'full_name') {
+                    cust_name = field.values[0];
+                  } else if (field.name === 'email') {
+                    email = field.values[0];
+                  } else if (field.name === 'company_name') {
+                    company_name = field.values[0];
+                  } else if (field.name === 'phone_number') {
+                    phone = field.values[0];
+                  } else if (field.name === 'state') {
+                    state = field.values[0];
+                  }
+                }
+                const newLead = new salesLead({
+                  id: leadData.id,
+                  closingDate: createdTime,
+                  campaign_Name: campName,
+                  ad_Name: adName,
+                  custName: cust_name,
+                  custEmail: email,
+                  custBussiness: company_name,
+                  custNumb: phone,
+                  state: state,
+                  salesTeam: personTeam
+                });
+                await newLead.save();
+
               }
-              const newLead = new Lead({
-                id: leadData.id,
-                campaign_Name: campName,
-                ad_Name: adName,
-                created_time: createdTime,
-                name: cust_name,
-                phone: phone,
-                email: email,
-                company_name: company_name,
-                state: state,
-                salesTeam: ""
-              });
-              await newLead.save();
+
+              
             }
           }
         }
@@ -1130,6 +1206,18 @@ router.get('/getFacebook-leads', async (req, res) => {
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+//getSales-Leads
+
+router.get('/getSalesFacebook-leads', async (req,res)=>{
+  try{
+    const fetchedLeads = await salesLead.find().sort({ closingDate: -1});
+    res.json(fetchedLeads);
+  }catch(error){
+    console.log("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to Fetch Leads'})
   }
 });
 
@@ -1495,6 +1583,7 @@ router.get('/transferLeads', async (req, res) => {
     const fbLead = await Lead.find();
     let successCount = 0;
     let skipCount = 0;
+    let Sales = 0;
     for (doc of fbLead) {
 
       let existingLead = await transferLead.findOne({ created_time: doc.created_time });
@@ -1515,10 +1604,19 @@ router.get('/transferLeads', async (req, res) => {
         await adminLead.save();
         successCount++;
       } else {
-        skipCount++;
+        const SalesLeadDoc = await salesLead.findOne({closingDate: doc.created_time});
+        Sales++;
+        if(SalesLeadDoc && SalesLeadDoc.salesTeam) {
+          console.log("Check SalesTeam==>>", salesLead.salesTeam);
+          existingLead.salesTeam = SalesLeadDoc.salesTeam;
+          await existingLead.save();
+        }else{
+          skipCount++;
+        }
+        
       }
     }
-    res.status(200).json({ success: true, message: "Data Transfer Successful", successCount: successCount, skipCount: skipCount });
+    res.status(200).json({ success: true, message: "Data Transfer Successful", successCount: successCount, skipCount: skipCount, Sales: Sales });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
