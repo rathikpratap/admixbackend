@@ -4,7 +4,8 @@ const customerSchema = new mongoose.Schema({
 
     custCode : {type:String},
     custName : {type:String},
-    custNumb : {type:String},
+    custNumb : {type:Number},
+    custEmail : {type:String},
     custBussiness : {type:String},
     closingDate : {type:Date},
     closingPrice : {type:Number},

@@ -411,6 +411,7 @@ router.put('/update/:id', async (req, res) => {
           custCode: req.body.custCode,
           custName: leadDet.custName,
           custNumb: leadDet.custNumb,
+          custEmail: leadDet.custEmail,
           custBussiness: leadDet.custBussiness,
           closingDate: req.body.closingDate,
           closingPrice: req.body.closingPrice,
@@ -1149,11 +1150,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
 
               let existingLead = await salesLead.findOne({ closingDate: lead.created_time})
 
-              let customerExist = await Customer.findOne(lead._id);
-
-              const customerLead = await Customer.findOne({_id: customerExist._id});
-
-              if(!existingLead && !customerLead){
+              if(!existingLead){
 
                 for (const field of field_data) {
                   if (field.name === 'full_name') {
@@ -1168,23 +1165,24 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     state = field.values[0];
                   }
                 }
-                const newLead = new salesLead({
-                  id: leadData.id,
-                  closingDate: createdTime,
-                  campaign_Name: campName,
-                  ad_Name: adName,
-                  custName: cust_name,
-                  custEmail: email,
-                  custBussiness: company_name,
-                  custNumb: phone,
-                  state: state,
-                  salesTeam: personTeam
-                });
-                await newLead.save();
 
-              }
-
-              
+                let customerLead = await Customer.findOne({ custNumb: phone });
+                if(!customerLead){
+                  const newLead = new salesLead({
+                    id: leadData.id,
+                    closingDate: createdTime,
+                    campaign_Name: campName,
+                    ad_Name: adName,
+                    custName: cust_name,
+                    custEmail: email,
+                    custBussiness: company_name,
+                    custNumb: phone,
+                    state: state,
+                    salesTeam: personTeam
+                  });
+                  await newLead.save();
+                }
+              }  
             }
           }
         }
@@ -1358,6 +1356,28 @@ router.get('/getTeams-leads/', async (req, res) => {
   }
 });
 
+router.get('/getSalesTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
+    console.log("STart Date==>", startOfToday);
+    console.log("End Date===>", endOfToday);
+    // Fetch leads with closing date within today's range
+    const todayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfToday,
+        $lt: endOfToday
+      }
+    }).sort({ closingDate: -1 });
+    return res.json(todayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
 //get Yesterday Team Leads
 
 router.get('/getYesterdayTeams-leads/', async (req, res) => {
@@ -1372,6 +1392,30 @@ router.get('/getYesterdayTeams-leads/', async (req, res) => {
     console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesYesterdayTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1410,6 +1454,30 @@ router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
   }
 });
 
+router.get('/getSalesOneYesterdayTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 2);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
 router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
   try {
     // Get today's date
@@ -1422,6 +1490,30 @@ router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
     console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesTwoYesterdayTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 3);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1460,6 +1552,30 @@ router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
   }
 });
 
+router.get('/getSalesThreeYesterdayTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 4);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
 router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
   try {
     // Get today's date
@@ -1485,6 +1601,30 @@ router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
   }
 });
 
+router.get('/getSalesFourYesterdayTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 5);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
 router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
   try {
     // Get today's date
@@ -1497,6 +1637,30 @@ router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
     console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesFiveYesterdayTeamWork/', async (req, res) => {
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 6);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
