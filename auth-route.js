@@ -1,4 +1,6 @@
 const router = require('express').Router();
+//const { google } = require('googleapis');
+//const fs = require('fs');
 
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
@@ -414,6 +416,7 @@ router.put('/update/:id', async (req, res) => {
           custEmail: leadDet.custEmail,
           custBussiness: leadDet.custBussiness,
           closingDate: req.body.closingDate,
+          leadsCreatedDate: leadDet.closingDate,
           closingPrice: req.body.closingPrice,
           closingCateg: req.body.closingCateg,
           AdvPay: req.body.AdvPay,
@@ -1125,6 +1128,28 @@ router.get('/facebook-leads', async (req, res) => {
 
 // sales automatic facebook leads
 
+// const CLIENT_ID = '849248724588-o2h327suhgl0okqu27r21q2514gi7dko.apps.googleusercontent.com';
+// const CLIENT_SECRET = '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';
+// const REDIRECT_URI ='https://developers.google.com/oauthplayground';
+// const REFERESH_TOKEN = '1//042j-umfcdB9eCgYIARAAGAQSNwF-L9Ir0-UnE_dZa9joo55XHElr55JW6K4PzJVxo7bFG4U8U0afLnpyqUbbnaKxGawvOFSmW6c';
+
+// const oauth2Client = new google.auth.OAuth2(
+//   CLIENT_ID,
+//   CLIENT_SECRET,
+//   REDIRECT_URI
+// );
+
+// oauth2Client.setCredentials({refresh_token: REFERESH_TOKEN})
+
+// const drive = google.drive({
+//   version: 'v3',
+//   auth: oauth2Client
+// });
+// const people = google.people({
+//   version: 'v1',
+//   auth: oauth2Client
+// });
+
 router.get('/salesFacebook-leads', async (req, res) => {
   //await Lead.deleteMany();
   try {
@@ -1137,6 +1162,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
 
     for (const leadData of leadsData) {
       const campaigns = leadData.campaigns.data;
+      //const tempLeadsData = [];
 
       for (const campaign of campaigns) {
         const { id: campId, name: campName, ads } = campaign;
@@ -1166,7 +1192,8 @@ router.get('/salesFacebook-leads', async (req, res) => {
                   }
                 }
 
-                let customerLead = await Customer.findOne({ custNumb: phone });
+                
+                let customerLead = await Customer.findOne({ leadsCreatedDate: createdTime });
                 if(!customerLead){
                   const newLead = new salesLead({
                     id: leadData.id,
@@ -1178,17 +1205,45 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     custBussiness: company_name,
                     custNumb: phone,
                     state: state,
-                    salesTeam: personTeam
+                    salesTeam: personTeam,
+                    leadsCreatedDate: createdTime
                   });
                   await newLead.save();
+                  //tempLeadsData.push({custName: `${new Date(createdTime).toLocaleDateString()} - ${cust_name}`, custNumb: phone});
+                } else{
+                  console.log("All leads Stored");
                 }
               }  
             }
           }
         }
       }
+      // Prepare VCF data
+      // let vcfContent = "";
+      // tempLeadsData.forEach(function (lead) {
+      //   vcfContent += `BEGIN:VCARD\n`;
+      //   vcfContent += `VERSION:3.0\n`;
+      //   vcfContent += `FN:${lead.custName}\n`;
+      //   vcfContent += `TEL:${lead.custNumb}\n`;
+      //   vcfContent += `END:VCARD\n`;
+      // });
+      
+      // const tempFilePath = 'extracted_leads.vcf';
+      // fs.writeFileSync(tempFilePath, vcfContent)
+      // const driveResponse = await drive.files.create({
+      //   requestBody: {
+      //     name: 'Facebook-leads.vcf',
+      //     mimeType: 'text/vcard'
+      //   },
+      //   media: {
+      //     mimeType: 'text/vcard',
+      //     body: fs.createReadStream(tempFilePath)
+      //   }
+      // });
+      
     }
-    res.json({ success: true });
+    //res.json({ success: true, fileId: driveResponse.data.id }); 
+    //res.json({success: true});
   } catch (error) {
     console.error('Error fetching and saving Facebook leads:', error);
     res.status(500).json({ error: 'Internal server error' });

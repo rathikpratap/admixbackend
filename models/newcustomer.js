@@ -8,6 +8,7 @@ const customerSchema = new mongoose.Schema({
     custEmail : {type:String},
     custBussiness : {type:String},
     closingDate : {type:Date},
+    leadsCreatedDate:{type:Date},
     closingPrice : {type:Number},
     closingCateg : {type:String},
     AdvPay : {type:Number},

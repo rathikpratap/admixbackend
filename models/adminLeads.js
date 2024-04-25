@@ -12,7 +12,8 @@ const transferSchema = new mongoose.Schema({
     state: String,
     salesTeam: String,
     projectStatus: String,
-    remark: String
+    remark: String,
+    leadsCreatedDate: Date
 });
 
 module.exports = mongoose.model('transferLead', transferSchema);
