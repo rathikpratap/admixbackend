@@ -1,6 +1,6 @@
 const router = require('express').Router();
-//const { google } = require('googleapis');
-//const fs = require('fs');
+const { google } = require('googleapis');
+const fs = require('fs');
 
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
@@ -1128,27 +1128,32 @@ router.get('/facebook-leads', async (req, res) => {
 
 // sales automatic facebook leads
 
-// const CLIENT_ID = '849248724588-o2h327suhgl0okqu27r21q2514gi7dko.apps.googleusercontent.com';
-// const CLIENT_SECRET = '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';
-// const REDIRECT_URI ='https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//042j-umfcdB9eCgYIARAAGAQSNwF-L9Ir0-UnE_dZa9joo55XHElr55JW6K4PzJVxo7bFG4U8U0afLnpyqUbbnaKxGawvOFSmW6c';
+//  const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
+//  const CLIENT_SECRET = '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';
+//  const REDIRECT_URI ='https://developers.google.com/oauthplayground';
+//  const REFERESH_TOKEN = '1//045zQHlZaKi4oCgYIARAAGAQSNwF-L9IrPUP6mfi-d169595j6yQvlMlcHi2y_FHQBJiHufoRe1YgogvHL2qYsE2EXaKHrjqeqIU';
 
-// const oauth2Client = new google.auth.OAuth2(
-//   CLIENT_ID,
-//   CLIENT_SECRET,
-//   REDIRECT_URI
-// );
+  const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
+  const CLIENT_SECRET = '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';
+  const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+  const REFERESH_TOKEN = '1//04tLI91wufMZCCgYIARAAGAQSNwF-L9IrwvEvOvaQCg5VmajzpgmlJNHum9QvIlC-U-pGJDMu0TueEKeYUABKo8LUkwOQT0Tin7Y';
 
-// oauth2Client.setCredentials({refresh_token: REFERESH_TOKEN})
+ const oauth2Client = new google.auth.OAuth2(
+   CLIENT_ID,
+   CLIENT_SECRET,
+   REDIRECT_URI
+ );
+
+ oauth2Client.setCredentials({refresh_token: REFERESH_TOKEN})
 
 // const drive = google.drive({
 //   version: 'v3',
 //   auth: oauth2Client
 // });
-// const people = google.people({
-//   version: 'v1',
-//   auth: oauth2Client
-// });
+ const people = google.people({
+   version: 'v1',
+   auth: oauth2Client
+ });
 
 router.get('/salesFacebook-leads', async (req, res) => {
   //await Lead.deleteMany();
@@ -1162,7 +1167,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
 
     for (const leadData of leadsData) {
       const campaigns = leadData.campaigns.data;
-      //const tempLeadsData = [];
+      const tempLeadsData = [];
 
       for (const campaign of campaigns) {
         const { id: campId, name: campName, ads } = campaign;
@@ -1209,7 +1214,13 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     leadsCreatedDate: createdTime
                   });
                   await newLead.save();
-                  //tempLeadsData.push({custName: `${new Date(createdTime).toLocaleDateString()} - ${cust_name}`, custNumb: phone});
+                  tempLeadsData.push({custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone});
+                  function formatDate(timestamp) {
+                    const date = new Date(timestamp);
+                    const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
+                    return `${day}${month}`;
+                }
                 } else{
                   console.log("All leads Stored");
                 }
@@ -1218,6 +1229,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
           }
         }
       }
+      
       // Prepare VCF data
       // let vcfContent = "";
       // tempLeadsData.forEach(function (lead) {
@@ -1240,6 +1252,24 @@ router.get('/salesFacebook-leads', async (req, res) => {
       //     body: fs.createReadStream(tempFilePath)
       //   }
       // });
+
+      tempLeadsData.forEach(async(lead)=>{
+        const contact = {
+          names: [{
+            givenName: lead.custName
+          }],
+          phoneNumbers: [{
+            value: lead.custNumb
+          }]
+        };
+        try{
+          const res = await people.people.createContact({
+            requestBody: contact
+          });
+        }catch(error){
+          console.error("Error Creating Contact", error);
+        }
+      })
       
     }
     //res.json({ success: true, fileId: driveResponse.data.id }); 
