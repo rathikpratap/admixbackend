@@ -1243,7 +1243,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
       
     }
     //res.json({ success: true, fileId: driveResponse.data.id }); 
-    //res.json({success: true});
+    res.json({success: true});
   } catch (error) {
     console.error('Error fetching and saving Facebook leads:', error);
     res.status(500).json({ error: 'Internal server error' });
