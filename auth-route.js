@@ -1128,11 +1128,13 @@ router.get('/facebook-leads', async (req, res) => {
 
 // sales automatic facebook leads
 
+  //itwebdeveloper
 //  const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
 //  const CLIENT_SECRET = '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';
 //  const REDIRECT_URI ='https://developers.google.com/oauthplayground';
 //  const REFERESH_TOKEN = '1//045zQHlZaKi4oCgYIARAAGAQSNwF-L9IrPUP6mfi-d169595j6yQvlMlcHi2y_FHQBJiHufoRe1YgogvHL2qYsE2EXaKHrjqeqIU';
 
+  // AdmixmediaIndia
   const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
   const CLIENT_SECRET = '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';
   const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
@@ -1180,6 +1182,11 @@ router.get('/salesFacebook-leads', async (req, res) => {
               const { created_time: createdTime, field_data } = lead;
 
               let existingLead = await salesLead.findOne({ closingDate: lead.created_time})
+
+              if(existingLead){
+                existingLead.salesTeam = personTeam;
+                await existingLead.save();
+              }
 
               if(!existingLead){
 
