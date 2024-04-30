@@ -1226,7 +1226,8 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     const date = new Date(timestamp);
                     const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
                     const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
-                    return `${day}${month}`;
+                    const year = String(date.getFullYear()).slice(-2);
+                    return `${day}${month}${year}`;
                 }
                 } else{
                   console.log("All leads Stored");
