@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { google } = require('googleapis');
 const fs = require('fs');
+const FbAccessToken = require('./models/accessToken');
 
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
@@ -17,6 +18,7 @@ const axios = require('axios');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const adminLeads = require('./models/adminLeads');
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -1057,22 +1059,62 @@ router.get('/getSalesTeam', async (req, res) => {
   }
 });
 
+//store Access Token
+
+router.post('/fbToken', async(req,res) =>{
+  try{
+    const existingToken = await FbAccessToken.findOne();
+    if(existingToken){
+      existingToken.newAccessToken = req.body.newAccessToken;
+      await existingToken.save().then((_)=>{
+        res.json({success:true, message: "Access Token Updated"})
+      });  
+    }else{
+      const accessToken = new FbAccessToken({
+        newAccessToken: req.body.newAccessToken
+      })
+      await accessToken.save().then((_)=>{
+        res.json({success: true, message: "New Access Token Stored"})
+      })
+    }
+    
+  } catch(error){
+    console.error('Error Storing Access Token', error);
+    res.status(500).json({error: 'Failed to store Access Token'});
+  }
+});
+
+//get Fb Token
+
+router.get('/getFbToken',async(req,res)=>{
+  try{
+    const token = await FbAccessToken.find();
+    res.json(token);
+  }catch(error){
+    console.error("Error Fetching Access Token",error);
+    res.status(500).json({error: 'Failed to fetch Access Token'})
+  }
+});
+
 // Facebook integration Api
 
 //local accessToken
 //const accessToken = 'EAAWYGC5I1ZCMBOZCHJ1ZAullgKhNPY2ZBOYvxKZAXKNclVH4u5tAsb1dEhE4NCq1EEzszPLNg3KqHC4a565AANqH7ltCHXiVC6E8JdN1Pcts0nD97oPD85HNwblUAMZBUFZC2lC6kJVR25ZAeDg7baj25ike0lcs9HYELWfiYGC8f5ZCypc2h2M2m9PX5';
 
 //Real accessToken
-const accessToken = 'EAANSY8Y9OkYBOZC9QM1UlFWzPaBAEl2n9n3RFnOIKSpurvajA0Conk66E2S98SwkfSxE4llIxRJM6IYKFE4QTGmeK5Ul3JmyNbeefkWBy95hQfVZBUzgXTbjBXhAD5UlZBfTwRsPBq9f5C2UT3eYcZAyGzmiN9BhVifNJ8oQXYgmCjnNE2ewxqlU'
+//const accessToken = 'EAANSY8Y9OkYBOZC9QM1UlFWzPaBAEl2n9n3RFnOIKSpurvajA0Conk66E2S98SwkfSxE4llIxRJM6IYKFE4QTGmeK5Ul3JmyNbeefkWBy95hQfVZBUzgXTbjBXhAD5UlZBfTwRsPBq9f5C2UT3eYcZAyGzmiN9BhVifNJ8oQXYgmCjnNE2ewxqlU'
 
 router.get('/facebook-leads', async (req, res) => {
   await Lead.deleteMany();
   try {
+    const accessToken1 = await FbAccessToken.findOne();
     //Local
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     //Real
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
-    const leadsData = response.data.adaccounts.data;
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
+    
+
+      const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email = '';
 
     for (const leadData of leadsData) {
@@ -1120,6 +1162,9 @@ router.get('/facebook-leads', async (req, res) => {
       }
     }
     res.json({ success: true });
+
+    
+    
   } catch (error) {
     console.error('Error fetching and saving Facebook leads:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1132,7 +1177,7 @@ router.get('/facebook-leads', async (req, res) => {
 //  const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
 //  const CLIENT_SECRET = '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';
 //  const REDIRECT_URI ='https://developers.google.com/oauthplayground';
-//  const REFERESH_TOKEN = '1//045zQHlZaKi4oCgYIARAAGAQSNwF-L9IrPUP6mfi-d169595j6yQvlMlcHi2y_FHQBJiHufoRe1YgogvHL2qYsE2EXaKHrjqeqIU';
+//  const REFERESH_TOKEN = '1//04TCGfsxehgaQCgYIARAAGAQSNwF-L9IrdCGI5xBGRLhgdw4oQUn4ziri8FhgmKiSA9N0zfC_HkxRsZCB0i397goaQjiCfT7EDmw';
 
   // AdmixmediaIndia
   const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
@@ -1163,7 +1208,8 @@ router.get('/salesFacebook-leads', async (req, res) => {
     //Local
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     //Real
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
+    const accessToken1 = await FbAccessToken.findOne();
+    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email = '';
 
