@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { google } = require('googleapis');
 const fs = require('fs');
 const FbAccessToken = require('./models/accessToken');
+const newCompany = require('./models/company');
 
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
@@ -1059,6 +1060,34 @@ router.get('/getSalesTeam', async (req, res) => {
   }
 });
 
+// get Company
+
+router.get('/getCompany', async(req,res)=>{
+  try{
+    const companies = await newCompany.find();
+    res.json(companies);
+  }catch(error){
+    console.error("Error Fetching Company Names", error);
+    res.status(500).json({error: 'Failed to fetch Company Name'})
+  }
+});
+
+//new Company
+
+router.post('/addCompany', async(req,res)=>{
+  try{
+    const newCompanyName = new newCompany({
+      companyName: req.body.companyName
+    })
+    await newCompanyName.save().then((_)=>{
+      res.json({success: true, message: "New Comapny Added"})
+    })
+  }catch(error){
+    console.error('Error Adding Company Name', error);
+    res.status(500).json({error: 'Failed to Add Company Name'})
+  }
+});
+
 //store Access Token
 
 router.post('/fbToken', async(req,res) =>{
@@ -1183,7 +1212,7 @@ router.get('/facebook-leads', async (req, res) => {
   const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
   const CLIENT_SECRET = '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';
   const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-  const REFERESH_TOKEN = '1//04tLI91wufMZCCgYIARAAGAQSNwF-L9IrwvEvOvaQCg5VmajzpgmlJNHum9QvIlC-U-pGJDMu0TueEKeYUABKo8LUkwOQT0Tin7Y';
+  const REFERESH_TOKEN = '1//04QWmtx7XalXQCgYIARAAGAQSNwF-L9IraJPM7Tu4W4FbD0VHhtQdKB6WyHG92zYcixPL9WEkrzVmtKLwJcN4bFeZoOpZVEsoNEo';
 
  const oauth2Client = new google.auth.OAuth2(
    CLIENT_ID,
