@@ -96,7 +96,7 @@ router.get('/profile', checkAuth, async (req, res) => {
   })
 })
 
-// Table Database Ongoing
+// Monthwise Ongoing Projects
 
 router.get('/list', async (req, res) => {
   console.log("person hjjj ==>", person);
@@ -108,6 +108,49 @@ router.get('/list', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
+      //remainingAmount: { $gt: 0 },
+      projectStatus: { $ne: 'Completed' }
+    }).sort({ closingDate: -1 });
+
+    if (products.length > 0) {
+      res.json(products);
+    } else {
+      res.json({ result: "No Data Found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+//All ongoing Projects Sales
+
+router.get('/allList', async (req, res) => {
+  console.log("person hjjj ==>", person);
+  try {
+    const products = await Customer.find({
+      salesPerson: person,
+      //remainingAmount: { $gt: 0 },
+      projectStatus: { $ne: 'Completed' }
+    }).sort({ closingDate: -1 });
+
+    if (products.length > 0) {
+      res.json(products);
+    } else {
+      res.json({ result: "No Data Found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// All ongoing projects Admin
+
+router.get('/allListAdmin', async (req, res) => {
+  console.log("person hjjj ==>", person);
+  try {
+    const products = await Customer.find({
       //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
@@ -207,7 +250,8 @@ router.get('/allTwoPreviousProjects', async (req, res) => {
 // All Projects Admin
 
 router.get('/allProjectsAdmin', async (req, res) => {
-  const currentMonth = new Date().getMonth() + 1;
+  try{
+    const currentMonth = new Date().getMonth() + 1;
   const allProjects = await Customer.find({
     closingDate: {
       $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
@@ -215,6 +259,46 @@ router.get('/allProjectsAdmin', async (req, res) => {
     }
   }).sort({ closingDate: -1 });
   return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+//all previous Month projects Admin
+
+router.get('/allPreviousProjectsAdmin', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const previousMonthData = await Customer.find({
+    closingDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+      $lte: new Date(new Date().getFullYear(), currentMonth -1, 1)
+    }
+  }).sort({ closingDate: -1 });
+  return res.json(previousMonthData)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+//all previous Two Month projects Admin
+
+router.get('/allTwoPreviousProjectsAdmin', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const previousTwoMonthData = await Customer.find({
+    closingDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+      $lte: new Date(new Date().getFullYear(), currentMonth -2, 2)
+    }
+  }).sort({ closingDate: -1 });
+  return res.json(previousTwoMonthData)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
 })
 
 //database Length
@@ -235,7 +319,7 @@ router.get('/allEmployee', async (req, res) => {
   }
 })
 
-//All Ongoing Projects Admin
+//All Monthwise Ongoing Projects Admin
 
 router.get('/allOngoingProjects', async (req, res) => {
   console.log("person ==>", person);
@@ -344,6 +428,22 @@ router.get('/read-emp/:id', async (req, res) => {
     }
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+})
+
+//read company
+
+router.get('/getCompanyPay/:id', async (req,res)=>{
+  try{
+    const compDetails = await newCompany.findById(req.params.id);
+    if(compDetails) {
+      console.log("Company===>", compDetails);
+      return res.json(compDetails);
+    } else {
+      return res.json({ result: "No Company Found"});
+    }
+  }catch(error){
+    return res.status(500).json({error: error.message});
   }
 })
 
@@ -468,7 +568,9 @@ router.put('/update/:id', async (req, res) => {
           voiceDurationSeconds: req.body.voiceDurationSeconds,
           scriptDurationMinutes: req.body.scriptDurationMinutes,
           scriptDurationSeconds: req.body.scriptDurationSeconds,
-          numberOfVideos: req.body.numberOfVideos
+          numberOfVideos: req.body.numberOfVideos,
+          companyName: req.body.companyName,
+          scriptPassDate: req.body.scriptPassDate
         });
         await newCustomer.save();
         await salesLead.findByIdAndDelete(req.params.id);
@@ -495,6 +597,43 @@ router.put('/updateEmp/:id', async (req, res) => {
     res.send({ result: "No Employee Found" })
   }
 })
+
+//update Payment
+
+router.put('/updatePay/:companyName/:signupName', async (req, res) => {
+  try {
+    const companyName = req.params.companyName;
+    const signupName = req.params.signupName;
+    const updatedPaymentInfo = req.body;
+
+    let updatedCompany;
+
+    // Check if the company exists
+    const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName });
+
+    if (existingCompany) {
+      // If the company exists, update its payment information
+      updatedCompany = await newCompany.findOneAndUpdate(
+        { companyName: companyName, signupName: signupName }, // Query
+        { $set: updatedPaymentInfo }, // Update
+        { new: true } // Options: returns the modified document
+      );
+    } else {
+      // If the company doesn't exist, create a new entry with the provided signupName
+      const newEntry = { companyName: companyName, signupName: signupName, ...updatedPaymentInfo };
+      updatedCompany = await new newCompany(newEntry).save();
+    }
+
+    res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
+    
+  } catch (error) {
+    console.error("Error updating payment information:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+
 
 //Search Data
 
@@ -546,7 +685,9 @@ router.post('/customer', async (req, res) => {
     editor: req.body.editor,
     scriptWriter: req.body.scriptWriter,
     voiceOver: req.body.voiceOver,
-    salesTeam: req.body.salesTeam
+    salesTeam: req.body.salesTeam,
+    companyName: req.body.companyName,
+    scriptPassDate: req.body.scriptPassDate
 
   })
 
@@ -605,6 +746,27 @@ router.get('/totalEntries', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// total Month rest Amount Received
+
+router.get('/totalRecvAmount', async(req, res)=>{
+  const currentMonth = new Date().getMonth()+1;
+  try{
+    let query;
+    query = {
+      restPaymentDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $lte: new Date(new Date().getFullYear(),currentMonth,0)
+      }
+    };
+    const totalEntries = await Customer.find(query);
+    const totalMonthRecv = totalEntries.reduce((sum, doc)=> sum + doc.restAmount, 0);
+    res.json(totalMonthRecv);
+  } catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
   }
 });
 
@@ -1087,6 +1249,22 @@ router.post('/addCompany', async(req,res)=>{
     res.status(500).json({error: 'Failed to Add Company Name'})
   }
 });
+
+// delete Company
+
+router.delete('/delete-comp/:id', async (req, res) => {
+  try {
+    const deleteData = await newCompany.findByIdAndDelete(req.params.id);
+    if (deleteData) {
+      console.log("Delete ==>", deleteData);
+      return res.json(deleteData);
+    } else {
+      return res.json({ result: "No Data Deleted" });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+})
 
 //store Access Token
 
@@ -1977,6 +2155,9 @@ router.post('/updateEditor', async (req, res) => {
         existingItem.scriptWriter = item.scriptWriter;
         existingItem.voiceOver = item.voiceOver;
         existingItem.projectStatus = item.projectStatus;
+        existingItem.scriptPassDate = item.scriptPassDate;
+        existingItem.editorPassDate = item.editorPassDate;
+        existingItem.voicePassDate = item.voicePassDate;
         await existingItem.save();
       }
     }
@@ -2000,7 +2181,18 @@ router.get('/scriptProjects', async (req, res) => {
 //Editor Projects
 
 router.get('/editorProjects', async (req, res) => {
-  const allProjects = await Customer.find({ editor: person }).sort({ closingDate: -1 });
+  const allProjects = await Customer.find({ editor: person, companyName: "AdmixMedia" }).sort({ closingDate: -1 });
+  if (allProjects) {
+    return res.json(allProjects)
+  } else {
+    res.send({ result: "No Data Found" })
+  }
+});
+
+//other company Editor Projects
+
+router.get('/editorProjectsOther', async (req, res) => {
+  const allProjects = await Customer.find({ editor: person, companyName: { $ne: "AdmixMedia"} }).sort({ closingDate: -1 });
   if (allProjects) {
     return res.json(allProjects)
   } else {
@@ -2036,6 +2228,20 @@ router.post('/update-projectStatus', async (req, res) => {
     return res.json(items);
   } catch (error) {
     return res.status(500).json({ error: error.message })
+  }
+});
+
+//random quotes
+
+router.get('/quotes',async (req,res)=>{
+  try{
+    const api_url = "https://api.quotable.io/random";
+    const response = await fetch(api_url);
+    const data = await response.json();
+    res.json(data);
+  }catch(error){
+    console.error(error);
+      return res.status(500).json({message: "Server Error"});
   }
 });
 

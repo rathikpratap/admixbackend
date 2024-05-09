@@ -1,7 +1,20 @@
 const mongoose = require('mongoose');
 
 const newComapnySchema = new mongoose.Schema({
-    companyName : String
+    companyName : {type: String},
+    signupName : {type: String},
+    signupRole : {type: String},
+    payment60Sec: {type: Number},
+    payment90Sec: {type: Number},
+    payment120Sec: {type: Number},
+    payment150Sec: {type: Number},
+    payment180Sec: {type: Number},
+    paymentTwoVideo: {type: Number},
+    paymentThreeVideo: {type: Number},
+    payment150words :{type:Number},
+    payment200words: {type:Number},
+    payment300words: {type:Number},
+    payment500words:{type: Number}
 });
 
 module.exports = mongoose.model('newCompany', newComapnySchema);

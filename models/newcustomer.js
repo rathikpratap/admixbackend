@@ -29,6 +29,7 @@ const customerSchema = new mongoose.Schema({
     script: {type:String},
     scriptDuration: {type: Number},
     scriptDeliveryDate: {type:String},
+    scriptPassDate: {type:String},
     scriptStatus: {type: String},
     scriptPayment: {type:Number},
     scriptOtherChanges: {type: String},
@@ -40,6 +41,7 @@ const customerSchema = new mongoose.Schema({
     videoDurationMinutes: {type: Number},
     videoDurationSeconds: {type: Number},
     videoDeliveryDate: {type: String},
+    editorPassDate: {type: String},
     videoType: {type: String},
     editorStatus: {type: String},
     editorPayment: {type: Number},
@@ -49,6 +51,7 @@ const customerSchema = new mongoose.Schema({
     voiceDurationMinutes: {type: Number},
     voiceDurationSeconds: {type: Number},
     voiceDeliveryDate: {type: String},
+    voicePassDate: {type:String},
     voiceOverType: {type: String},
     voiceOverStatus: {type:String},
     voicePayment: {type: Number},
@@ -58,7 +61,8 @@ const customerSchema = new mongoose.Schema({
     totalEditorPayment: {type: Number},
     totalScriptPayment: {type: Number},
     totalVoicePayment: {type: Number},
-    numberOfVideos: {type: String}
+    numberOfVideos: {type: String},
+    companyName: {type: String},
 });
 
 //customerSchema.pre('save', function(next) {
