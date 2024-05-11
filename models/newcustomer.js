@@ -22,6 +22,8 @@ const customerSchema = new mongoose.Schema({
     remark : {type:String},
     restAmount : {type:Number},
     restPaymentDate : {type:Date},
+    graphicDesigner : {type:String},
+    graphicPassDate : {type:String},
     editor: {type:String},
     scriptWriter: {type: String},
     voiceOver:{type: String},

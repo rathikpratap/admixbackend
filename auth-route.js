@@ -534,6 +534,7 @@ router.put('/update/:id', async (req, res) => {
           remark: req.body.remark,
           salesPerson: person,
           salesTeam: leadDet.salesTeam,
+          graphicDesigner: req.body.graphicDesigner,
           editor: req.body.editor,
           scriptWriter: req.body.scriptWriter,
           voiceOver: req.body.voiceOver,
@@ -638,15 +639,19 @@ router.put('/updatePay/:companyName/:signupName', async (req, res) => {
 //Search Data
 
 router.get('/searchCustomer/:mobile', async (req, res) => {
-  let data = await Customer.find(
-    {
-      "$or": [
-        { custNumb: { $regex: req.params.mobile } },
-        { custName: { $regex: req.params.mobile } }
-      ]
-    }
-  )
-  res.send(data);
+  try{
+    let data = await Customer.find(
+      {
+        "$or": [
+          // { custNumb: { $regex: req.params.mobile } },
+          { custName: { $regex: req.params.mobile } }
+        ]
+      }
+    )
+    res.send(data);
+  }catch(error){
+    console.log(error);
+  }
 })
 
 router.get('/customerProject/:projectStatus', async (req, res) => {
@@ -1390,7 +1395,7 @@ router.get('/facebook-leads', async (req, res) => {
   const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
   const CLIENT_SECRET = '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';
   const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-  const REFERESH_TOKEN = '1//04QWmtx7XalXQCgYIARAAGAQSNwF-L9IraJPM7Tu4W4FbD0VHhtQdKB6WyHG92zYcixPL9WEkrzVmtKLwJcN4bFeZoOpZVEsoNEo';
+  const REFERESH_TOKEN = '1//049H1ZqHyt6yRCgYIARAAGAQSNwF-L9IrNAc_A6WnlPiQPzzb4I1ATP7xLiEL--gDUwTvoiZji79T-bPDRGZtIZ9tirpVO2iDZ1o';
 
  const oauth2Client = new google.auth.OAuth2(
    CLIENT_ID,
@@ -2158,6 +2163,8 @@ router.post('/updateEditor', async (req, res) => {
         existingItem.scriptPassDate = item.scriptPassDate;
         existingItem.editorPassDate = item.editorPassDate;
         existingItem.voicePassDate = item.voicePassDate;
+        existingItem.graphicDesigner = item.graphicDesigner;
+        existingItem.graphicPassDate = item.graphicPassDate;
         await existingItem.save();
       }
     }
