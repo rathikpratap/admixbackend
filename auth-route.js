@@ -652,7 +652,7 @@ router.get('/searchCustomer/:mobile', async (req, res) => {
   }catch(error){
     console.log(error);
   }
-})
+});
 
 router.get('/customerProject/:projectStatus', async (req, res) => {
   let data = await salesLead.find(
@@ -663,7 +663,14 @@ router.get('/customerProject/:projectStatus', async (req, res) => {
     }
   )
   res.send(data);
-})
+});
+
+router.get('/customerProjectName/:projectName', async (req,res)=>{
+  let data = await Customer.find(
+    { custBussiness: { $regex: req.params.projectName}}
+  )
+  res.send(data);
+});
 
 // New Customer
 
@@ -1439,14 +1446,16 @@ router.get('/salesFacebook-leads', async (req, res) => {
             for (const lead of leads.data) {
               const { created_time: createdTime, field_data } = lead;
 
-              let existingLead = await salesLead.findOne({ closingDate: lead.created_time})
+              let existingLead = await salesLead.findOne({ closingDate: lead.created_time});
 
               if(existingLead){
-                existingLead.salesTeam = personTeam;
-                await existingLead.save();
+                if (!existingLead.salesTeam) {
+                  existingLead.salesTeam = personTeam;
+                  await existingLead.save();
+                }
               }
 
-              if(!existingLead){
+              else{
 
                 for (const field of field_data) {
                   if (field.name === 'full_name') {
