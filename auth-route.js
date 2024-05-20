@@ -1402,7 +1402,7 @@ router.get('/facebook-leads', async (req, res) => {
   const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
   const CLIENT_SECRET = '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';
   const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-  const REFERESH_TOKEN = '1//049H1ZqHyt6yRCgYIARAAGAQSNwF-L9IrNAc_A6WnlPiQPzzb4I1ATP7xLiEL--gDUwTvoiZji79T-bPDRGZtIZ9tirpVO2iDZ1o';
+  const REFERESH_TOKEN = '1//04juHRjZBeQXtCgYIARAAGAQSNwF-L9IrjGHFUjMy5yYPgzm6hAjydTttQe6xS16XC1vvVGPiAbZ_DcnoTGMNWqxP5SQ9PeJfyoU';
 
  const oauth2Client = new google.auth.OAuth2(
    CLIENT_ID,
@@ -2184,13 +2184,146 @@ router.post('/updateEditor', async (req, res) => {
 })
 
 //Script writer Projects
-
 router.get('/scriptProjects', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const allProjects = await Customer.find({
+    scriptWriter: person,
+    scriptPassDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+      $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+    }
+  }).sort({ scriptPassDate: -1 });
+  return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/scriptPreviousProjects', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const allProjects = await Customer.find({
+    scriptWriter: person,
+    scriptPassDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+      $lte: new Date(new Date().getFullYear(), currentMonth-1, 1)
+    }
+  }).sort({ scriptPassDate: -1 });
+  return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/scriptTwoPreviousProjects', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const allProjects = await Customer.find({
+    scriptWriter: person,
+    scriptPassDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+      $lte: new Date(new Date().getFullYear(), currentMonth-2, 2)
+    }
+  }).sort({ scriptPassDate: -1 });
+  return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/allScriptProjects', async (req, res) => {
   const allProjects = await Customer.find({ scriptWriter: person }).sort({ closingDate: -1 });
   if (allProjects) {
     return res.json(allProjects)
   } else {
     res.send({ result: "No Data Found" })
+  }
+});
+
+router.get('/dataByDatePassRange/:startDate/:endDate', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate()+1);
+  try{
+    let query = {
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: startDate, $lte: endDate
+      }
+    };
+    const rangeTotalData = await Customer.find(query);
+    res.json(rangeTotalData);
+  }catch(error){
+    conosle.log(error);
+    res.status(500).json({message: "Server Error"})
+  } 
+});
+
+router.get('/todayEntriesScript', async (req, res) => {
+  const currentDate = new Date();
+  try {
+    let query;
+    query = {
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
+    const totalDayEntry = await Customer.find(query);
+    console.log("Total Entries===>>", totalDayEntry)
+    res.json({ totalDayEntry });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.get('/scriptActiveList', async (req, res) => {
+  console.log("person hjjj ==>", person);
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      //remainingAmount: { $gt: 0 },
+      scriptStatus: { $ne: 'Complete' }
+    }).sort({ closingDate: -1 });
+
+      res.json(products);
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/scriptCompleteList', async (req, res) => {
+  console.log("person hjjj ==>", person);
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      //remainingAmount: { $gt: 0 },
+      scriptStatus: { $regex: /^Complete$/i }
+    }).sort({ closingDate: -1 });
+
+      res.json(products);
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -2219,12 +2352,82 @@ router.get('/editorProjectsOther', async (req, res) => {
 // VoiceOver Projects
 
 router.get('/voProjects', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const allProjects = await Customer.find({
+    voiceOver: person,
+    scriptPassDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+      $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+    }
+  }).sort({ voicePassDate: -1 });
+  return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/voPreviousProjects', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const allProjects = await Customer.find({
+    voiceOver: person,
+    scriptPassDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+      $lte: new Date(new Date().getFullYear(), currentMonth-1, 1)
+    }
+  }).sort({ voicePassDate: -1 });
+  return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/voTwoPreviousProjects', async (req, res) => {
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+  const allProjects = await Customer.find({
+    voiceOver: person,
+    scriptPassDate: {
+      $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+      $lte: new Date(new Date().getFullYear(), currentMonth-2, 2)
+    }
+  }).sort({ voicePassDate: -1 });
+  return res.json(allProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/allVoProjects', async (req, res) => {
   const allProjects = await Customer.find({ voiceOver: person }).sort({ closingDate: -1 });
   if (allProjects) {
     return res.json(allProjects)
   } else {
     res.send({ result: "No Data Found" })
   }
+});
+
+router.get('/dataByDatePassRangeVo/:startDate/:endDate', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate()+1);
+  try{
+    let query = {
+      voiceOver: person,
+      voicePassDate: {
+        $gte: startDate, $lte: endDate
+      }
+    };
+    const rangeTotalData = await Customer.find(query);
+    res.json(rangeTotalData);
+  }catch(error){
+    conosle.log(error);
+    res.status(500).json({message: "Server Error"})
+  } 
 });
 
 // update Project Status from Admin Panel
