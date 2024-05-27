@@ -3177,7 +3177,42 @@ router.put('/updateB2b/:id', async (req, res) => {
   } else {
     res.send({ result: "No Employee Found" })
   }
-})
+});
+
+router.put('/updateB2bEditor/:id', async (req, res) => {
+  console.log("req.body ==>", req.body);
+  const custDet = await B2bCustomer.findByIdAndUpdate(req.params.id, {
+    $set: req.body
+  })
+  if (custDet) {
+    return res.json(custDet)
+  } else {
+    res.send({ result: "No No Data" })
+  }
+});
+
+// New Custom Sales LEad
+
+router.post('/customLead', async(req,res)=>{
+  const customer = new salesLead({
+    campaign_Name: req.body.campaign_Name,
+    closingDate: req.body.closingDate,
+    custName: req.body.custName,
+    custEmail: req.body.custEmail,
+    custBussiness: req.body.custBussiness,
+    custNumb: req.body.custNumb,
+    state: req.body.state,
+    salesTeam: req.body.salesTeam,
+    salesPerson: req.body.salesPerson,
+    leadsCreatedDate: req.body.leadsCreatedDate,
+    companyName: req.body.companyName,
+  })
+  await customer.save().then((_)=>{
+    res.json({success: true, message: "New Lead Added!!"})
+  }).catch((err)=>{
+    res.json({success: false, message: "New Lead Not Added!!"})
+  })
+});
 
 
 module.exports = router
