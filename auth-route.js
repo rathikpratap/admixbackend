@@ -3206,6 +3206,8 @@ router.post('/customLead', async(req,res)=>{
     salesPerson: req.body.salesPerson,
     leadsCreatedDate: req.body.leadsCreatedDate,
     companyName: req.body.companyName,
+    projectStatus: req.body.projectStatus,
+    remark: req.body.remark
   })
   await customer.save().then((_)=>{
     res.json({success: true, message: "New Lead Added!!"})
