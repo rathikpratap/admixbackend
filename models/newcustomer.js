@@ -65,6 +65,13 @@ const customerSchema = new mongoose.Schema({
     totalVoicePayment: {type: Number},
     numberOfVideos: {type: String},
     companyName: {type: String},
+    EditorPaymentStatus: {type:String},
+    ScriptPaymentStatus: {type:String},
+    VoiceOverPaymentStatus: {type:String},
+    EditorPaymentDate:{type:Date},
+    ScriptPaymentDate:{type:Date},
+    VoiceOverPaymentDate: {type:Date},
+    CNRNumber: {type:String}
 });
 
 //customerSchema.pre('save', function(next) {

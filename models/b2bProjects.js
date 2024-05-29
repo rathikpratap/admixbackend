@@ -20,6 +20,9 @@ const b2bProjectSchema = new mongoose.Schema({
     editorOtherChanges:{type:String},
     editorChangesPayment:{type:Number},
     numberOfVideos:{type:String},
-    videoDuration:{type:Number}
+    videoDuration:{type:Number},
+    editorPaymentStatus:{type:String},
+    editorPaymentDate:{type:Date},
+    CNRNumber:{type:String}
 });
 module.exports = mongoose.model('B2bProjects', b2bProjectSchema);
