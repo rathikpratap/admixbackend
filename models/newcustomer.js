@@ -68,10 +68,12 @@ const customerSchema = new mongoose.Schema({
     EditorPaymentStatus: {type:String},
     ScriptPaymentStatus: {type:String},
     VoiceOverPaymentStatus: {type:String},
-    EditorPaymentDate:{type:Date},
-    ScriptPaymentDate:{type:Date},
-    VoiceOverPaymentDate: {type:Date},
-    CNRNumber: {type:String}
+    editorPaymentDate:{type:Date},
+    scriptPaymentDate:{type:Date},
+    voiceOverPaymentDate: {type:Date},
+    EditorCNR: {type:String},
+    ScriptCNR: {type:String},
+    VoCNR: {type:String}
 });
 
 //customerSchema.pre('save', function(next) {

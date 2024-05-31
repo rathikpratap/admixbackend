@@ -11,6 +11,7 @@ const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
 const salesLead = require('./models/salesLead');
 const transferLead = require('./models/adminLeads');
+const Payroll = require('./models/payroll');
 const { Country, State, City } = require('country-state-city');
 //const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -2461,10 +2462,10 @@ router.get('/editorActiveList', async (req, res) => {
       companyName: "AdmixMedia",
       editorPassDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth)
       },
       //remainingAmount: { $gt: 0 },
-      editorStatus: { $ne: 'Complete' }
+      editorStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
     res.json(products);
@@ -2484,10 +2485,10 @@ router.get('/editorCompleteList', async (req, res) => {
       companyName: "AdmixMedia",
       editorPassDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth)
       },
       //remainingAmount: { $gt: 0 },
-      editorStatus: { $regex: /^Complete$/i }
+      editorStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
 
     res.json(products);
@@ -3257,6 +3258,509 @@ router.get('/updateSalesTeam', async (req, res) => {
     return (result.modifiedCount);
   } catch (err) {
     console.error(err);
+  }
+});
+
+//Payroll System
+
+router.get('/dataByTm/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      closingDate: { $gte: startDate, $lte: endDate},
+      $or: [
+        { editor: tmName },
+        { scriptWriter: tmName },
+        { voiceOver: tmName }
+      ]
+    };
+    const totalData = await Customer.find(query);
+    res.json(totalData);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.get('/dataByEditorPayment/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query1={
+      closingDate: {$gte: startDate, $lte: endDate},
+      editor: tmName,
+      editorStatus: { $regex: /^Completed$/i }
+    };
+    const completeProjects = await Customer.find(query1);
+    let query2={
+      closingDate: {$gte: startDate, $lte: endDate},
+      editor: tmName,
+      editorStatus: { $ne: 'Completed'}
+    }
+    const inCompleteProjects = await Customer.find(query2);
+    let query3={
+      closingDate: {$gte: startDate, $lte: endDate},
+      editor: tmName,
+      EditorPaymentStatus: {$ne: 'Transfered'},
+      editorStatus: {$regex: /^Completed$/i}
+    }
+    const totalData= await Customer.find(query3);
+    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalEditorPayment, 0);
+    res.json({completeProjects, inCompleteProjects, paybalAmount});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.get('/dataByScriptPayment/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query1={
+      closingDate: {$gte: startDate, $lte: endDate},
+      scriptWriter: tmName,
+      scriptStatus: { $regex: /^Complete$/i }
+    };
+    const completeProjects = await Customer.find(query1);
+    let query2={
+      closingDate: {$gte: startDate, $lte: endDate},
+      scriptWriter: tmName,
+      scriptStatus: { $ne: 'Complete'}
+    }
+    const inCompleteProjects = await Customer.find(query2);
+    let query3={
+      closingDate: {$gte: startDate, $lte: endDate},
+      scriptWriter: tmName,
+      scriptStatus: {$regex: /^Complete$/i},
+      ScriptPaymentStatus: {$ne: 'Transfered'}
+    }
+    const totalData= await Customer.find(query3);
+    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalScriptPayment, 0);
+    res.json({completeProjects, inCompleteProjects, paybalAmount});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.get('/dataByVoPayment/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query1={
+      closingDate: {$gte: startDate, $lte: endDate},
+      voiceOver: tmName,
+      voiceOverStatus: { $regex: /^Complete$/i }
+    };
+    const completeProjects = await Customer.find(query1);
+    let query2={
+      closingDate: {$gte: startDate, $lte: endDate},
+      voiceOver: tmName,
+      voiceOverStatus: { $ne: 'Complete'}
+    }
+    const inCompleteProjects = await Customer.find(query2);
+    let query3={
+      closingDate: {$gte: startDate, $lte: endDate},
+      voiceOver: tmName,
+      voiceOverStatus: {$regex: /^Complete$/i},
+      VoiceOverPaymentStatus: {$ne: 'Transfered'}
+    }
+    const totalData= await Customer.find(query3);
+    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalVoicePayment, 0);
+    res.json({completeProjects, inCompleteProjects, paybalAmount});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+//update Payroll Payment
+
+router.put('/editorPayrollUpdate/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate()+1);
+  try{
+    let query={
+      closingDate: {$gte: startDate, $lte: endDate},
+      editor: tmName,
+      editorStatus: {$regex: /^Completed$/i}
+    };
+    const update={
+      $set: {EditorCNR: req.body.EditorCNR , EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate}
+    };
+    const result = await Customer.updateMany(query, update);
+    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+    
+    const payrollData = new Payroll({
+      startDate: startDate,
+      endDate: endDate,
+      tmName: tmName,
+      EditorPaymentStatus: req.body.EditorPaymentStatus,
+      EditorCNR: req.body.EditorCNR,
+      editorPaymentDate: req.body.editorPaymentDate,
+      PaybalAmount: req.body.EditorPaybalPayment,
+      companyName: req.body.companyName,
+      Role: req.body.payrollRole
+    });
+    await payrollData.save();
+    res.json({message: "Payroll Successfull"});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.put('/editorPayrollUpdateScript/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate()+1);
+  try{
+  let query={
+    closingDate: {$gte: startDate, $lte: endDate},
+    scriptWriter: tmName,
+    scriptStatus: {$regex: /^Complete$/i}
+  };
+  const update={
+    $set: {ScriptCNR: req.body.ScriptCNR, ScriptPaymentStatus: req.body.ScriptPaymentStatus, scriptPaymentDate: req.body.scriptPaymentDate}
+  };
+  const result = await Customer.updateMany(query, update);
+  console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+  
+  const payrollData = new Payroll({
+    startDate: startDate,
+    endDate: endDate,
+    tmName: tmName,
+    ScriptPaymentStatus: req.body.ScriptPaymentStatus,
+    ScriptCNR: req.body.ScriptCNR,
+    scriptPaymentDate: req.body.scriptPaymentDate,
+    PaybalAmount: req.body.ScriptPaybalPayment,
+    Role: req.body.payrollRole
+  });
+  await payrollData.save();
+  res.json({message: "Payroll Successfull"});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.put('/editorPayrollUpdateVo/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate()+1);
+  try{
+  let query={
+    closingDate: {$gte: startDate, $lte: endDate},
+    voiceOver: tmName,
+    voiceOverStatus: {$regex: /^Complete$/i}
+  };
+  const update={
+    $set: {VoCNR: req.body.VoCNR, voiceOverPaymentDate: req.body.voiceOverPaymentDate, voiceOverPaymentStatus: req.body.voiceOverPaymentStatus}
+  };
+  const result = await Customer.updateMany(query, update);
+  console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+  
+  const payrollData = new Payroll({
+    startDate: startDate,
+    endDate: endDate,
+    tmName: tmName,
+    VoiceOverPaymentStatus: req.body.VoiceOverPaymentStatus,
+    VoCNR: req.body.VoCNR,
+    voiceOverPaymentDate: req.body.voiceOverPaymentDate,
+    PaybalAmount: req.body.VoPaybalPayment,
+    Role: req.body.payrollRole
+  });
+  await payrollData.save();
+  res.json({message: "Payroll Successfull"});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.get('/editorPayroll', async(req,res)=>{
+  try{
+    const allData = await Payroll.find({
+      tmName: person
+    });
+    if(allData.length> 0){
+      res.json(allData);
+    }else{
+      res.json({result: "No Data Found"})
+    }
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+router.get('/editorPayroll/:EditorCNR', async (req, res) => {
+  console.log("ENTEr");
+  let data = await Payroll.find(
+    { EditorCNR: { $regex: req.params.EditorCNR } }
+  )
+  res.send(data);
+});
+
+router.get('/payrollByDatePassRangeEditor/:startDate/:endDate', async (req, res) => {
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      tmName: person,
+      editorPaymentDate: {
+        $gte: startDate, $lte: endDate
+      }
+    };
+    const rangeTotalData = await Payroll.find(query);
+    res.json(rangeTotalData);
+  } catch (error) {
+    conosle.log(error);
+    res.status(500).json({ message: "Server Error" })
+  }
+});
+
+router.get('/scriptPayroll', async(req,res)=>{
+  try{
+    const allData = await Payroll.find({
+      tmName: person
+    });
+    if(allData.length> 0){
+      res.json(allData);
+    }else{
+      res.json({result: "No Data Found"})
+    }
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+router.get('/scriptPayroll/:ScriptCNR', async (req, res) => {
+  
+  let data = await Payroll.find(
+    { ScriptCNR: { $regex: req.params.ScriptCNR } }
+  )
+  res.send(data);
+});
+
+router.get('/payrollByDatePassRangeScript/:startDate/:endDate', async (req, res) => {
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      tmName: person,
+      scriptPaymentDate: {
+        $gte: startDate, $lte: endDate
+      }
+    };
+    const rangeTotalData = await Payroll.find(query);
+    res.json(rangeTotalData);
+  } catch (error) {
+    conosle.log(error);
+    res.status(500).json({ message: "Server Error" })
+  }
+});
+
+
+
+router.get('/voPayroll', async(req,res)=>{
+  try{
+    const allData = await Payroll.find({
+      tmName: person
+    });
+    if(allData.length> 0){
+      res.json(allData);
+    }else{
+      res.json({result: "No Data Found"})
+    }
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+router.get('/voPayroll/:VoCNR', async (req, res) => {
+  
+  let data = await Payroll.find(
+    { VoCNR: { $regex: req.params.VoCNR } }
+  )
+  res.send(data);
+});
+
+router.get('/payrollByDatePassRangeVo/:startDate/:endDate', async (req, res) => {
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      tmName: person,
+      voiceOverPaymentDate: {
+        $gte: startDate, $lte: endDate
+      }
+    };
+    const rangeTotalData = await Payroll.find(query);
+    res.json(rangeTotalData);
+  } catch (error) {
+    conosle.log(error);
+    res.status(500).json({ message: "Server Error" })
+  }
+});
+
+//B2b Payroll
+
+router.get('/dataByTmB2b/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      b2bProjectDate: { $gte: startDate, $lte: endDate},
+      b2bEditor: tmName 
+    };
+    const totalData = await B2bCustomer.find(query);
+    res.json(totalData);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.get('/dataByEditorPaymentB2b/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query1={
+      b2bProjectDate: {$gte: startDate, $lte: endDate},
+      b2bEditor: tmName,
+      projectStatus: { $regex: /^Completed$/i }
+    };
+    const completeProjects = await B2bCustomer.find(query1);
+    let query2={
+      b2bProjectDate: {$gte: startDate, $lte: endDate},
+      b2bEditor: tmName,
+      projectStatus: { $ne: 'Completed'}
+    }
+    const inCompleteProjects = await B2bCustomer.find(query2);
+    let query3={
+      b2bProjectDate: {$gte: startDate, $lte: endDate},
+      b2bEditor: tmName,
+      EditorPaymentStatus: {$ne: 'Transfered'},
+      projectStatus: {$regex: /^Completed$/i}
+    }
+    const totalData= await B2bCustomer.find(query3);
+    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalEditorPayment, 0);
+    res.json({completeProjects, inCompleteProjects, paybalAmount});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.put('/editorPayrollUpdateB2b/:startDate/:endDate/:tmName', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const tmName = req.params.tmName;
+  endDate.setDate(endDate.getDate()+1);
+  try{
+    let query={
+      b2bProjectDate: {$gte: startDate, $lte: endDate},
+      b2bEditor: tmName,
+      projectStatus: {$regex: /^Completed$/i}
+    };
+    const update={
+      $set: {EditorCNR: req.body.EditorCNR , EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate}
+    };
+    const result = await B2bCustomer.updateMany(query, update);
+    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+    
+    const payrollData = new Payroll({
+      startDate: startDate,
+      endDate: endDate,
+      tmName: tmName,
+      EditorPaymentStatus: req.body.EditorPaymentStatus,
+      EditorCNR: req.body.EditorCNR,
+      editorPaymentDate: req.body.editorPaymentDate,
+      PaybalAmount: req.body.EditorPaybalPayment,
+      companyName: req.body.companyName
+    });
+    await payrollData.save();
+    res.json({message: "Payroll Successfull"});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
+
+router.get('/allPayroll', async(req,res)=>{
+  try{
+    const allData = await Payroll.find();
+    if(allData.length> 0){
+      res.json(allData);
+    }else{
+      res.json({result: "No Data Found"})
+    }
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+router.get('/payrollByDatePassRangeEditorAll/:startDate/:endDate', async (req, res) => {
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      $or:[
+        {editorPaymentDate: {
+          $gte: startDate, $lte: endDate
+        }},
+        {scriptPaymentDate: {$gte: startDate, $lte: endDate}},
+        {voiceOverPaymentDate: {$gte: startDate, $lte: endDate}}
+      ]
+    };
+    const rangeTotalData = await Payroll.find(query);
+    res.json(rangeTotalData);
+  } catch (error) {
+    conosle.log(error);
+    res.status(500).json({ message: "Server Error" })
+  }
+});
+
+router.get('/payrollAll/:EditorCNR', async (req, res) => {
+  try{
+    let query={
+      $or:[
+        { ScriptCNR: { $regex: req.params.EditorCNR } },
+        { EditorCNR: { $regex: req.params.EditorCNR } },
+        { VoCNR: { $regex: req.params.EditorCNR } },
+      ]
+    }
+  let data = await Payroll.find(query);
+  res.send(data);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
   }
 });
 
