@@ -523,6 +523,7 @@ router.put('/update/:id', async (req, res) => {
           leadsCreatedDate: leadDet.closingDate,
           closingPrice: req.body.closingPrice,
           closingCateg: req.body.closingCateg,
+          billType: req.body.billType,
           AdvPay: req.body.AdvPay,
           remainingAmount: req.body.remainingAmount,
           custCountry: req.body.custCountry,
@@ -602,39 +603,81 @@ router.put('/updateEmp/:id', async (req, res) => {
 
 //update Payment
 
-router.put('/updatePay/:companyName/:signupName', async (req, res) => {
+// router.put('/updatePay/:companyName/:signupName', async (req, res) => {
+//   try {
+//     const companyName = req.params.companyName;
+//     const signupName = req.params.signupName;
+//     const updatedPaymentInfo = req.body;
+
+//     let updatedCompany;
+
+//     // Check if the company exists
+//     const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName });
+
+//     if (existingCompany) {
+//       // If the company exists, update its payment information
+//       updatedCompany = await newCompany.findOneAndUpdate(
+//         { companyName: companyName, signupName: signupName }, // Query
+//         { $set: updatedPaymentInfo }, // Update
+//         { new: true } // Options: returns the modified document
+//       );
+//     } else {
+//       // If the company doesn't exist, create a new entry with the provided signupName
+//       const newEntry = { companyName: companyName, signupName: signupName, ...updatedPaymentInfo };
+//       updatedCompany = await new newCompany(newEntry).save();
+//     }
+
+//     res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
+
+//   } catch (error) {
+//     console.error("Error updating payment information:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
+
+router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (req, res) => {
   try {
     const companyName = req.params.companyName;
     const signupName = req.params.signupName;
+    const signupRole = req.params.signupRole;
+    const videoType = req.params.videoType;
     const updatedPaymentInfo = req.body;
 
     let updatedCompany;
 
-    // Check if the company exists
-    const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName });
+    if (signupRole === 'Editor') {
+      const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName, videoType: videoType });
+      if (existingCompany) {
 
-    if (existingCompany) {
-      // If the company exists, update its payment information
-      updatedCompany = await newCompany.findOneAndUpdate(
-        { companyName: companyName, signupName: signupName }, // Query
-        { $set: updatedPaymentInfo }, // Update
-        { new: true } // Options: returns the modified document
-      );
+        updatedCompany = await newCompany.findOneAndUpdate(
+          { companyName: companyName, signupName: signupName, videoType: videoType },
+          { $set: updatedPaymentInfo },
+          { new: true }
+        );
+      } else {
+        const newEntry = { companyName: companyName, signupName: signupName, ...updatedPaymentInfo };
+        updatedCompany = await newCompany(newEntry).save();
+      }
+      res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
     } else {
-      // If the company doesn't exist, create a new entry with the provided signupName
-      const newEntry = { companyName: companyName, signupName: signupName, ...updatedPaymentInfo };
-      updatedCompany = await new newCompany(newEntry).save();
+      const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName });
+      if (existingCompany) {
+        updatedCompany = await newCompany.findOneAndUpdate(
+          { companyName: companyName, signupName: signupName },
+          { $set: updatedPaymentInfo },
+          { new: true }
+        );
+      }else{
+        const newEntry = {companyName: companyName, signupName: signupName, ...updatedPaymentInfo};
+      updatedCompany = await newCompany(newEntry).save();
+      }
+      res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
     }
-
-    res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
-
-  } catch (error) {
-    console.error("Error updating payment information:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  }catch (error) {
+  console.error("Error updating paymeny information:", error);
+  res.status(500).json({ message: "Internal server error" });
+}
 });
-
-
 
 
 //Search Data
@@ -685,6 +728,7 @@ router.post('/customer', async (req, res) => {
     closingDate: req.body.closingDate,
     closingPrice: req.body.closingPrice,
     closingCateg: req.body.closingCateg,
+    billType: req.body.billType,
     AdvPay: req.body.AdvPay,
     remainingAmount: req.body.remainingAmount,
     restAmount: req.body.restAmount,
@@ -997,6 +1041,7 @@ router.get('/downloadFile', async (req, res) => {
       'closingDate': customer.closingDate,
       'closingPrice': customer.closingPrice,
       'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
       'AdvPay': customer.AdvPay,
       'remainingAmount': customer.remainingAmount,
       'restAmount': customer.restAmount,
@@ -1050,6 +1095,7 @@ router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
       'closingDate': customer.closingDate,
       'closingPrice': customer.closingPrice,
       'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
       'AdvPay': customer.AdvPay,
       'remainingAmount': customer.remainingAmount,
       'restAmount': customer.restAmount,
@@ -1147,6 +1193,7 @@ router.get('/downloadDueFile/:startDate/:endDate', async (req, res) => {
       'closingDate': customer.closingDate,
       'closingPrice': customer.closingPrice,
       'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
       'AdvPay': customer.AdvPay,
       'remainingAmount': customer.remainingAmount,
       'restAmount': customer.restAmount,
@@ -1397,7 +1444,7 @@ router.get('/facebook-leads', async (req, res) => {
 // const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
 // const CLIENT_SECRET = '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';
 // const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04Si-mrqfDFW7CgYIARAAGAQSNwF-L9IrEwuDaMHbX6mNQQURq9yo0sNPeLnfFKe5lmralufmeLDadGbSjfSnzQnD-XW_KIfyyz4';
+// const REFERESH_TOKEN = '1//04n5jdhOXIcDxCgYIARAAGAQSNwF-L9Ir2mggd__Ojf-7NV9vP93p8Skkobx4bYzHSIWhsPNRiQsziR2z7TlyGgJNbxnlkZg-VCo';
 
 // AdmixmediaIndia
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
@@ -2841,6 +2888,7 @@ router.post('/b2bProject', async (req, res) => {
     b2bVideoType: req.body.b2bVideoType,
     b2bProjectDate: req.body.b2bProjectDate,
     b2bProjectPrice: req.body.b2bProjectPrice,
+    b2bBillType: req.body.b2bBillType,
     b2bVideoDurationMinutes: req.body.b2bVideoDurationMinutes,
     b2bVideoDurationSeconds: req.body.b2bVideoDurationSeconds,
     b2bEditor: req.body.b2bEditor,
@@ -3091,6 +3139,7 @@ router.get('/downloadFileB2b', async (req, res) => {
       'VideoType': customer.b2bVideoType,
       'ProjectDate': customer.b2bProjectDate,
       'ProjectPrice': customer.b2bProjectPrice,
+      'BillType': customer.b2bBillType,
       'DurationMinutes': customer.b2bVideoDurationMinutes,
       'DurationSeconds': customer.b2bVideoDurationMinutes,
       'Editor': customer.b2bEditor,
@@ -3133,6 +3182,7 @@ router.get('/downloadRangeFileB2b/:startDate/:endDate', async (req, res) => {
       'VideoType': customer.b2bVideoType,
       'ProjectDate': customer.b2bProjectDate,
       'ProjectPrice': customer.b2bProjectPrice,
+      'BillType': customer.billType,
       'DurationMinutes': customer.b2bVideoDurationMinutes,
       'DurationSeconds': customer.b2bVideoDurationMinutes,
       'Editor': customer.b2bEditor,
@@ -3232,9 +3282,9 @@ router.post('/customLead', async (req, res) => {
     const response = await people.people.createContact({
       requestBody: contact
     });
-    if(response.status === 200){
-      res.json({success: true, message: "New Lead & Contact Added!!"})
-    }else{
+    if (response.status === 200) {
+      res.json({ success: true, message: "New Lead & Contact Added!!" })
+    } else {
       console.error("Error creating contact:", response.statusText);
       res.json({ success: false, message: "New Lead Added, but Contact Not Created!" });
     }
@@ -3263,14 +3313,14 @@ router.get('/updateSalesTeam', async (req, res) => {
 
 //Payroll System
 
-router.get('/dataByTm/:startDate/:endDate/:tmName', async(req,res)=>{
+router.get('/dataByTm/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
-      closingDate: { $gte: startDate, $lte: endDate},
+      closingDate: { $gte: startDate, $lte: endDate },
       $or: [
         { editor: tmName },
         { scriptWriter: tmName },
@@ -3279,130 +3329,130 @@ router.get('/dataByTm/:startDate/:endDate/:tmName', async(req,res)=>{
     };
     const totalData = await Customer.find(query);
     res.json(totalData);
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.get('/dataByEditorPayment/:startDate/:endDate/:tmName', async(req,res)=>{
+router.get('/dataByEditorPayment/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
   endDate.setDate(endDate.getDate() + 1);
-  try{
-    let query1={
-      closingDate: {$gte: startDate, $lte: endDate},
+  try {
+    let query1 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       editor: tmName,
       editorStatus: { $regex: /^Completed$/i }
     };
     const completeProjects = await Customer.find(query1);
-    let query2={
-      closingDate: {$gte: startDate, $lte: endDate},
+    let query2 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       editor: tmName,
-      editorStatus: { $ne: 'Completed'}
+      editorStatus: { $ne: 'Completed' }
     }
     const inCompleteProjects = await Customer.find(query2);
-    let query3={
-      closingDate: {$gte: startDate, $lte: endDate},
+    let query3 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       editor: tmName,
-      EditorPaymentStatus: {$ne: 'Transfered'},
-      editorStatus: {$regex: /^Completed$/i}
+      EditorPaymentStatus: { $ne: 'Transfered' },
+      editorStatus: { $regex: /^Completed$/i }
     }
-    const totalData= await Customer.find(query3);
-    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalEditorPayment, 0);
-    res.json({completeProjects, inCompleteProjects, paybalAmount});
-  }catch(error){
+    const totalData = await Customer.find(query3);
+    const paybalAmount = totalData.reduce((sum, doc) => sum + doc.totalEditorPayment, 0);
+    res.json({ completeProjects, inCompleteProjects, paybalAmount });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.get('/dataByScriptPayment/:startDate/:endDate/:tmName', async(req,res)=>{
+router.get('/dataByScriptPayment/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
   endDate.setDate(endDate.getDate() + 1);
-  try{
-    let query1={
-      closingDate: {$gte: startDate, $lte: endDate},
+  try {
+    let query1 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       scriptWriter: tmName,
       scriptStatus: { $regex: /^Complete$/i }
     };
     const completeProjects = await Customer.find(query1);
-    let query2={
-      closingDate: {$gte: startDate, $lte: endDate},
+    let query2 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       scriptWriter: tmName,
-      scriptStatus: { $ne: 'Complete'}
+      scriptStatus: { $ne: 'Complete' }
     }
     const inCompleteProjects = await Customer.find(query2);
-    let query3={
-      closingDate: {$gte: startDate, $lte: endDate},
+    let query3 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       scriptWriter: tmName,
-      scriptStatus: {$regex: /^Complete$/i},
-      ScriptPaymentStatus: {$ne: 'Transfered'}
+      scriptStatus: { $regex: /^Complete$/i },
+      ScriptPaymentStatus: { $ne: 'Transfered' }
     }
-    const totalData= await Customer.find(query3);
-    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalScriptPayment, 0);
-    res.json({completeProjects, inCompleteProjects, paybalAmount});
-  }catch(error){
+    const totalData = await Customer.find(query3);
+    const paybalAmount = totalData.reduce((sum, doc) => sum + doc.totalScriptPayment, 0);
+    res.json({ completeProjects, inCompleteProjects, paybalAmount });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.get('/dataByVoPayment/:startDate/:endDate/:tmName', async(req,res)=>{
+router.get('/dataByVoPayment/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
   endDate.setDate(endDate.getDate() + 1);
-  try{
-    let query1={
-      closingDate: {$gte: startDate, $lte: endDate},
+  try {
+    let query1 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       voiceOver: tmName,
       voiceOverStatus: { $regex: /^Complete$/i }
     };
     const completeProjects = await Customer.find(query1);
-    let query2={
-      closingDate: {$gte: startDate, $lte: endDate},
+    let query2 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       voiceOver: tmName,
-      voiceOverStatus: { $ne: 'Complete'}
+      voiceOverStatus: { $ne: 'Complete' }
     }
     const inCompleteProjects = await Customer.find(query2);
-    let query3={
-      closingDate: {$gte: startDate, $lte: endDate},
+    let query3 = {
+      closingDate: { $gte: startDate, $lte: endDate },
       voiceOver: tmName,
-      voiceOverStatus: {$regex: /^Complete$/i},
-      VoiceOverPaymentStatus: {$ne: 'Transfered'}
+      voiceOverStatus: { $regex: /^Complete$/i },
+      VoiceOverPaymentStatus: { $ne: 'Transfered' }
     }
-    const totalData= await Customer.find(query3);
-    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalVoicePayment, 0);
-    res.json({completeProjects, inCompleteProjects, paybalAmount});
-  }catch(error){
+    const totalData = await Customer.find(query3);
+    const paybalAmount = totalData.reduce((sum, doc) => sum + doc.totalVoicePayment, 0);
+    res.json({ completeProjects, inCompleteProjects, paybalAmount });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
 //update Payroll Payment
 
-router.put('/editorPayrollUpdate/:startDate/:endDate/:tmName', async(req,res)=>{
+router.put('/editorPayrollUpdate/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
-  endDate.setDate(endDate.getDate()+1);
-  try{
-    let query={
-      closingDate: {$gte: startDate, $lte: endDate},
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      closingDate: { $gte: startDate, $lte: endDate },
       editor: tmName,
-      editorStatus: {$regex: /^Completed$/i}
+      editorStatus: { $regex: /^Completed$/i }
     };
-    const update={
-      $set: {EditorCNR: req.body.EditorCNR , EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate}
+    const update = {
+      $set: { EditorCNR: req.body.EditorCNR, EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate }
     };
     const result = await Customer.updateMany(query, update);
     console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
-    
+
     const payrollData = new Payroll({
       startDate: startDate,
       endDate: endDate,
@@ -3415,96 +3465,96 @@ router.put('/editorPayrollUpdate/:startDate/:endDate/:tmName', async(req,res)=>{
       Role: req.body.payrollRole
     });
     await payrollData.save();
-    res.json({message: "Payroll Successfull"});
-  }catch(error){
+    res.json({ message: "Payroll Successfull" });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.put('/editorPayrollUpdateScript/:startDate/:endDate/:tmName', async(req,res)=>{
+router.put('/editorPayrollUpdateScript/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
-  endDate.setDate(endDate.getDate()+1);
-  try{
-  let query={
-    closingDate: {$gte: startDate, $lte: endDate},
-    scriptWriter: tmName,
-    scriptStatus: {$regex: /^Complete$/i}
-  };
-  const update={
-    $set: {ScriptCNR: req.body.ScriptCNR, ScriptPaymentStatus: req.body.ScriptPaymentStatus, scriptPaymentDate: req.body.scriptPaymentDate}
-  };
-  const result = await Customer.updateMany(query, update);
-  console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
-  
-  const payrollData = new Payroll({
-    startDate: startDate,
-    endDate: endDate,
-    tmName: tmName,
-    ScriptPaymentStatus: req.body.ScriptPaymentStatus,
-    ScriptCNR: req.body.ScriptCNR,
-    scriptPaymentDate: req.body.scriptPaymentDate,
-    PaybalAmount: req.body.ScriptPaybalPayment,
-    Role: req.body.payrollRole
-  });
-  await payrollData.save();
-  res.json({message: "Payroll Successfull"});
-  }catch(error){
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      closingDate: { $gte: startDate, $lte: endDate },
+      scriptWriter: tmName,
+      scriptStatus: { $regex: /^Complete$/i }
+    };
+    const update = {
+      $set: { ScriptCNR: req.body.ScriptCNR, ScriptPaymentStatus: req.body.ScriptPaymentStatus, scriptPaymentDate: req.body.scriptPaymentDate }
+    };
+    const result = await Customer.updateMany(query, update);
+    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+
+    const payrollData = new Payroll({
+      startDate: startDate,
+      endDate: endDate,
+      tmName: tmName,
+      ScriptPaymentStatus: req.body.ScriptPaymentStatus,
+      ScriptCNR: req.body.ScriptCNR,
+      scriptPaymentDate: req.body.scriptPaymentDate,
+      PaybalAmount: req.body.ScriptPaybalPayment,
+      Role: req.body.payrollRole
+    });
+    await payrollData.save();
+    res.json({ message: "Payroll Successfull" });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.put('/editorPayrollUpdateVo/:startDate/:endDate/:tmName', async(req,res)=>{
+router.put('/editorPayrollUpdateVo/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
-  endDate.setDate(endDate.getDate()+1);
-  try{
-  let query={
-    closingDate: {$gte: startDate, $lte: endDate},
-    voiceOver: tmName,
-    voiceOverStatus: {$regex: /^Complete$/i}
-  };
-  const update={
-    $set: {VoCNR: req.body.VoCNR, voiceOverPaymentDate: req.body.voiceOverPaymentDate, voiceOverPaymentStatus: req.body.voiceOverPaymentStatus}
-  };
-  const result = await Customer.updateMany(query, update);
-  console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
-  
-  const payrollData = new Payroll({
-    startDate: startDate,
-    endDate: endDate,
-    tmName: tmName,
-    VoiceOverPaymentStatus: req.body.VoiceOverPaymentStatus,
-    VoCNR: req.body.VoCNR,
-    voiceOverPaymentDate: req.body.voiceOverPaymentDate,
-    PaybalAmount: req.body.VoPaybalPayment,
-    Role: req.body.payrollRole
-  });
-  await payrollData.save();
-  res.json({message: "Payroll Successfull"});
-  }catch(error){
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      closingDate: { $gte: startDate, $lte: endDate },
+      voiceOver: tmName,
+      voiceOverStatus: { $regex: /^Complete$/i }
+    };
+    const update = {
+      $set: { VoCNR: req.body.VoCNR, voiceOverPaymentDate: req.body.voiceOverPaymentDate, voiceOverPaymentStatus: req.body.voiceOverPaymentStatus }
+    };
+    const result = await Customer.updateMany(query, update);
+    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+
+    const payrollData = new Payroll({
+      startDate: startDate,
+      endDate: endDate,
+      tmName: tmName,
+      VoiceOverPaymentStatus: req.body.VoiceOverPaymentStatus,
+      VoCNR: req.body.VoCNR,
+      voiceOverPaymentDate: req.body.voiceOverPaymentDate,
+      PaybalAmount: req.body.VoPaybalPayment,
+      Role: req.body.payrollRole
+    });
+    await payrollData.save();
+    res.json({ message: "Payroll Successfull" });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.get('/editorPayroll', async(req,res)=>{
-  try{
+router.get('/editorPayroll', async (req, res) => {
+  try {
     const allData = await Payroll.find({
       tmName: person
     });
-    if(allData.length> 0){
+    if (allData.length > 0) {
       res.json(allData);
-    }else{
-      res.json({result: "No Data Found"})
+    } else {
+      res.json({ result: "No Data Found" })
     }
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -3535,24 +3585,24 @@ router.get('/payrollByDatePassRangeEditor/:startDate/:endDate', async (req, res)
   }
 });
 
-router.get('/scriptPayroll', async(req,res)=>{
-  try{
+router.get('/scriptPayroll', async (req, res) => {
+  try {
     const allData = await Payroll.find({
       tmName: person
     });
-    if(allData.length> 0){
+    if (allData.length > 0) {
       res.json(allData);
-    }else{
-      res.json({result: "No Data Found"})
+    } else {
+      res.json({ result: "No Data Found" })
     }
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
 router.get('/scriptPayroll/:ScriptCNR', async (req, res) => {
-  
+
   let data = await Payroll.find(
     { ScriptCNR: { $regex: req.params.ScriptCNR } }
   )
@@ -3580,24 +3630,24 @@ router.get('/payrollByDatePassRangeScript/:startDate/:endDate', async (req, res)
 
 
 
-router.get('/voPayroll', async(req,res)=>{
-  try{
+router.get('/voPayroll', async (req, res) => {
+  try {
     const allData = await Payroll.find({
       tmName: person
     });
-    if(allData.length> 0){
+    if (allData.length > 0) {
       res.json(allData);
-    }else{
-      res.json({result: "No Data Found"})
+    } else {
+      res.json({ result: "No Data Found" })
     }
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
 router.get('/voPayroll/:VoCNR', async (req, res) => {
-  
+
   let data = await Payroll.find(
     { VoCNR: { $regex: req.params.VoCNR } }
   )
@@ -3625,74 +3675,74 @@ router.get('/payrollByDatePassRangeVo/:startDate/:endDate', async (req, res) => 
 
 //B2b Payroll
 
-router.get('/dataByTmB2b/:startDate/:endDate/:tmName', async(req,res)=>{
+router.get('/dataByTmB2b/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
-      b2bProjectDate: { $gte: startDate, $lte: endDate},
-      b2bEditor: tmName 
+      b2bProjectDate: { $gte: startDate, $lte: endDate },
+      b2bEditor: tmName
     };
     const totalData = await B2bCustomer.find(query);
     res.json(totalData);
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.get('/dataByEditorPaymentB2b/:startDate/:endDate/:tmName', async(req,res)=>{
+router.get('/dataByEditorPaymentB2b/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
   endDate.setDate(endDate.getDate() + 1);
-  try{
-    let query1={
-      b2bProjectDate: {$gte: startDate, $lte: endDate},
+  try {
+    let query1 = {
+      b2bProjectDate: { $gte: startDate, $lte: endDate },
       b2bEditor: tmName,
       projectStatus: { $regex: /^Completed$/i }
     };
     const completeProjects = await B2bCustomer.find(query1);
-    let query2={
-      b2bProjectDate: {$gte: startDate, $lte: endDate},
+    let query2 = {
+      b2bProjectDate: { $gte: startDate, $lte: endDate },
       b2bEditor: tmName,
-      projectStatus: { $ne: 'Completed'}
+      projectStatus: { $ne: 'Completed' }
     }
     const inCompleteProjects = await B2bCustomer.find(query2);
-    let query3={
-      b2bProjectDate: {$gte: startDate, $lte: endDate},
+    let query3 = {
+      b2bProjectDate: { $gte: startDate, $lte: endDate },
       b2bEditor: tmName,
-      EditorPaymentStatus: {$ne: 'Transfered'},
-      projectStatus: {$regex: /^Completed$/i}
+      EditorPaymentStatus: { $ne: 'Transfered' },
+      projectStatus: { $regex: /^Completed$/i }
     }
-    const totalData= await B2bCustomer.find(query3);
-    const paybalAmount = totalData.reduce((sum,doc)=> sum + doc.totalEditorPayment, 0);
-    res.json({completeProjects, inCompleteProjects, paybalAmount});
-  }catch(error){
+    const totalData = await B2bCustomer.find(query3);
+    const paybalAmount = totalData.reduce((sum, doc) => sum + doc.totalEditorPayment, 0);
+    res.json({ completeProjects, inCompleteProjects, paybalAmount });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.put('/editorPayrollUpdateB2b/:startDate/:endDate/:tmName', async(req,res)=>{
+router.put('/editorPayrollUpdateB2b/:startDate/:endDate/:tmName', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const tmName = req.params.tmName;
-  endDate.setDate(endDate.getDate()+1);
-  try{
-    let query={
-      b2bProjectDate: {$gte: startDate, $lte: endDate},
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      b2bProjectDate: { $gte: startDate, $lte: endDate },
       b2bEditor: tmName,
-      projectStatus: {$regex: /^Completed$/i}
+      projectStatus: { $regex: /^Completed$/i }
     };
-    const update={
-      $set: {EditorCNR: req.body.EditorCNR , EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate}
+    const update = {
+      $set: { EditorCNR: req.body.EditorCNR, EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate }
     };
     const result = await B2bCustomer.updateMany(query, update);
     console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
-    
+
     const payrollData = new Payroll({
       startDate: startDate,
       endDate: endDate,
@@ -3704,24 +3754,24 @@ router.put('/editorPayrollUpdateB2b/:startDate/:endDate/:tmName', async(req,res)
       companyName: req.body.companyName
     });
     await payrollData.save();
-    res.json({message: "Payroll Successfull"});
-  }catch(error){
+    res.json({ message: "Payroll Successfull" });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.get('/allPayroll', async(req,res)=>{
-  try{
+router.get('/allPayroll', async (req, res) => {
+  try {
     const allData = await Payroll.find();
-    if(allData.length> 0){
+    if (allData.length > 0) {
       res.json(allData);
-    }else{
-      res.json({result: "No Data Found"})
+    } else {
+      res.json({ result: "No Data Found" })
     }
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -3731,12 +3781,14 @@ router.get('/payrollByDatePassRangeEditorAll/:startDate/:endDate', async (req, r
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
-      $or:[
-        {editorPaymentDate: {
-          $gte: startDate, $lte: endDate
-        }},
-        {scriptPaymentDate: {$gte: startDate, $lte: endDate}},
-        {voiceOverPaymentDate: {$gte: startDate, $lte: endDate}}
+      $or: [
+        {
+          editorPaymentDate: {
+            $gte: startDate, $lte: endDate
+          }
+        },
+        { scriptPaymentDate: { $gte: startDate, $lte: endDate } },
+        { voiceOverPaymentDate: { $gte: startDate, $lte: endDate } }
       ]
     };
     const rangeTotalData = await Payroll.find(query);
@@ -3748,19 +3800,19 @@ router.get('/payrollByDatePassRangeEditorAll/:startDate/:endDate', async (req, r
 });
 
 router.get('/payrollAll/:EditorCNR', async (req, res) => {
-  try{
-    let query={
-      $or:[
+  try {
+    let query = {
+      $or: [
         { ScriptCNR: { $regex: req.params.EditorCNR } },
         { EditorCNR: { $regex: req.params.EditorCNR } },
         { VoCNR: { $regex: req.params.EditorCNR } },
       ]
     }
-  let data = await Payroll.find(query);
-  res.send(data);
-  }catch(error){
+    let data = await Payroll.find(query);
+    res.send(data);
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 

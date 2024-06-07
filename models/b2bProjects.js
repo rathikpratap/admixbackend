@@ -8,6 +8,7 @@ const b2bProjectSchema = new mongoose.Schema({
     b2bVideoType:{type:String},
     b2bProjectDate:{type:Date},
     b2bProjectPrice:{type:Number},
+    b2bBillType:{type:String},
     b2bVideoDurationMinutes:{type:Number},
     b2bVideoDurationSeconds:{type:Number},
     b2bEditor:{type:String},

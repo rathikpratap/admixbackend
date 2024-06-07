@@ -11,6 +11,7 @@ const customerSchema = new mongoose.Schema({
     leadsCreatedDate:{type:Date},
     closingPrice : {type:Number},
     closingCateg : {type:String},
+    billType : {type:String},
     AdvPay : {type:Number},
     remainingAmount : {type:Number},
     custCountry : {type:String},
