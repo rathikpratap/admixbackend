@@ -70,7 +70,7 @@ router.post('/login', (req, res) => {
           //
           signupRole: user.signupRole
         };
-        const token = jwt.sign(payload, "webBatch", { expiresIn: '1h' });
+        const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
         //person = req.body.loginUsername;
         return res.json({ success: true, token: token, role: user.signupRole, team: user.salesTeam, message: "Login Successful" });
       } else {
