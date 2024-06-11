@@ -479,7 +479,22 @@ router.delete('/delete-cust/:id', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-})
+});
+
+// delete SalesLead
+
+router.delete('/delete-sales/:id', async (req, res) => {
+  try {
+    const deleteCust = await salesLead.findByIdAndDelete(req.params.id);
+    if (deleteCust) {
+      return res.json(deleteCust);
+    } else {
+      return res.json({ result: "No Data Deleted" });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
 
 // Edit Customer Details By editor
 
