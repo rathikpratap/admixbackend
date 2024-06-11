@@ -6,12 +6,14 @@ const newCompany = require('./models/company');
 const B2bCustomer = require('./models/b2bProjects');
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
+const WhatsAppCategory = require('./models/whatsAppCategory');
 const ClosingCategory = require('./models/closingCategory');
 const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
 const salesLead = require('./models/salesLead');
 const transferLead = require('./models/adminLeads');
 const Payroll = require('./models/payroll');
+const EstInvoice = require('./models/estInvoice');
 const { Country, State, City } = require('country-state-city');
 //const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -1238,11 +1240,43 @@ router.post('/newCategory', async (req, res) => {
   }
 });
 
+// new WhatsApp Category
+
+router.post('/newWhatsAppCategory', async (req, res) => {
+  try {
+    const category = new WhatsAppCategory({
+      whatsAppCategoryName: req.body.whatsAppCategoryName
+    })
+    await category.save().then((_) => {
+      res.json({ success: true, message: "New Category Added" })
+    }).catch((err) => {
+      if (err.code === 11000) {
+        return res.json({ success: false, message: "Category Already Added" })
+      }
+    });
+  } catch (error) {
+    console.error('Error Adding Category', error);
+    res.status(500).json({ error: 'Failed to add Category' });
+  }
+});
+
 // get Category
 
 router.get('/getCategory', async (req, res) => {
   try {
     const categories = await ClosingCategory.find();
+    res.json(categories);
+  } catch (error) {
+    console.error("Error Fetching Categories", error);
+    res.status(500).json({ error: 'Failed to Fetch Category Data ' })
+  }
+});
+
+// get WhatsApp Category
+
+router.get('/getWhatsAppCategory', async (req, res) => {
+  try {
+    const categories = await WhatsAppCategory.find();
     res.json(categories);
   } catch (error) {
     console.error("Error Fetching Categories", error);
@@ -3825,7 +3859,8 @@ router.get('/payrollAll/:EditorCNR', async (req, res) => {
 
 // get WhatsApp Leads
 
-router.get('/getWhatsApp-leads/', async (req, res) => {
+router.get('/getWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3840,7 +3875,7 @@ router.get('/getWhatsApp-leads/', async (req, res) => {
         $gte: startOfToday,
         $lt: endOfToday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(todayLeads);
   } catch (error) {
@@ -3849,7 +3884,8 @@ router.get('/getWhatsApp-leads/', async (req, res) => {
   }
 });
 
-router.get('/getYesterdayWhatsApp-leads/', async (req, res) => {
+router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3865,7 +3901,7 @@ router.get('/getYesterdayWhatsApp-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -3875,7 +3911,8 @@ router.get('/getYesterdayWhatsApp-leads/', async (req, res) => {
   }
 });
 
-router.get('/getOneYesterdayWhatsApp-leads/', async (req, res) => {
+router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3891,7 +3928,7 @@ router.get('/getOneYesterdayWhatsApp-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -3901,7 +3938,9 @@ router.get('/getOneYesterdayWhatsApp-leads/', async (req, res) => {
   }
 });
 
-router.get('/getTwoYesterdayWhatsApp-leads/', async (req, res) => {
+router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
+  console.log("NAME===>", name);
   try {
     // Get today's date
     const today = new Date();
@@ -3917,7 +3956,7 @@ router.get('/getTwoYesterdayWhatsApp-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -3927,7 +3966,8 @@ router.get('/getTwoYesterdayWhatsApp-leads/', async (req, res) => {
   }
 });
 
-router.get('/getThreeYesterdayWhatsApp-leads/', async (req, res) => {
+router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3943,7 +3983,7 @@ router.get('/getThreeYesterdayWhatsApp-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -3953,7 +3993,8 @@ router.get('/getThreeYesterdayWhatsApp-leads/', async (req, res) => {
   }
 });
 
-router.get('/getFourYesterdayWhatsApp-leads/', async (req, res) => {
+router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3969,7 +4010,7 @@ router.get('/getFourYesterdayWhatsApp-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -3979,7 +4020,8 @@ router.get('/getFourYesterdayWhatsApp-leads/', async (req, res) => {
   }
 });
 
-router.get('/getFiveYesterdayWhatsApp-leads/', async (req, res) => {
+router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
+  const name= req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3995,7 +4037,7 @@ router.get('/getFiveYesterdayWhatsApp-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$regex: /^WhatsApp$/i}
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -4004,5 +4046,44 @@ router.get('/getFiveYesterdayWhatsApp-leads/', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
+
+// est Invoice
+
+router.post('/estInvoice', async(req,res)=>{
+  try{
+    const est = new EstInvoice({
+      billNumber: req.body.billNumber,
+      billType: req.body.billType,
+      custName: req.body.custName,
+      custNumb: req.body.custNumb,
+      invoiceCateg: req.body.invoiceCateg,
+      customCateg: req.body.customCateg,
+      numOfVideos: req.body.numOfVideos,
+      priceOfVideos: req.body.priceOfVideos,
+      date: req.body.invoiceDate,
+      GSTAmount: req.body.GSTAmount,
+      totalAmount: req.body.totalAmount,
+      billFormat: req.body.billFormat
+    })
+    await est.save();
+  }catch(err){
+    console.error("Error adding Estimate Invoice Details",err);
+    res.json({success: false, message:"Error Adding Estimate Invoice"});
+  }
+});
+
+// Estimate Invoice Count
+
+router.get('/estInvoiceCount', async (req,res)=>{
+  const dataLength = await EstInvoice.countDocuments({billFormat: 'Estimate'});
+  return res.json(dataLength);
+});
+
+// Main Invoice Count
+
+router.get('/mainInvoiceCount',async(req,res)=>{
+  const dataLength = await EstInvoice.countDocuments( {billFormat: 'Main'});
+  return res.json(dataLength);
+})
 
 module.exports = router
