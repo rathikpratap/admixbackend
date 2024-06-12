@@ -1499,7 +1499,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04uc0EvkGXBJXCgYIARAAGAQSNwF-L9IrrTM8rfYNxlUDHaIS0sYSC4S0WyTtbdgDfNO76Me4X7d0PMUIR8ial_lGJbmJIrFY6qk';
+const REFERESH_TOKEN = '1//04327OhoL7JI_CgYIARAAGAQSNwF-L9Irc_RYbBE5C37VM67lb0rb3QYx0ONscnm_0ocVz2kHyYjDstCviTO8J0vw_qBK9FB0LHc';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -1679,28 +1679,7 @@ router.get('/getSalesFacebook-leads', async (req, res) => {
 
 // Leads Transfer
 
-//router.post('/update-salespersons', async (req,res)=>{
-//  try{
-//    const items = req.body.items;
-//    const updatedItems = items.map(item=> ({
-//      _id: item._id,
-//      closingDate: item.created_time,
-//      campaign_Name: item.campaign_Name,
-//      ad_Name: item.ad_Name,
-//      custName: item.name,
-//      custEmail: item.email,
-//      custBussiness: item.company_name,
-//      custNumb: item.phone,
-//      state: item.state,
-//      salesPerson: item.salesperson
-//    }));
-//  await salesLead.insertMany(updatedItems);
 
-//    res.json({message: "Items Updated Successfully"});
-//  }catch(err){
-//    res.status(500).json({ message: err.message});
-//  }
-//});
 
 router.post('/update-salespersons', async (req, res) => {
   try {
@@ -4100,5 +4079,187 @@ router.get('/mainInvoiceCount',async(req,res)=>{
   const dataLength = await EstInvoice.countDocuments( {billFormat: 'Main'});
   return res.json(dataLength);
 })
+
+// sales Whatsapp Work Admin
+
+router.get('/getSalesWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
+    console.log("STart Date==>", startOfToday);
+    console.log("End Date===>", endOfToday);
+    // Fetch leads with closing date within today's range
+    const todayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfToday,
+        $lt: endOfToday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+    return res.json(todayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesYesterdayWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesOneYesterdayWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 2);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesTwoYesterdayWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 3);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesThreeYesterdayWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 4);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesFourYesterdayWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 5);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    // Get today's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 6);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    console.log("YesterdayStart==>", startOfYesterday);
+    console.log("YestaerdayEnd===>", endOfYesterday);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      campaign_Name: { $regex: new RegExp(name, 'i') }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
 
 module.exports = router
