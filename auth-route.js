@@ -512,9 +512,11 @@ router.put('/updateEditor/:id', async (req, res) => {
 
 // Edit Customer Details
 
-router.put('/update/:id', async (req, res) => {
+router.put('/update/:id', checkAuth, async (req, res) => {
   try {
-    console.log("UPDATE SALESPERSON==>", person);
+    const person1 = req.userData.name;
+    const personTeam1 = req.userData.saleTeam;
+    console.log("UPDATE SALESPERSON==>", person1);
     let custDet = await Customer.findById(req.params.id);
     let leadDet = await salesLead.findById(req.params.id);
     if (custDet) {
@@ -551,8 +553,8 @@ router.put('/update/:id', async (req, res) => {
           restAmount: req.body.restAmount,
           restPaymentDate: req.body.restPaymentDate,
           remark: req.body.remark,
-          salesPerson: person,
-          salesTeam: leadDet.salesTeam,
+          salesPerson: person1,
+          salesTeam: personTeam1,
           graphicDesigner: req.body.graphicDesigner,
           editor: req.body.editor,
           scriptWriter: req.body.scriptWriter,
