@@ -515,8 +515,9 @@ router.put('/updateEditor/:id', async (req, res) => {
 router.put('/update/:id', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData.name;
-    const personTeam1 = req.userData.saleTeam;
+    const personTeam1 = req.userData.Saleteam;
     console.log("UPDATE SALESPERSON==>", person1);
+    console.log("UPDATE SALESTEAM==>", personTeam1);
     let custDet = await Customer.findById(req.params.id);
     let leadDet = await salesLead.findById(req.params.id);
     if (custDet) {
