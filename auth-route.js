@@ -26,6 +26,14 @@ const adminLeads = require('./models/adminLeads');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+
+const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+const SCOPES = [MESSAGING_SCOPE];
+
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./admix-demo-firebase-adminsdk-952at-48ec8627f9.json");
+
 let person = '';
 let personTeam = '';
 let role = '';
@@ -1502,7 +1510,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04327OhoL7JI_CgYIARAAGAQSNwF-L9Irc_RYbBE5C37VM67lb0rb3QYx0ONscnm_0ocVz2kHyYjDstCviTO8J0vw_qBK9FB0LHc';
+const REFERESH_TOKEN = '1//04UBGfqIs3DfdCgYIARAAGAQSNwF-L9IrXq71YEGeH9rLAydnak_GRosUW_KhMnUhjnZgKJQi-AH_1IEd7C_Epg47E4cFB3EfwzM';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4264,5 +4272,34 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
+
+
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+function getAccessToken() {
+  return new Promise(function(resolve, reject) {
+    const key = require('./admix-demo-firebase-adminsdk-952at-48ec8627f9.json');
+    const jwtClient = new google.auth.JWT(
+      key.client_email,
+      null,
+      key.private_key,
+      SCOPES,
+      null
+    );
+    jwtClient.authorize(function(err, tokens) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      console.log("tokens.access_token ==>",tokens.access_token)
+      resolve(tokens.access_token);
+    });
+  });
+}
+
+getAccessToken();
 
 module.exports = router
