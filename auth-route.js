@@ -27,12 +27,12 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 
-const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
-const SCOPES = [MESSAGING_SCOPE];
+//const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+//const SCOPES = [MESSAGING_SCOPE];
 
-var admin = require("firebase-admin");
+//var admin = require("firebase-admin");
 
-var serviceAccount = require("./admix-demo-firebase-adminsdk-952at-48ec8627f9.json");
+//var serviceAccount = require("./admix-demo-firebase-adminsdk-952at-48ec8627f9.json");
 
 let person = '';
 let personTeam = '';
@@ -4273,33 +4273,33 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
   }
 });
 
+// Firebase Push Notifications
 
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// function getAccessToken() {
+//   return new Promise(function(resolve, reject) {
+//     const key = require('./admix-demo-firebase-adminsdk-952at-48ec8627f9.json');
+//     const jwtClient = new google.auth.JWT(
+//       key.client_email,
+//       null,
+//       key.private_key,
+//       SCOPES,
+//       null
+//     );
+//     jwtClient.authorize(function(err, tokens) {
+//       if (err) {
+//         reject(err);
+//         return;
+//       }
+//       console.log("tokens.access_token ==>",tokens.access_token)
+//       resolve(tokens.access_token);
+//     });
+//   });
+// }
 
-function getAccessToken() {
-  return new Promise(function(resolve, reject) {
-    const key = require('./admix-demo-firebase-adminsdk-952at-48ec8627f9.json');
-    const jwtClient = new google.auth.JWT(
-      key.client_email,
-      null,
-      key.private_key,
-      SCOPES,
-      null
-    );
-    jwtClient.authorize(function(err, tokens) {
-      if (err) {
-        reject(err);
-        return;
-      }
-      console.log("tokens.access_token ==>",tokens.access_token)
-      resolve(tokens.access_token);
-    });
-  });
-}
-
-getAccessToken();
+// getAccessToken();
 
 module.exports = router
