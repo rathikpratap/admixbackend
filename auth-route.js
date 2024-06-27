@@ -14,6 +14,7 @@ const salesLead = require('./models/salesLead');
 const transferLead = require('./models/adminLeads');
 const Payroll = require('./models/payroll');
 const EstInvoice = require('./models/estInvoice');
+const Notification = require('./models/notification');
 const { Country, State, City } = require('country-state-city');
 //const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -22,13 +23,13 @@ const axios = require('axios');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const adminLeads = require('./models/adminLeads');
-
+const sendNotif = require('./middleware/sendNotif');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 
-//const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
-//const SCOPES = [MESSAGING_SCOPE];
+const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+const SCOPES = [MESSAGING_SCOPE];
 
 //var admin = require("firebase-admin");
 
@@ -1510,7 +1511,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04UBGfqIs3DfdCgYIARAAGAQSNwF-L9IrXq71YEGeH9rLAydnak_GRosUW_KhMnUhjnZgKJQi-AH_1IEd7C_Epg47E4cFB3EfwzM';
+const REFERESH_TOKEN = '1//04kTPyvKhf9oTCgYIARAAGAQSNwF-L9IrUVklSAJzS14f_ZUYyxObVBbsP8HWJ4z8J0kTIRBJtwRjiSP8Stds1FJ5nAgwCyB53m8';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4278,6 +4279,143 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
 // admin.initializeApp({
 //   credential: admin.credential.cert(serviceAccount)
 // });
+var acesToken = '';
+router.get('/getAccessToken', async(req,res)=>{
+  return new Promise(function(resolve, reject) {
+    const key = require('./admix-demo-firebase-adminsdk-952at-48ec8627f9.json');
+    const jwtClient = new google.auth.JWT(
+      key.client_email,
+      null,
+      key.private_key,
+      SCOPES,
+      null
+    );
+    jwtClient.authorize(function(err, tokens) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      console.log("tokens.access_token ==>",tokens.access_token);
+      acesToken = tokens.access_token;
+      resolve(tokens.access_token);
+    });
+  });
+});
+
+router.put('/save-Token/:token1', checkAuth, async (req, res) => {
+  try {
+    const userId = req.userData.userId;
+  const token1 = req.params.token1;
+  console.log("SAVED USERID====>>", userId);
+  console.log("SAVED TOKEN====>>", token1);
+  //acesToken = token1;
+      // Update the user document with the new token
+      //const updateData = { token: token };
+      const updatedUser = await User.findByIdAndUpdate(userId);
+
+      if (updatedUser) {
+          updatedUser.accessToken = token1;
+          await updatedUser.save();
+          res.json({ success: true, data: updatedUser });
+      } else {
+          res.status(404).json({ success: false, message: "User not found" });
+      }
+  } catch (error) {
+      console.error("Error saving token:", error.message);
+      res.status(500).json({ success: false, message: "Failed to save token" });
+  }
+});
+
+router.post('/bell', async(req, res)=>{
+  try{
+    const data = req.body.items;
+    const msgTitle = req.body.msgTitle;
+    const msgBody = req.body.msgBody;
+    const currentDate = req.body.currentDate;
+    let token = '';
+    let nameS = '';
+    let nameE = '';
+    let nameV = '';
+    let nameG = '';
+    let nameA = '';
+    for(const item of data){
+      let existingItem = await User.findById(item._id);
+      console.log("ExistingItem===>>",existingItem);
+      if (existingItem) {
+        token = existingItem.accessToken;
+        if(existingItem.signupRole === 'Script Writer'){
+          nameS = existingItem.signupUsername;
+        }else if(existingItem.signupRole === 'Editor'){
+          nameE = existingItem.signupUsername;
+        }else if(existingItem.signupRole === 'VO Artist'){
+          nameV = existingItem.signupUsername;
+        }else if(existingItem.signupRole === 'Graphic Designer'){
+          nameG = existingItem.signupUsername;
+        }else if(existingItem.signupRole === 'Admin'){
+          nameA = existingItem.signupUsername;
+        }else{
+          console.log("SignupRole Error");
+        }
+        console.log("ROLE====>>", existingItem.signupRole);
+        console.log("Data FCm Token===>>>>", item.accessToken);
+        break; // Break the loop if a valid token is found
+      }
+    }
+    console.log("FCM Token===>>", token);
+    //let token = 'eLs3LzqDZTcR9f2niojwGT:APA91bEWXI4tPMOrbieLoDKYfW4KQus4E3EpAvyzfq0ntzLvDsIOGup4ROeETfr6p6GS-RWgEJRKtPFX4NHDQjeEjrSAeVeVE05feW26HTF4JAlDr37aQnYgP2w5Ya1OWQl1HZbz_rY7';
+    if(!token || typeof token !== 'string'){
+      throw new Error('Invalid FCM token provided');
+    }
+    await sendNotif(token, msgTitle, msgBody);
+    const notifi = new Notification({
+      msgTitle : msgTitle,
+      msgBody : msgBody,
+      Date: currentDate,
+      ScriptWriter: nameS,
+      Editor: nameE,
+      VoiceOver: nameV,
+      GraphicDesigner: nameG,
+      Admin: nameA,
+      Status: 'Unread'
+    })
+    await notifi.save();
+    res.json({status:"success"})
+  }catch(error){
+    console.error("Notification API Error: ", error.message);
+    res.status(500).json({ status: "fail", error: error.message});
+  }
+});
+
+router.get('/getNotification', async(req, res)=>{
+  try{
+    let query1 = {
+      Status : { $regex: /^Unread$/i},
+      $or: [
+        { ScriptWriter: person },
+        { Editor: person},
+        {VoiceOver: person},
+        {GraphicDesigner: person},
+        {Admin: person}
+      ]
+    };
+    const unReadNotif = await Notification.find(query1);
+    let query2 = {
+      Status : {$regex: /^Read$/i},
+      $or: [
+        { ScriptWriter: person },
+        { Editor: person},
+        {VoiceOver: person},
+        {GraphicDesigner: person},
+        {Admin: person}
+      ]
+    };
+    const readNotif = await Notification.find(query2);
+    res.json({unReadNotif, readNotif});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"})
+  }
+});
 
 // function getAccessToken() {
 //   return new Promise(function(resolve, reject) {

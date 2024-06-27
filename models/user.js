@@ -19,6 +19,7 @@ const registerSchema = new mongoose.Schema({
     payment180Sec: {type: Number},
     paymentTwoVideo: {type: Number},
     paymentThreeVideo: {type: Number},
+    accessToken: {type: String}
 });
 
 module.exports = mongoose.model('User', registerSchema);
