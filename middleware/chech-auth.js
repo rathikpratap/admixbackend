@@ -8,10 +8,10 @@ module.exports = (req, res, next) => {
         const decode = jwt.verify(token, "webBatch");
         req.userData = decode
 
-        console.log("Auth===>>", req.userData);
+        //console.log("Auth===>>", req.userData);
         //return res.json(decode);
         if (req.userData.signupRole === 'Admin' || req.userData.signupRole === 'Manager' || req.userData.signupRole === 'Sales Team' || req.userData.signupRole === 'Editor' || req.userData.signupRole === 'Script Writer' || req.userData.signupRole === 'VO Artist') {
-            console.log("Auth Role===>>", req.userData.signupRole);
+            //console.log("Auth Role===>>", req.userData.signupRole);
             next();
         } else {
             throw new Error();

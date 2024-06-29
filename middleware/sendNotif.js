@@ -1,6 +1,6 @@
 var admin = require("firebase-admin");
 
-var serviceAccount = require("../admix-demo-firebase-adminsdk-952at-48ec8627f9.json");
+var serviceAccount = require("../admix-demo-firebase-adminsdk-952at-abf2518dc7.json");
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -25,7 +25,7 @@ const sendNotif = async (token, title, body)=>{
                     body: body,
                 },
             },
-            token: token,
+            token:token,
         };
         const response = await admin.messaging().send(message);
         console.log("Successfully sent message: ", response);

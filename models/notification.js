@@ -9,6 +9,7 @@ const notificationSchema = new mongoose.Schema({
     VoiceOver:{type:String},
     GraphicDesigner:{type:String},
     Admin:{type:String},
+    SalesPerson: {type:String},
     Status:{type:String}
 });
 

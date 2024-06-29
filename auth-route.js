@@ -100,8 +100,8 @@ router.get('/profile', checkAuth, async (req, res) => {
   role = req.userData.signupRole;
 
   User.findById(userId).exec().then((result) => {
-    console.log("data=====>>>>", person)
-    console.log("SALESPERSON===>>>>", personTeam);
+    //console.log("data=====>>>>", person)
+    //console.log("SALESPERSON===>>>>", personTeam);
     return res.json({ success: true, data: result })
   }).catch(err => {
     res.json({ success: false, message: "Server Error!!" })
@@ -111,7 +111,7 @@ router.get('/profile', checkAuth, async (req, res) => {
 // Monthwise Ongoing Projects
 
 router.get('/list', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -138,7 +138,7 @@ router.get('/list', async (req, res) => {
 //All ongoing Projects Sales
 
 router.get('/allList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   try {
     const products = await Customer.find({
       salesPerson: person,
@@ -160,7 +160,7 @@ router.get('/allList', async (req, res) => {
 // All ongoing projects Admin
 
 router.get('/allListAdmin', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   try {
     const products = await Customer.find({
       //remainingAmount: { $gt: 0 },
@@ -334,7 +334,7 @@ router.get('/allEmployee', async (req, res) => {
 //All Monthwise Ongoing Projects Admin
 
 router.get('/allOngoingProjects', async (req, res) => {
-  console.log("person ==>", person);
+  //console.log("person ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -433,7 +433,7 @@ router.get('/read-emp/:id', async (req, res) => {
   try {
     const empDetails = await User.findById(req.params.id);
     if (empDetails) {
-      console.log("Employee ==>", empDetails);
+      //console.log("Employee ==>", empDetails);
       return res.json(empDetails);
     } else {
       return res.json({ result: "No Employee Found" });
@@ -449,7 +449,7 @@ router.get('/getCompanyPay/:id', async (req, res) => {
   try {
     const compDetails = await newCompany.findById(req.params.id);
     if (compDetails) {
-      console.log("Company===>", compDetails);
+      //console.log("Company===>", compDetails);
       return res.json(compDetails);
     } else {
       return res.json({ result: "No Company Found" });
@@ -465,7 +465,7 @@ router.delete('/delete-emp/:id', async (req, res) => {
   try {
     const deleteData = await User.findByIdAndDelete(req.params.id);
     if (deleteData) {
-      console.log("Delete ==>", deleteData);
+      //console.log("Delete ==>", deleteData);
       return res.json(deleteData);
     } else {
       return res.json({ result: "No Data Deleted" });
@@ -508,7 +508,7 @@ router.delete('/delete-sales/:id', async (req, res) => {
 // Edit Customer Details By editor
 
 router.put('/updateEditor/:id', async (req, res) => {
-  console.log("req.body ==>", req.body);
+  //console.log("req.body ==>", req.body);
   const custDet = await Customer.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -525,8 +525,8 @@ router.put('/update/:id', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData.name;
     const personTeam1 = req.userData.Saleteam;
-    console.log("UPDATE SALESPERSON==>", person1);
-    console.log("UPDATE SALESTEAM==>", personTeam1);
+    //console.log("UPDATE SALESPERSON==>", person1);
+    //console.log("UPDATE SALESTEAM==>", personTeam1);
     let custDet = await Customer.findById(req.params.id);
     let leadDet = await salesLead.findById(req.params.id);
     if (custDet) {
@@ -619,7 +619,7 @@ router.put('/update/:id', checkAuth, async (req, res) => {
 // Edit Employee
 
 router.put('/updateEmp/:id', async (req, res) => {
-  console.log("req.body ==>", req.body);
+  //console.log("req.body ==>", req.body);
   const EmpDet = await User.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -800,7 +800,7 @@ router.get('/countries', async (req, res) => {
 router.get('/states/:countryCode', (req, res) => {
   const { countryCode } = req.params;
   const states = State.getStatesOfCountry(countryCode);
-  console.log("State===>", states);
+  //console.log("State===>", states);
   res.json(states);
 });
 
@@ -808,7 +808,7 @@ router.get('/cities/:countryCode/:stateCode', (req, res) => {
   const { countryCode } = req.params;
   const { stateCode } = req.params;
   const cities = City.getCitiesOfState(countryCode, stateCode);
-  console.log("City===>", cities);
+  //console.log("City===>", cities);
   res.json(cities);
 });
 
@@ -926,7 +926,7 @@ router.get('/todayEntries', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    console.log("Total Entries===>>", totalDayEntry)
+    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -946,7 +946,7 @@ router.get('/todayEntriesEmp', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    console.log("Total Entries===>>", totalDayEntry)
+    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -1042,7 +1042,7 @@ router.post('/uploadFile', upload.single('file'), async (req, res) => {
 
 router.get('/downloadFile', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  console.log("person ==>", person);
+  //console.log("person ==>", person);
   try {
     let query;
     if (role === 'Admin' || role === 'Manager') {
@@ -1098,7 +1098,7 @@ router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  console.log("DOwnload PersonTeam===>", personTeam)
+  //console.log("DOwnload PersonTeam===>", personTeam)
   try {
     let query;
     if (role === 'Admin' || role === 'Manager') {
@@ -1155,7 +1155,7 @@ router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  console.log("DOwnload PersonTeam===>", personTeam)
+  //console.log("DOwnload PersonTeam===>", personTeam)
   try {
     let query = {
       closingDate: {
@@ -1377,7 +1377,7 @@ router.delete('/delete-comp/:id', async (req, res) => {
   try {
     const deleteData = await newCompany.findByIdAndDelete(req.params.id);
     if (deleteData) {
-      console.log("Delete ==>", deleteData);
+      //console.log("Delete ==>", deleteData);
       return res.json(deleteData);
     } else {
       return res.json({ result: "No Data Deleted" });
@@ -1511,7 +1511,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04kTPyvKhf9oTCgYIARAAGAQSNwF-L9IrUVklSAJzS14f_ZUYyxObVBbsP8HWJ4z8J0kTIRBJtwRjiSP8Stds1FJ5nAgwCyB53m8';
+const REFERESH_TOKEN = '1//04MLrGo0ApNnpCgYIARAAGAQSNwF-L9IrSiGiT46582Spb6SStHwEkGppXLp1b0vLWpiErc2LuAmRcSCMjGjQrRmdWDkjPErDQc8';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -1760,7 +1760,7 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
       }
     };
     const rangeTotalData = await transferLead.find(query).sort({ created_time: -1 });
-    console.log("Leads Data===>", rangeTotalData);
+    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -1787,8 +1787,8 @@ router.get('/getTeams-leads/', async (req, res) => {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    console.log("STart Date==>", startOfToday);
-    console.log("End Date===>", endOfToday);
+    //console.log("STart Date==>", startOfToday);
+    //console.log("End Date===>", endOfToday);
     // Fetch leads with closing date within today's range
     const todayLeads = await salesLead.find({
       salesTeam: personTeam,
@@ -1811,8 +1811,8 @@ router.get('/getSalesTeamWork/', async (req, res) => {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    console.log("STart Date==>", startOfToday);
-    console.log("End Date===>", endOfToday);
+    //console.log("STart Date==>", startOfToday);
+    //console.log("End Date===>", endOfToday);
     // Fetch leads with closing date within today's range
     const todayLeads = await salesLead.find({
       closingDate: {
@@ -1837,8 +1837,8 @@ router.get('/getYesterdayTeams-leads/', async (req, res) => {
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -1863,8 +1863,8 @@ router.get('/getSalesYesterdayTeamWork/', async (req, res) => {
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -1887,8 +1887,8 @@ router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -1913,8 +1913,8 @@ router.get('/getSalesOneYesterdayTeamWork/', async (req, res) => {
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -1937,8 +1937,8 @@ router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -1963,8 +1963,8 @@ router.get('/getSalesTwoYesterdayTeamWork/', async (req, res) => {
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -1987,8 +1987,8 @@ router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2013,8 +2013,8 @@ router.get('/getSalesThreeYesterdayTeamWork/', async (req, res) => {
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -2037,8 +2037,8 @@ router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2063,8 +2063,8 @@ router.get('/getSalesFourYesterdayTeamWork/', async (req, res) => {
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -2087,8 +2087,8 @@ router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2113,8 +2113,8 @@ router.get('/getSalesFiveYesterdayTeamWork/', async (req, res) => {
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -2187,7 +2187,7 @@ router.get('/salesleadsByRange/:startDate/:endDate', async (req, res) => {
       }
     };
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    console.log("Leads Data===>", rangeTotalData);
+    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -2206,7 +2206,7 @@ router.get('/salesleadsByRangeAdmin/:startDate/:endDate', async (req, res) => {
       }
     };
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    console.log("Leads Data===>", rangeTotalData);
+    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -2245,7 +2245,7 @@ router.get('/transferLeads', async (req, res) => {
         const SalesLeadDoc = await salesLead.findOne({ closingDate: doc.created_time });
         Sales++;
         if (SalesLeadDoc && SalesLeadDoc.salesTeam) {
-          console.log("Check SalesTeam==>>", salesLead.salesTeam);
+          //console.log("Check SalesTeam==>>", salesLead.salesTeam);
           existingLead.salesTeam = SalesLeadDoc.salesTeam;
           await existingLead.save();
         } else {
@@ -2389,7 +2389,7 @@ router.get('/todayEntriesScript', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    console.log("Total Entries===>>", totalDayEntry)
+    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -2398,7 +2398,7 @@ router.get('/todayEntriesScript', async (req, res) => {
 });
 
 router.get('/scriptActiveList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -2420,7 +2420,7 @@ router.get('/scriptActiveList', async (req, res) => {
 });
 
 router.get('/scriptCompleteList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -2539,7 +2539,7 @@ router.get('/todayEntriesEditor', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    console.log("Total Entries===>>", totalDayEntry)
+    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -2548,7 +2548,7 @@ router.get('/todayEntriesEditor', async (req, res) => {
 });
 
 router.get('/editorActiveList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -2571,7 +2571,7 @@ router.get('/editorActiveList', async (req, res) => {
 });
 
 router.get('/editorCompleteList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -2691,7 +2691,7 @@ router.get('/todayEntriesEditorOther', async (req, res) => {
       }
     };
     const totalDayEntry = await B2bCustomer.find(query);
-    console.log("Total Entries===>>", totalDayEntry)
+    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -2700,7 +2700,7 @@ router.get('/todayEntriesEditorOther', async (req, res) => {
 });
 
 router.get('/editorOtherActiveList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
@@ -2723,7 +2723,7 @@ router.get('/editorOtherActiveList', async (req, res) => {
 });
 
 router.get('/editorOtherCompleteList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
@@ -2838,7 +2838,7 @@ router.get('/todayEntriesVo', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    console.log("Total Entries===>>", totalDayEntry)
+    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -2847,7 +2847,7 @@ router.get('/todayEntriesVo', async (req, res) => {
 });
 
 router.get('/voActiveList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -2869,7 +2869,7 @@ router.get('/voActiveList', async (req, res) => {
 });
 
 router.get('/voCompleteList', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -2999,7 +2999,7 @@ router.get('/allTotalEntriesB2b', async (req, res) => {
 });
 
 router.get('/listB2b', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
@@ -3024,7 +3024,7 @@ router.get('/listB2b', async (req, res) => {
 });
 
 router.get('/allListB2b', async (req, res) => {
-  console.log("person hjjj ==>", person);
+  //console.log("person hjjj ==>", person);
   try {
     const products = await B2bCustomer.find({
       salesPerson: person,
@@ -3166,7 +3166,7 @@ router.delete('/delete-B2b/:id', async (req, res) => {
 
 router.get('/downloadFileB2b', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  console.log("person ==>", person);
+  //console.log("person ==>", person);
   try {
     let query;
     query = {
@@ -3210,7 +3210,7 @@ router.get('/downloadRangeFileB2b/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  console.log("DOwnload PersonTeam===>", personTeam)
+  //console.log("DOwnload PersonTeam===>", personTeam)
   try {
     let query;
     query = {
@@ -3266,7 +3266,7 @@ router.get('/read-b2b/:id', async (req, res) => {
 });
 
 router.put('/updateB2b/:id', async (req, res) => {
-  console.log("req.body ==>", req.body);
+  //console.log("req.body ==>", req.body);
   const EmpDet = await B2bCustomer.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -3278,7 +3278,7 @@ router.put('/updateB2b/:id', async (req, res) => {
 });
 
 router.put('/updateB2bEditor/:id', async (req, res) => {
-  console.log("req.body ==>", req.body);
+  //console.log("req.body ==>", req.body);
   const custDet = await B2bCustomer.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -3350,8 +3350,8 @@ router.get('/updateSalesTeam', async (req, res) => {
     const options = { multi: true }; // This will update multiple documents
 
     const result = await salesLead.updateMany(query, update, options);
-    console.log(`${result.matchedCount} documents matched the query criteria.`);
-    console.log(`${result.modifiedCount} documents were updated.`);
+    //console.log(`${result.matchedCount} documents matched the query criteria.`);
+    //console.log(`${result.modifiedCount} documents were updated.`);
     return (result.modifiedCount);
   } catch (err) {
     console.error(err);
@@ -3498,7 +3498,7 @@ router.put('/editorPayrollUpdate/:startDate/:endDate/:tmName', async (req, res) 
       $set: { EditorCNR: req.body.EditorCNR, EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate }
     };
     const result = await Customer.updateMany(query, update);
-    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -3534,7 +3534,7 @@ router.put('/editorPayrollUpdateScript/:startDate/:endDate/:tmName', async (req,
       $set: { ScriptCNR: req.body.ScriptCNR, ScriptPaymentStatus: req.body.ScriptPaymentStatus, scriptPaymentDate: req.body.scriptPaymentDate }
     };
     const result = await Customer.updateMany(query, update);
-    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -3569,7 +3569,7 @@ router.put('/editorPayrollUpdateVo/:startDate/:endDate/:tmName', async (req, res
       $set: { VoCNR: req.body.VoCNR, voiceOverPaymentDate: req.body.voiceOverPaymentDate, voiceOverPaymentStatus: req.body.voiceOverPaymentStatus }
     };
     const result = await Customer.updateMany(query, update);
-    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -3606,7 +3606,7 @@ router.get('/editorPayroll', async (req, res) => {
 });
 
 router.get('/editorPayroll/:EditorCNR', async (req, res) => {
-  console.log("ENTEr");
+  //console.log("ENTEr");
   let data = await Payroll.find(
     { EditorCNR: { $regex: req.params.EditorCNR } }
   )
@@ -3788,7 +3788,7 @@ router.put('/editorPayrollUpdateB2b/:startDate/:endDate/:tmName', async (req, re
       $set: { EditorCNR: req.body.EditorCNR, EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate }
     };
     const result = await B2bCustomer.updateMany(query, update);
-    console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
+    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -3872,8 +3872,8 @@ router.get('/getWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    console.log("STart Date==>", startOfToday);
-    console.log("End Date===>", endOfToday);
+    //console.log("STart Date==>", startOfToday);
+    //console.log("End Date===>", endOfToday);
     // Fetch leads with closing date within today's range
     const todayLeads = await salesLead.find({
       salesTeam: personTeam,
@@ -3899,8 +3899,8 @@ router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -3926,8 +3926,8 @@ router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -3946,7 +3946,7 @@ router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name= req.params.name;
-  console.log("NAME===>", name);
+  //console.log("NAME===>", name);
   try {
     // Get today's date
     const today = new Date();
@@ -3954,8 +3954,8 @@ router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -3981,8 +3981,8 @@ router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4008,8 +4008,8 @@ router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4035,8 +4035,8 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4101,8 +4101,8 @@ router.get('/getSalesWhatsAppWork/:name', async (req, res) => {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    console.log("STart Date==>", startOfToday);
-    console.log("End Date===>", endOfToday);
+    //console.log("STart Date==>", startOfToday);
+    //console.log("End Date===>", endOfToday);
     // Fetch leads with closing date within today's range
     const todayLeads = await salesLead.find({
       closingDate: {
@@ -4127,8 +4127,8 @@ router.get('/getSalesYesterdayWhatsAppWork/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4153,8 +4153,8 @@ router.get('/getSalesOneYesterdayWhatsAppWork/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4179,8 +4179,8 @@ router.get('/getSalesTwoYesterdayWhatsAppWork/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4205,8 +4205,8 @@ router.get('/getSalesThreeYesterdayWhatsAppWork/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4231,8 +4231,8 @@ router.get('/getSalesFourYesterdayWhatsAppWork/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4257,8 +4257,8 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    console.log("YesterdayStart==>", startOfYesterday);
-    console.log("YestaerdayEnd===>", endOfYesterday);
+    //console.log("YesterdayStart==>", startOfYesterday);
+    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4282,7 +4282,7 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
 var acesToken = '';
 router.get('/getAccessToken', async(req,res)=>{
   return new Promise(function(resolve, reject) {
-    const key = require('./admix-demo-firebase-adminsdk-952at-48ec8627f9.json');
+    const key = require('./admix-demo-firebase-adminsdk-952at-abf2518dc7.json');
     const jwtClient = new google.auth.JWT(
       key.client_email,
       null,
@@ -4295,7 +4295,7 @@ router.get('/getAccessToken', async(req,res)=>{
         reject(err);
         return;
       }
-      console.log("tokens.access_token ==>",tokens.access_token);
+      //console.log("tokens.access_token ==>",tokens.access_token);
       acesToken = tokens.access_token;
       resolve(tokens.access_token);
     });
@@ -4306,8 +4306,8 @@ router.put('/save-Token/:token1', checkAuth, async (req, res) => {
   try {
     const userId = req.userData.userId;
   const token1 = req.params.token1;
-  console.log("SAVED USERID====>>", userId);
-  console.log("SAVED TOKEN====>>", token1);
+  //console.log("SAVED USERID====>>", userId);
+  //console.log("SAVED TOKEN====>>", token1);
   //acesToken = token1;
       // Update the user document with the new token
       //const updateData = { token: token };
@@ -4326,6 +4326,7 @@ router.put('/save-Token/:token1', checkAuth, async (req, res) => {
   }
 });
 
+// SalesPerson to Admin
 router.post('/bell', async(req, res)=>{
   try{
     const data = req.body.items;
@@ -4333,16 +4334,71 @@ router.post('/bell', async(req, res)=>{
     const msgBody = req.body.msgBody;
     const currentDate = req.body.currentDate;
     let token = '';
+    let nameA = '';
+    for(const item of data){
+      let existingItem = await User.findById(item._id);
+      //console.log("ExistingItem===>>",existingItem);
+      if (existingItem) {
+        token = existingItem.accessToken;
+        nameA = existingItem.signupRole;
+        //console.log("ROLE====>>", existingItem.signupRole);
+        //console.log("Data FCm Token===>>>>", item.accessToken);
+        break; // Break the loop if a valid token is found
+      }
+    }
+    //console.log("FCM Token===>>", token);
+    if(!token || typeof token !== 'string'){
+      throw new Error('Invalid FCM token provided');
+    }
+    await sendNotif(token, msgTitle, msgBody);
+    const notifi = new Notification({
+      msgTitle : msgTitle,
+      msgBody : msgBody,
+      Date: currentDate,
+      Admin: nameA,
+      Status: 'Unread'
+    })
+    await notifi.save();
+    res.json({status:"success"})
+  }catch(error){
+    console.error("Notification API Error: ", error.message);
+    res.status(500).json({ status: "fail", error: error.message});
+  }
+});
+
+// Admin to Editor and SalesPerson
+router.post('/bells', async(req,res)=>{
+  try{
+    const data = req.body.items;
+    const sales = req.body.sales;
+    const msgTitle = req.body.msgTitle;
+    const msgBody = req.body.msgBody;
+    const currentDate = req.body.currentDate;
+    let token1 = '';
+    let token2 = '';
     let nameS = '';
     let nameE = '';
     let nameV = '';
     let nameG = '';
     let nameA = '';
+    let saleItem = '';
+    for(const saleAc of sales){
+      const saleItems = await Customer.findById(saleAc._id);
+      if(saleItems){
+        saleItem = saleItems.salesPerson;
+        //console.log("TOKEN SALESPERSON===>", saleItem);
+      }
+    }
+    const saleperson = await User.findOne({signupUsername : saleItem});
+    //console.log("Saleperson Token===>", saleperson.accessToken);
+    if(saleperson){
+      token2 = saleperson.accessToken;
+    }
+    
     for(const item of data){
       let existingItem = await User.findById(item._id);
-      console.log("ExistingItem===>>",existingItem);
-      if (existingItem) {
-        token = existingItem.accessToken;
+      if(existingItem){
+        token1 = existingItem.accessToken;
         if(existingItem.signupRole === 'Script Writer'){
           nameS = existingItem.signupUsername;
         }else if(existingItem.signupRole === 'Editor'){
@@ -4356,17 +4412,27 @@ router.post('/bell', async(req, res)=>{
         }else{
           console.log("SignupRole Error");
         }
-        console.log("ROLE====>>", existingItem.signupRole);
-        console.log("Data FCm Token===>>>>", item.accessToken);
+        //console.log("ROLE====>>", existingItem.signupRole);
+        //console.log("Data FCm Token===>>>>", item.accessToken);
         break; // Break the loop if a valid token is found
       }
     }
-    console.log("FCM Token===>>", token);
-    //let token = 'eLs3LzqDZTcR9f2niojwGT:APA91bEWXI4tPMOrbieLoDKYfW4KQus4E3EpAvyzfq0ntzLvDsIOGup4ROeETfr6p6GS-RWgEJRKtPFX4NHDQjeEjrSAeVeVE05feW26HTF4JAlDr37aQnYgP2w5Ya1OWQl1HZbz_rY7';
-    if(!token || typeof token !== 'string'){
+    //console.log("FCM Token===>>", token1);
+    if(!token1 || typeof token1 !== 'string'){
       throw new Error('Invalid FCM token provided');
     }
-    await sendNotif(token, msgTitle, msgBody);
+    if(!token2 || typeof token2 !== 'string'){
+      throw new Error('Invalid FCM token provided');
+    }
+      await sendNotif(token2, msgTitle, msgBody);
+
+      if (token2) {
+        //console.log("Attempting to send notification to token2:", token2);
+        await sendNotif(token1, msgTitle, msgBody);
+      } else {
+        console.log("No valid token for salesperson to send notification");
+      }
+  
     const notifi = new Notification({
       msgTitle : msgTitle,
       msgBody : msgBody,
@@ -4379,6 +4445,14 @@ router.post('/bell', async(req, res)=>{
       Status: 'Unread'
     })
     await notifi.save();
+    const notifiSales = new Notification({
+      msgTitle : msgTitle,
+      msgBody : msgBody,
+      Date: currentDate,
+      SalesPerson: saleItem,
+      Status: 'Unread'
+    })
+    await notifiSales.save();
     res.json({status:"success"})
   }catch(error){
     console.error("Notification API Error: ", error.message);
@@ -4386,36 +4460,125 @@ router.post('/bell', async(req, res)=>{
   }
 });
 
-router.get('/getNotification', async(req, res)=>{
+// Editor to Admin and SalesPErson
+router.post('/bellsAdmin', async(req,res)=>{
+  try{
+    const data = req.body.items;
+    const sales = req.body.sales;
+    const msgTitle = req.body.msgTitle;
+    const msgBody = req.body.msgBody;
+    const currentDate = req.body.currentDate;
+    let token1='';
+    let token2 = '';
+    let nameA = '';
+    //let saleItem = '';
+    const saleperson = await User.findOne({signupUsername : sales});
+    //console.log("TOKEN SALESPERSON====>", saleperson);
+    if(saleperson){
+      token2 = saleperson.accessToken;
+      //console.log("Saleperson Token====>>", token2);
+    }else{
+      console.log("SalesPerson Error");
+    }
+    for(const item of data){
+      let existingItem = await User.findById(item._id);
+      if(existingItem){
+        token1 = existingItem.accessToken;
+        nameA = existingItem.signupRole;
+      }else{
+        console.log("ExistingItem Error");
+      }
+    }
+    //console.log("FCM Token1===>>", token1);
+    if(!token1 || typeof token1 !== 'string'){
+      throw new error("Invalid FCM token provided");
+    }
+    //console.log("FCM Token2===>>", token2);
+    if(!token2 || typeof token2 !== 'string'){
+      throw new error("Invalid FCM token provided");
+    }
+    await sendNotif(token1, msgTitle, msgBody);
+    await sendNotif(token2, msgTitle, msgBody);
+
+    const notifi = new Notification({
+      msgTitle: msgTitle,
+      msgBody: msgBody,
+      Date: currentDate,
+      Admin: nameA,
+      Status: 'Unread'
+    });
+    await notifi.save();
+    const notifiSales = new Notification({
+      msgTitle: msgTitle,
+      msgBody: msgBody,
+      Date: currentDate,
+      SalesPerson: sales,
+      Status: 'Unread'
+    });
+    await notifiSales.save();
+    res.json({status: "success"});
+  }catch(error){
+    console.error("Notification API Error: ", error.message);
+    res.status(500).json({status: "fail", error: error.message});
+  }
+})
+
+router.get('/getNotification',checkAuth, async(req, res)=>{
+  const person1 = req.userData.name;
+  const role = req.userData.signupRole;
+  //console.log("Notification PErson1===>", person1);
   try{
     let query1 = {
       Status : { $regex: /^Unread$/i},
       $or: [
-        { ScriptWriter: person },
-        { Editor: person},
-        {VoiceOver: person},
-        {GraphicDesigner: person},
-        {Admin: person}
+        { ScriptWriter: person1 },
+        { Editor: person1},
+        {VoiceOver: person1},
+        {GraphicDesigner: person1},
+        {SalesPerson: person1},
+        {Admin: person1}
       ]
     };
     const unReadNotif = await Notification.find(query1);
     let query2 = {
       Status : {$regex: /^Read$/i},
       $or: [
-        { ScriptWriter: person },
-        { Editor: person},
-        {VoiceOver: person},
-        {GraphicDesigner: person},
-        {Admin: person}
+        { ScriptWriter: person1 },
+        { Editor: person1},
+        {VoiceOver: person1},
+        {GraphicDesigner: person1},
+        {SalesPerson: person1},
+        {Admin: person1}
       ]
     };
     const readNotif = await Notification.find(query2);
-    res.json({unReadNotif, readNotif});
+    let query3 = {
+      Status : {$regex: /^Unread$/i},
+      Admin: role
+    };
+    const unReadAdmin = await Notification.find(query3);
+    let query4 = {
+      Status : {$regex: /^Read$/i},
+      Admin: role
+    };
+    const readAdmin = await Notification.find(query4);
+    res.json({unReadNotif, readNotif, unReadAdmin, readAdmin});
   }catch(error){
     console.log(error);
     res.status(500).json({message: "Server Error"})
   }
 });
+
+router.post('/markRead', async(req,res)=>{
+  try{
+    const {id} = req.body;
+    await Notification.findByIdAndUpdate(id,{Status: 'Read'});
+    res.json({status: "success"});
+  }catch(error){
+    console.error("Error updating notification status", error.message);
+    res.status(500).json({status: "fail", error: error.message});
+  }
+})
 
 // function getAccessToken() {
 //   return new Promise(function(resolve, reject) {
