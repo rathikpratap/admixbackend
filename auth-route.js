@@ -632,38 +632,6 @@ router.put('/updateEmp/:id', async (req, res) => {
 
 //update Payment
 
-// router.put('/updatePay/:companyName/:signupName', async (req, res) => {
-//   try {
-//     const companyName = req.params.companyName;
-//     const signupName = req.params.signupName;
-//     const updatedPaymentInfo = req.body;
-
-//     let updatedCompany;
-
-//     // Check if the company exists
-//     const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName });
-
-//     if (existingCompany) {
-//       // If the company exists, update its payment information
-//       updatedCompany = await newCompany.findOneAndUpdate(
-//         { companyName: companyName, signupName: signupName }, // Query
-//         { $set: updatedPaymentInfo }, // Update
-//         { new: true } // Options: returns the modified document
-//       );
-//     } else {
-//       // If the company doesn't exist, create a new entry with the provided signupName
-//       const newEntry = { companyName: companyName, signupName: signupName, ...updatedPaymentInfo };
-//       updatedCompany = await new newCompany(newEntry).save();
-//     }
-
-//     res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
-
-//   } catch (error) {
-//     console.error("Error updating payment information:", error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// });
-
 router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (req, res) => {
   try {
     const companyName = req.params.companyName;
@@ -707,7 +675,6 @@ router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (
   res.status(500).json({ message: "Internal server error" });
 }
 });
-
 
 //Search Data
 
@@ -1511,7 +1478,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04MLrGo0ApNnpCgYIARAAGAQSNwF-L9IrSiGiT46582Spb6SStHwEkGppXLp1b0vLWpiErc2LuAmRcSCMjGjQrRmdWDkjPErDQc8';
+const REFERESH_TOKEN = '1//04v8XaizFIXW4CgYIARAAGAQSNwF-L9Ir2E9zOKlFsfDjMW7D5Pp-3KYMtjDolqP3mJ8KrztQbss353IGScHBzjdsH2r2LFJXXeA';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -1791,7 +1758,7 @@ router.get('/getTeams-leads/', async (req, res) => {
     //console.log("End Date===>", endOfToday);
     // Fetch leads with closing date within today's range
     const todayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfToday,
         $lt: endOfToday
@@ -1840,7 +1807,7 @@ router.get('/getYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1890,7 +1857,7 @@ router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1940,7 +1907,7 @@ router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1990,7 +1957,7 @@ router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -2040,7 +2007,7 @@ router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -2090,7 +2057,7 @@ router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -4055,26 +4022,47 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
-router.post('/estInvoice', async(req,res)=>{
-  try{
-    const est = new EstInvoice({
-      billNumber: req.body.billNumber,
-      billType: req.body.billType,
-      custName: req.body.custName,
-      custNumb: req.body.custNumb,
-      invoiceCateg: req.body.invoiceCateg,
-      customCateg: req.body.customCateg,
-      numOfVideos: req.body.numOfVideos,
-      priceOfVideos: req.body.priceOfVideos,
-      date: req.body.invoiceDate,
-      GSTAmount: req.body.GSTAmount,
-      totalAmount: req.body.totalAmount,
-      billFormat: req.body.billFormat
-    })
-    await est.save();
-  }catch(err){
-    console.error("Error adding Estimate Invoice Details",err);
-    res.json({success: false, message:"Error Adding Estimate Invoice"});
+router.post('/estInvoice', async (req, res) => {
+  try {
+    const {
+      custGST,
+      custADD,
+      billNumber,
+      billType,
+      custName,
+      custNumb,
+      invoiceCateg,
+      customCateg,
+      rows, // Array of row data
+      invoiceDate,
+      GSTAmount,
+      totalAmount,
+      billFormat
+    } = req.body;
+
+    // Create a new invoice document
+    const estInvoice = new EstInvoice({
+      custGST,
+      custADD,
+      billNumber,
+      billType,
+      custName,
+      custNumb,
+      invoiceCateg,
+      customCateg,
+      rows,
+      date: invoiceDate,
+      GSTAmount,
+      totalAmount,
+      billFormat
+    });
+
+    // Save the invoice to the database
+    await estInvoice.save();
+    res.json({ success: true, message: 'Estimate Invoice Added Successfully' });
+  } catch (err) {
+    console.error("Error adding Estimate Invoice Details", err);
+    res.json({ success: false, message: "Error Adding Estimate Invoice" });
   }
 });
 
