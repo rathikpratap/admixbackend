@@ -1758,7 +1758,7 @@ router.get('/getTeams-leads/', async (req, res) => {
     //console.log("End Date===>", endOfToday);
     // Fetch leads with closing date within today's range
     const todayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfToday,
         $lt: endOfToday
@@ -1807,7 +1807,7 @@ router.get('/getYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1857,7 +1857,7 @@ router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1907,7 +1907,7 @@ router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -1957,7 +1957,7 @@ router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -2007,7 +2007,7 @@ router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -2057,7 +2057,7 @@ router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
     //console.log("YesterdayStart==>", startOfYesterday);
     //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
