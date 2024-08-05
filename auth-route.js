@@ -845,6 +845,84 @@ router.get('/totalEntriesEmp', async (req, res) => {
   }
 });
 
+router.get('/totalEntriesDue', async(req,res)=>{
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    let query;
+    query = {
+      salesPerson: person,
+      remainingAmount: { $gt: 0 },
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      }
+    };
+    const dueAmount = await Customer.find(query);
+    res.json(dueAmount);
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
+  }
+});
+
+router.get('/totalEntriesRest', async(req,res)=>{
+  const currentMonth = new Date().getMonth() +1;
+  try{
+    let query;
+    query = {
+      salesPerson: person,
+      restAmount: {$gt: 0},
+      restPaymentDate:{
+        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth,0)
+      }
+    };
+    const restAmount = await Customer.find(query);
+    res.json(restAmount);
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
+  }
+});
+
+router.get('/totalEntriesDueAdmin', async(req,res)=>{
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    let query;
+    query = {
+      remainingAmount: { $gt: 0 },
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      }
+    };
+    const dueAmount = await Customer.find(query);
+    res.json(dueAmount);
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
+  }
+});
+
+router.get('/totalEntriesRestAdmin', async(req,res)=>{
+  const currentMonth = new Date().getMonth() +1;
+  try{
+    let query;
+    query = {
+      restAmount: {$gt: 0},
+      restPaymentDate:{
+        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth,0)
+      }
+    };
+    const restAmount = await Customer.find(query);
+    res.json(restAmount);
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
+  }
+});
+
 // router.get('/totalEntries', async (req, res) => {
 
 //   const currentMonth = new Date().getMonth() + 1;
