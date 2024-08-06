@@ -26,6 +26,7 @@ const adminLeads = require('./models/adminLeads');
 const sendNotif = require('./middleware/sendNotif');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+const moment = require('moment');
 
 
 const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
@@ -664,16 +665,16 @@ router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (
           { $set: updatedPaymentInfo },
           { new: true }
         );
-      }else{
-        const newEntry = {companyName: companyName, signupName: signupName, ...updatedPaymentInfo};
-      updatedCompany = await newCompany(newEntry).save();
+      } else {
+        const newEntry = { companyName: companyName, signupName: signupName, ...updatedPaymentInfo };
+        updatedCompany = await newCompany(newEntry).save();
       }
       res.status(200).json({ message: "Payment information updated successfully", company: updatedCompany });
     }
-  }catch (error) {
-  console.error("Error updating paymeny information:", error);
-  res.status(500).json({ message: "Internal server error" });
-}
+  } catch (error) {
+    console.error("Error updating paymeny information:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 //Search Data
@@ -845,81 +846,81 @@ router.get('/totalEntriesEmp', async (req, res) => {
   }
 });
 
-router.get('/totalEntriesDue', async(req,res)=>{
+router.get('/totalEntriesDue', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     let query;
     query = {
       salesPerson: person,
       remainingAmount: { $gt: 0 },
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       }
     };
     const dueAmount = await Customer.find(query);
     res.json(dueAmount);
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/totalEntriesRest', async(req,res)=>{
-  const currentMonth = new Date().getMonth() +1;
-  try{
+router.get('/totalEntriesRest', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
     let query;
     query = {
       salesPerson: person,
-      restAmount: {$gt: 0},
-      restPaymentDate:{
-        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
-        $lte: new Date(new Date().getUTCFullYear(), currentMonth,0)
+      restAmount: { $gt: 0 },
+      restPaymentDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
       }
     };
     const restAmount = await Customer.find(query);
     res.json(restAmount);
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/totalEntriesDueAdmin', async(req,res)=>{
+router.get('/totalEntriesDueAdmin', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     let query;
     query = {
       remainingAmount: { $gt: 0 },
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       }
     };
     const dueAmount = await Customer.find(query);
     res.json(dueAmount);
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/totalEntriesRestAdmin', async(req,res)=>{
-  const currentMonth = new Date().getMonth() +1;
-  try{
+router.get('/totalEntriesRestAdmin', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
     let query;
     query = {
-      restAmount: {$gt: 0},
-      restPaymentDate:{
-        $gte: new Date(new Date().getFullYear(), currentMonth -1,1),
-        $lte: new Date(new Date().getUTCFullYear(), currentMonth,0)
+      restAmount: { $gt: 0 },
+      restPaymentDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
       }
     };
     const restAmount = await Customer.find(query);
     res.json(restAmount);
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -1841,7 +1842,7 @@ router.get('/getTeams-leads/', async (req, res) => {
         $gte: startOfToday,
         $lt: endOfToday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
     return res.json(todayLeads);
   } catch (error) {
@@ -1890,7 +1891,7 @@ router.get('/getYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -1940,7 +1941,7 @@ router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -1990,7 +1991,7 @@ router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2040,7 +2041,7 @@ router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2090,7 +2091,7 @@ router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2140,7 +2141,7 @@ router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: {$ne: 'WhatsApp'}
+      campaign_Name: { $ne: 'WhatsApp' }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -3911,7 +3912,7 @@ router.get('/payrollAll/:EditorCNR', async (req, res) => {
 // get WhatsApp Leads
 
 router.get('/getWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3936,7 +3937,7 @@ router.get('/getWhatsApp-leads/:name', async (req, res) => {
 });
 
 router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3963,7 +3964,7 @@ router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
 });
 
 router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -3990,7 +3991,7 @@ router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
 });
 
 router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   //console.log("NAME===>", name);
   try {
     // Get today's date
@@ -4018,7 +4019,7 @@ router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
 });
 
 router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -4045,7 +4046,7 @@ router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
 });
 
 router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -4072,7 +4073,7 @@ router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
 });
 
 router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -4146,15 +4147,15 @@ router.post('/estInvoice', async (req, res) => {
 
 // Estimate Invoice Count
 
-router.get('/estInvoiceCount', async (req,res)=>{
-  const dataLength = await EstInvoice.countDocuments({billFormat: 'Estimate'});
+router.get('/estInvoiceCount', async (req, res) => {
+  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
   return res.json(dataLength);
 });
 
 // Main Invoice Count
 
-router.get('/mainInvoiceCount',async(req,res)=>{
-  const dataLength = await EstInvoice.countDocuments( {billFormat: 'Main'});
+router.get('/mainInvoiceCount', async (req, res) => {
+  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
   return res.json(dataLength);
 })
 
@@ -4346,8 +4347,8 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
 //   credential: admin.credential.cert(serviceAccount)
 // });
 var acesToken = '';
-router.get('/getAccessToken', async(req,res)=>{
-  return new Promise(function(resolve, reject) {
+router.get('/getAccessToken', async (req, res) => {
+  return new Promise(function (resolve, reject) {
     const key = require('./admix-demo-firebase-adminsdk-952at-abf2518dc7.json');
     const jwtClient = new google.auth.JWT(
       key.client_email,
@@ -4356,7 +4357,7 @@ router.get('/getAccessToken', async(req,res)=>{
       SCOPES,
       null
     );
-    jwtClient.authorize(function(err, tokens) {
+    jwtClient.authorize(function (err, tokens) {
       if (err) {
         reject(err);
         return;
@@ -4371,37 +4372,37 @@ router.get('/getAccessToken', async(req,res)=>{
 router.put('/save-Token/:token1', checkAuth, async (req, res) => {
   try {
     const userId = req.userData.userId;
-  const token1 = req.params.token1;
-  //console.log("SAVED USERID====>>", userId);
-  //console.log("SAVED TOKEN====>>", token1);
-  //acesToken = token1;
-      // Update the user document with the new token
-      //const updateData = { token: token };
-      const updatedUser = await User.findByIdAndUpdate(userId);
+    const token1 = req.params.token1;
+    //console.log("SAVED USERID====>>", userId);
+    //console.log("SAVED TOKEN====>>", token1);
+    //acesToken = token1;
+    // Update the user document with the new token
+    //const updateData = { token: token };
+    const updatedUser = await User.findByIdAndUpdate(userId);
 
-      if (updatedUser) {
-          updatedUser.accessToken = token1;
-          await updatedUser.save();
-          res.json({ success: true, data: updatedUser });
-      } else {
-          res.status(404).json({ success: false, message: "User not found" });
-      }
+    if (updatedUser) {
+      updatedUser.accessToken = token1;
+      await updatedUser.save();
+      res.json({ success: true, data: updatedUser });
+    } else {
+      res.status(404).json({ success: false, message: "User not found" });
+    }
   } catch (error) {
-      console.error("Error saving token:", error.message);
-      res.status(500).json({ success: false, message: "Failed to save token" });
+    console.error("Error saving token:", error.message);
+    res.status(500).json({ success: false, message: "Failed to save token" });
   }
 });
 
 // SalesPerson to Admin
-router.post('/bell', async(req, res)=>{
-  try{
+router.post('/bell', async (req, res) => {
+  try {
     const data = req.body.items;
     const msgTitle = req.body.msgTitle;
     const msgBody = req.body.msgBody;
     const currentDate = req.body.currentDate;
     let token = '';
     let nameA = '';
-    for(const item of data){
+    for (const item of data) {
       let existingItem = await User.findById(item._id);
       //console.log("ExistingItem===>>",existingItem);
       if (existingItem) {
@@ -4413,28 +4414,28 @@ router.post('/bell', async(req, res)=>{
       }
     }
     //console.log("FCM Token===>>", token);
-    if(!token || typeof token !== 'string'){
+    if (!token || typeof token !== 'string') {
       throw new Error('Invalid FCM token provided');
     }
     await sendNotif(token, msgTitle, msgBody);
     const notifi = new Notification({
-      msgTitle : msgTitle,
-      msgBody : msgBody,
+      msgTitle: msgTitle,
+      msgBody: msgBody,
       Date: currentDate,
       Admin: nameA,
       Status: 'Unread'
     })
     await notifi.save();
-    res.json({status:"success"})
-  }catch(error){
+    res.json({ status: "success" })
+  } catch (error) {
     console.error("Notification API Error: ", error.message);
-    res.status(500).json({ status: "fail", error: error.message});
+    res.status(500).json({ status: "fail", error: error.message });
   }
 });
 
 // Admin to Editor and SalesPerson
-router.post('/bells', async(req,res)=>{
-  try{
+router.post('/bells', async (req, res) => {
+  try {
     const data = req.body.items;
     const sales = req.body.sales;
     const msgTitle = req.body.msgTitle;
@@ -4448,34 +4449,34 @@ router.post('/bells', async(req,res)=>{
     let nameG = '';
     let nameA = '';
     let saleItem = '';
-    for(const saleAc of sales){
+    for (const saleAc of sales) {
       const saleItems = await Customer.findById(saleAc._id);
-      if(saleItems){
+      if (saleItems) {
         saleItem = saleItems.salesPerson;
         //console.log("TOKEN SALESPERSON===>", saleItem);
       }
     }
-    const saleperson = await User.findOne({signupUsername : saleItem});
+    const saleperson = await User.findOne({ signupUsername: saleItem });
     //console.log("Saleperson Token===>", saleperson.accessToken);
-    if(saleperson){
+    if (saleperson) {
       token2 = saleperson.accessToken;
     }
-    
-    for(const item of data){
+
+    for (const item of data) {
       let existingItem = await User.findById(item._id);
-      if(existingItem){
+      if (existingItem) {
         token1 = existingItem.accessToken;
-        if(existingItem.signupRole === 'Script Writer'){
+        if (existingItem.signupRole === 'Script Writer') {
           nameS = existingItem.signupUsername;
-        }else if(existingItem.signupRole === 'Editor'){
+        } else if (existingItem.signupRole === 'Editor') {
           nameE = existingItem.signupUsername;
-        }else if(existingItem.signupRole === 'VO Artist'){
+        } else if (existingItem.signupRole === 'VO Artist') {
           nameV = existingItem.signupUsername;
-        }else if(existingItem.signupRole === 'Graphic Designer'){
+        } else if (existingItem.signupRole === 'Graphic Designer') {
           nameG = existingItem.signupUsername;
-        }else if(existingItem.signupRole === 'Admin'){
+        } else if (existingItem.signupRole === 'Admin') {
           nameA = existingItem.signupUsername;
-        }else{
+        } else {
           console.log("SignupRole Error");
         }
         //console.log("ROLE====>>", existingItem.signupRole);
@@ -4484,24 +4485,24 @@ router.post('/bells', async(req,res)=>{
       }
     }
     //console.log("FCM Token===>>", token1);
-    if(!token1 || typeof token1 !== 'string'){
+    if (!token1 || typeof token1 !== 'string') {
       throw new Error('Invalid FCM token provided');
     }
-    if(!token2 || typeof token2 !== 'string'){
+    if (!token2 || typeof token2 !== 'string') {
       throw new Error('Invalid FCM token provided');
     }
-      await sendNotif(token2, msgTitle, msgBody);
+    await sendNotif(token2, msgTitle, msgBody);
 
-      if (token2) {
-        //console.log("Attempting to send notification to token2:", token2);
-        await sendNotif(token1, msgTitle, msgBody);
-      } else {
-        console.log("No valid token for salesperson to send notification");
-      }
-  
+    if (token2) {
+      //console.log("Attempting to send notification to token2:", token2);
+      await sendNotif(token1, msgTitle, msgBody);
+    } else {
+      console.log("No valid token for salesperson to send notification");
+    }
+
     const notifi = new Notification({
-      msgTitle : msgTitle,
-      msgBody : msgBody,
+      msgTitle: msgTitle,
+      msgBody: msgBody,
       Date: currentDate,
       ScriptWriter: nameS,
       Editor: nameE,
@@ -4512,55 +4513,55 @@ router.post('/bells', async(req,res)=>{
     })
     await notifi.save();
     const notifiSales = new Notification({
-      msgTitle : msgTitle,
-      msgBody : msgBody,
+      msgTitle: msgTitle,
+      msgBody: msgBody,
       Date: currentDate,
       SalesPerson: saleItem,
       Status: 'Unread'
     })
     await notifiSales.save();
-    res.json({status:"success"})
-  }catch(error){
+    res.json({ status: "success" })
+  } catch (error) {
     console.error("Notification API Error: ", error.message);
-    res.status(500).json({ status: "fail", error: error.message});
+    res.status(500).json({ status: "fail", error: error.message });
   }
 });
 
 // Editor to Admin and SalesPErson
-router.post('/bellsAdmin', async(req,res)=>{
-  try{
+router.post('/bellsAdmin', async (req, res) => {
+  try {
     const data = req.body.items;
     const sales = req.body.sales;
     const msgTitle = req.body.msgTitle;
     const msgBody = req.body.msgBody;
     const currentDate = req.body.currentDate;
-    let token1='';
+    let token1 = '';
     let token2 = '';
     let nameA = '';
     //let saleItem = '';
-    const saleperson = await User.findOne({signupUsername : sales});
+    const saleperson = await User.findOne({ signupUsername: sales });
     //console.log("TOKEN SALESPERSON====>", saleperson);
-    if(saleperson){
+    if (saleperson) {
       token2 = saleperson.accessToken;
       //console.log("Saleperson Token====>>", token2);
-    }else{
+    } else {
       console.log("SalesPerson Error");
     }
-    for(const item of data){
+    for (const item of data) {
       let existingItem = await User.findById(item._id);
-      if(existingItem){
+      if (existingItem) {
         token1 = existingItem.accessToken;
         nameA = existingItem.signupRole;
-      }else{
+      } else {
         console.log("ExistingItem Error");
       }
     }
     //console.log("FCM Token1===>>", token1);
-    if(!token1 || typeof token1 !== 'string'){
+    if (!token1 || typeof token1 !== 'string') {
       throw new error("Invalid FCM token provided");
     }
     //console.log("FCM Token2===>>", token2);
-    if(!token2 || typeof token2 !== 'string'){
+    if (!token2 || typeof token2 !== 'string') {
       throw new error("Invalid FCM token provided");
     }
     await sendNotif(token1, msgTitle, msgBody);
@@ -4582,69 +4583,194 @@ router.post('/bellsAdmin', async(req,res)=>{
       Status: 'Unread'
     });
     await notifiSales.save();
-    res.json({status: "success"});
-  }catch(error){
+    res.json({ status: "success" });
+  } catch (error) {
     console.error("Notification API Error: ", error.message);
-    res.status(500).json({status: "fail", error: error.message});
+    res.status(500).json({ status: "fail", error: error.message });
   }
-})
+});
 
-router.get('/getNotification',checkAuth, async(req, res)=>{
+router.get('/getNotification', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   const role = req.userData.signupRole;
   //console.log("Notification PErson1===>", person1);
-  try{
+  try {
     let query1 = {
-      Status : { $regex: /^Unread$/i},
+      Status: { $regex: /^Unread$/i },
       $or: [
         { ScriptWriter: person1 },
-        { Editor: person1},
-        {VoiceOver: person1},
-        {GraphicDesigner: person1},
-        {SalesPerson: person1},
-        {Admin: person1}
+        { Editor: person1 },
+        { VoiceOver: person1 },
+        { GraphicDesigner: person1 },
+        { SalesPerson: person1 },
+        { Admin: person1 }
       ]
     };
     const unReadNotif = await Notification.find(query1);
     let query2 = {
-      Status : {$regex: /^Read$/i},
+      Status: { $regex: /^Read$/i },
       $or: [
         { ScriptWriter: person1 },
-        { Editor: person1},
-        {VoiceOver: person1},
-        {GraphicDesigner: person1},
-        {SalesPerson: person1},
-        {Admin: person1}
+        { Editor: person1 },
+        { VoiceOver: person1 },
+        { GraphicDesigner: person1 },
+        { SalesPerson: person1 },
+        { Admin: person1 }
       ]
     };
     const readNotif = await Notification.find(query2);
     let query3 = {
-      Status : {$regex: /^Unread$/i},
+      Status: { $regex: /^Unread$/i },
       Admin: role
     };
     const unReadAdmin = await Notification.find(query3);
     let query4 = {
-      Status : {$regex: /^Read$/i},
+      Status: { $regex: /^Read$/i },
       Admin: role
     };
     const readAdmin = await Notification.find(query4);
-    res.json({unReadNotif, readNotif, unReadAdmin, readAdmin});
-  }catch(error){
+    res.json({ unReadNotif, readNotif, unReadAdmin, readAdmin });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"})
+    res.status(500).json({ message: "Server Error" })
   }
 });
 
-router.post('/markRead', async(req,res)=>{
-  try{
-    const {id} = req.body;
-    await Notification.findByIdAndUpdate(id,{Status: 'Read'});
-    res.json({status: "success"});
-  }catch(error){
+router.post('/markRead', async (req, res) => {
+  try {
+    const { id } = req.body;
+    await Notification.findByIdAndUpdate(id, { Status: 'Read' });
+    res.json({ status: "success" });
+  } catch (error) {
     console.error("Error updating notification status", error.message);
-    res.status(500).json({status: "fail", error: error.message});
+    res.status(500).json({ status: "fail", error: error.message });
   }
-})
+});
+
+// Top Performer
+
+router.get('/topPerformer', async (req, res) => {
+  const startOfMonth = moment().startOf('month').toDate();
+  const endOfMonth = moment().endOf('month').toDate();
+  try {
+    const results = await Customer.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startOfMonth,
+            $lte: endOfMonth
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$salesPerson',
+          numberOfClosings: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { numberOfClosings: -1 }
+      }
+    ]);
+    if (results.length > 0) {
+      console.log('Top performer of the Month: ', results[0]);
+      results.forEach(result => {
+        console.log(`SalesPerson: ${result._id}, Number of Closings: ${result.numberOfClosings}`);
+      });
+      res.json(results);
+    } else {
+      console.log('No sales Entries found')
+    }
+  } catch (error) {
+    console.error("Error getting top performer", error.message);
+    res.status(500).json({ status: "fail", error: error.message });
+  }
+});
+
+//monthly top performer
+
+router.get('/monthlyPerformer', async (req, res) => {
+  const startOfYear = moment().startOf('year').toDate();
+  const endOfYear = moment().endOf('year').toDate();
+
+  try {
+    const results = await Customer.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startOfYear,
+            $lt: endOfYear
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            salesPerson: '$salesPerson',
+            month: { $month: '$closingDate' },
+            year: { $year: '$closingDate' }
+          },
+          numberOfClosings: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.salesPerson': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Transform the data to be easier to work with on the frontend
+    const transformedResults = results.reduce((acc, item) => {
+      const { salesPerson, month } = item._id;
+      if (!acc[salesPerson]) acc[salesPerson] = {};
+      acc[salesPerson][month] = item.numberOfClosings;
+      return acc;
+    }, {});
+
+    res.json(transformedResults);
+  } catch (err) {
+    res.status(500).json({ error: 'Error retrieving salespersons monthly performance.' });
+  }
+});
+
+// Top Selling Product
+
+router.get('/topProduct', async (req, res) => {
+  const startOfMonth = moment().startOf('month').toDate();
+  const endOfMonth = moment().endOf('month').toDate();
+  try {
+    const results = await Customer.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startOfMonth,
+            $lte: endOfMonth
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$closingCateg',
+          numberOfClosings: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { numberOfClosings: -1 }
+      }
+    ]);
+    if (results.length > 0) {
+      console.log('Top performer of the Month: ', results[0]);
+      results.forEach(result => {
+        console.log(`ClosingCateg: ${result._id}, Number of Closings: ${result.numberOfClosings}`);
+      });
+      res.json(results);
+    } else {
+      console.log('No sales Entries found')
+    }
+  } catch (error) {
+    console.error("Error getting top performer", error.message);
+    res.status(500).json({ status: "fail", error: error.message });
+  }
+});
 
 // function getAccessToken() {
 //   return new Promise(function(resolve, reject) {
