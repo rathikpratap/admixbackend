@@ -1557,7 +1557,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04v8XaizFIXW4CgYIARAAGAQSNwF-L9Ir2E9zOKlFsfDjMW7D5Pp-3KYMtjDolqP3mJ8KrztQbss353IGScHBzjdsH2r2LFJXXeA';
+const REFERESH_TOKEN = '1//04dC7jp4-ZYgPCgYIARAAGAQSNwF-L9IrvNagJ5wYG3oIxBtCay7dcYnjiz82Lk6yQ713K7zbZ7HDYOd026WH7E2drUpnv5CFEno';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4665,17 +4665,17 @@ router.get('/topPerformer', async (req, res) => {
       {
         $group: {
           _id: '$salesPerson',
-          numberOfClosings: { $sum: 1 }
+          totalClosingPrice: { $sum: '$closingPrice' }
         }
       },
       {
-        $sort: { numberOfClosings: -1 }
+        $sort: { totalClosingPrice: -1 }
       }
     ]);
     if (results.length > 0) {
       console.log('Top performer of the Month: ', results[0]);
       results.forEach(result => {
-        console.log(`SalesPerson: ${result._id}, Number of Closings: ${result.numberOfClosings}`);
+        console.log(`SalesPerson: ${result._id}, Total Closing Price: ${result.totalClosingPrice}`);
       });
       res.json(results);
     } else {
