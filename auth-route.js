@@ -866,6 +866,51 @@ router.get('/totalEntriesDue', async (req, res) => {
   }
 });
 
+router.get('/totalEntriesDueDownload', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    let query;
+    query = {
+      salesPerson: person,
+      remainingAmount: { $gt: 0 },
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+      }
+    };
+    const dueAmount = await Customer.find(query);
+    const data = dueAmount.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'dueAmountCustomers.xlsx');
+    res.download('dueAmountCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
+  }
+});
+
 router.get('/totalEntriesRest', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
@@ -880,9 +925,55 @@ router.get('/totalEntriesRest', async (req, res) => {
     };
     const restAmount = await Customer.find(query);
     res.json(restAmount);
+    console.log("RESTAMOUNT====>", restAmount);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/totalEntriesRestDownload', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    let query;
+    query = {
+      salesPerson: person,
+      restAmount: { $gt: 0 },
+      restPaymentDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+      }
+    };
+    const restAmount = await Customer.find(query);
+    const data = restAmount.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'restAmountCustomers.xlsx');
+    res.download('restAmountCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
   }
 });
 
@@ -921,6 +1012,94 @@ router.get('/totalEntriesRestAdmin', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/totalEntriesRestDownloadAdmin', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    let query;
+    query = {
+      restAmount: { $gt: 0 },
+      restPaymentDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+      }
+    };
+    const restAmount = await Customer.find(query);
+    const data = restAmount.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'restAmountCustomers.xlsx');
+    res.download('restAmountCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
+  }
+});
+
+router.get('/totalEntriesDueDownloadAdmin', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    let query;
+    query = {
+      remainingAmount: { $gt: 0 },
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+      }
+    };
+    const dueAmount = await Customer.find(query);
+    const data = dueAmount.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'dueAmountCustomers.xlsx');
+    res.download('dueAmountCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
   }
 });
 
@@ -977,6 +1156,175 @@ router.get('/todayEntries', async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.get('/todayEntriesDownloadAdmin', async (req, res) => {
+  const currentDate = new Date();
+  try {
+    let query;
+    query = {
+      closingDate: {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
+    const totalDayEntry = await Customer.find(query);
+    const data = totalDayEntry.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'todayEntryCustomers.xlsx');
+    res.download('todayEntryCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
+  }
+});
+
+router.get('/totalEntriesDownloadAdmin', async (req, res) => {
+  const currentMonth = new Date().getMonth()+1;
+  try {
+    let query;
+    query = {
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      }
+    };
+    const totalEntry = await Customer.find(query);
+    const data = totalEntry.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,  
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'totalEntryCustomers.xlsx');
+    res.download('totalEntryCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
+  }
+});
+
+router.get('/allOngoingProjectsDownloadAdmin', async (req, res) => {
+  const currentMonth = new Date().getMonth()+1;
+  try {
+    let query;
+    query = {
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      projectStatus: {$ne: 'Completed'}
+    };
+    const allOngoingEntry = await Customer.find(query);
+    const data = allOngoingEntry.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,  
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'ActiveCustomers.xlsx');
+    res.download('ActiveCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
+  }
+});
+
+router.get('/allActiveProjectsDownloadAdmin', async (req, res) => {
+  try {
+    let query;
+    query = {
+      projectStatus: {$ne: 'Completed'}
+    };
+    const allActiveEntry = await Customer.find(query);
+    const data = allActiveEntry.map(customer=>({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,  
+      'custBussiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'billType': customer.billType,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'custCountry': customer.custCountry,
+      'custCity': customer.custCity,
+      'custState': customer.custState,
+      'projectStatus': customer.projectStatus,
+      'salesPerson': customer.salesPerson,
+      'youtubeLink': customer.youtubeLink,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Customers');
+    XLSX.writeFile(wb,'AllActiveCustomers.xlsx');
+    res.download('AllActiveCustomers.xlsx');
+  } catch (error) {
+    console.error('Error Downloading File',error);
+    res.status(500).json({ message: 'Failed to download File' });
   }
 });
 
@@ -1557,7 +1905,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04dC7jp4-ZYgPCgYIARAAGAQSNwF-L9IrvNagJ5wYG3oIxBtCay7dcYnjiz82Lk6yQ713K7zbZ7HDYOd026WH7E2drUpnv5CFEno';
+const REFERESH_TOKEN = '1//04rOSR8y-0BjrCgYIARAAGAQSNwF-L9Irypk8bzLaYI0y1I61_R28Incf0dJFHdy-O7iEa4F6iT7vbf_z7VXF8LVvKXDE5HPIdsc';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4771,6 +5119,159 @@ router.get('/topProduct', async (req, res) => {
     res.status(500).json({ status: "fail", error: error.message });
   }
 });
+
+router.get('/conversionRate', async (req, res) => {
+  const startOfMonth = moment().startOf('month').toDate();
+  const endOfMonth = moment().endOf('month').toDate();
+  
+  try {
+    // Aggregate total leads by salesPerson
+    const totalLeads = await salesLead.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startOfMonth,
+            $lte: endOfMonth
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$salesPerson',
+          totalNumberOfLeads: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Aggregate total sales by salesPerson
+    const totalSales = await Customer.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startOfMonth,
+            $lte: endOfMonth
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$salesPerson',
+          totalNumberOfSales: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Merge totalLeads and totalSales to calculate conversion rate
+    const conversionRates = totalLeads.map(lead => {
+      const sales = totalSales.find(sale => sale._id.toString() === lead._id.toString());
+      const totalNumberOfLeads = lead.totalNumberOfLeads;
+      const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
+      const totalSum = totalNumberOfLeads + totalNumberOfSales;
+      const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
+
+      return {
+        salesPerson: lead._id,
+        totalLeads: totalNumberOfLeads,
+        totalSales: totalNumberOfSales,
+        totalSum: totalSum,
+        conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
+      };
+    });
+
+    if (conversionRates.length > 0) {
+      console.log('CONVERSION RATES====>', conversionRates);
+      res.json({ status: 'success', data: conversionRates });
+    } else {
+      console.log('NO LEADS OR SALES FOUND');
+      res.json({ status: 'success', data: [], message: 'No leads or sales found for the current month' });
+    }
+  } catch (error) {
+    console.error('Error getting Conversion Rate', error.message);
+    res.status(500).json({ status: 'fail', error: error.message });
+  }
+});
+
+
+
+
+
+
+
+
+router.get('/conversionRateMonthly', async (req, res) => {
+  try {
+    // Aggregate total leads by salesPerson and month
+    const totalLeads = await salesLead.aggregate([
+      {
+        $group: {
+          _id: {
+            salesPerson: '$salesPerson',
+            month: { $month: '$closingDate' },
+            year: { $year: '$closingDate' }
+          },
+          totalNumberOfLeads: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Aggregate total sales by salesPerson and month
+    const totalSales = await Customer.aggregate([
+      {
+        $group: {
+          _id: {
+            salesPerson: '$salesPerson',
+            month: { $month: '$closingDate' },
+            year: { $year: '$closingDate' }
+          },
+          totalNumberOfSales: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Merge totalLeads and totalSales to calculate conversion rate
+    const conversionRates = totalLeads.map(lead => {
+      // Find the matching sales entry for the current lead's salesPerson and month/year
+      const sales = totalSales.find(sale => 
+        sale._id.salesPerson && 
+        sale._id.salesPerson === lead._id.salesPerson &&
+        sale._id.month === lead._id.month &&
+        sale._id.year === lead._id.year
+      );
+
+      const totalNumberOfLeads = lead.totalNumberOfLeads;
+      const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
+      const totalSum = totalNumberOfLeads + totalNumberOfSales;
+      const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
+
+      return {
+        salesPerson: lead._id.salesPerson,
+        month: lead._id.month,
+        year: lead._id.year,
+        totalLeads: totalNumberOfLeads,
+        totalSales: totalNumberOfSales,
+        conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
+      };
+    });
+
+    if (conversionRates.length > 0) {
+      console.log('CONVERSION RATES====>', conversionRates);
+      res.json({ status: 'success', data: conversionRates });
+    } else {
+      console.log('NO LEADS OR SALES FOUND');
+      res.json({ status: 'success', data: [], message: 'No leads or sales found' });
+    }
+  } catch (error) {
+    console.error('Error getting Conversion Rate', error.message);
+    res.status(500).json({ status: 'fail', error: error.message });
+  }
+});
+
+
+
+
+
+
+
 
 // function getAccessToken() {
 //   return new Promise(function(resolve, reject) {
