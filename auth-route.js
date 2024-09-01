@@ -83,8 +83,31 @@ router.post('/login', (req, res) => {
           signupRole: user.signupRole
         };
         const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
+
+        // Save the current login time
+        const currentTime = new Date();
+        
+        // Push the login time to the user's loginTimes array
+        user.loginTimes = user.loginTimes || []; // Initialize if not already an array
+        user.loginTimes.push(currentTime);
+
+        user.save()
+          .then(() => {
+            return res.json({
+              success: true,
+              token: token,
+              role: user.signupRole,
+              team: user.salesTeam,
+              message: "Login Successful"
+            });
+          })
+          .catch(err => {
+            console.error("Error saving login time: ", err);
+            return res.json({ success: false, message: "Failed to save login time." });
+          });
+
         //person = req.body.loginUsername;
-        return res.json({ success: true, token: token, role: user.signupRole, team: user.salesTeam, message: "Login Successful" });
+        //return res.json({ success: true, token: token, role: user.signupRole, team: user.salesTeam, message: "Login Successful" });
       } else {
         return res.json({ success: false, message: "Password not Matched" });
       }
@@ -92,6 +115,54 @@ router.post('/login', (req, res) => {
     .catch(err => {
       res.json({ success: false, message: "Authentication Failed" });
     });
+});
+
+router.post('/logout', (req, res) => {
+  const token = req.headers.authorization.split(' ')[1]; // Assumes token is in the format "Bearer <token>"
+
+  // Verify JWT token
+  jwt.verify(token, "webBatch", (err, decoded) => {
+    if (err) {
+      return res.json({ success: false, message: "Invalid token." });
+    }
+    //console.log("TOKEN====>>", token);
+
+    const userId = decoded.userId; // Extract user ID from token
+
+    //console.log("USERID====>>", userId);
+
+    // Find the user by ID and update the logout time
+    User.findById(userId).exec()
+      .then(user => {
+        if (!user) {
+          return res.json({ success: false, message: "User not found!" });
+        }
+        
+        // Save the current logout time
+        const currentTime = new Date();
+        
+        // Push the logout time to the user's logoutTimes array
+        user.logoutTimes = user.logoutTimes || []; // Initialize if not already an array
+        user.logoutTimes.push(currentTime);
+
+        // Save the updated user document
+        user.save()
+          .then(() => {
+            return res.json({
+              success: true,
+              message: "Logout Successful"
+            });
+          })
+          .catch(err => {
+            console.error("Error saving logout time: ", err);
+            return res.json({ success: false, message: "Failed to save logout time." });
+          });
+      })
+      .catch(err => {
+        console.error("Error during logout: ", err);
+        res.json({ success: false, message: "Logout Failed" });
+      });
+  });
 });
 
 router.get('/profile', checkAuth, async (req, res) => {
@@ -1905,7 +1976,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04rOSR8y-0BjrCgYIARAAGAQSNwF-L9Irypk8bzLaYI0y1I61_R28Incf0dJFHdy-O7iEa4F6iT7vbf_z7VXF8LVvKXDE5HPIdsc';
+const REFERESH_TOKEN = '1//04Py7se3HPDEKCgYIARAAGAQSNwF-L9IrkGNhP3_z04izBQXvuYXUzvlF8LmMl7qP0tOvcEgwhf5mNqcBoUKDUq5X-eim9rCdic8';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
