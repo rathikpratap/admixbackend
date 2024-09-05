@@ -20,8 +20,12 @@ const registerSchema = new mongoose.Schema({
     paymentTwoVideo: {type: Number},
     paymentThreeVideo: {type: Number},
     accessToken: {type: String},
-    loginTimes: [{type: Date}],
-    logoutTimes:[{type:Date}]
+    loginSessions: [
+        {
+            loginTime: { type: Date },
+            logoutTime: { type: Date }
+        }
+    ] // Store login and logout as pairs
 });
 
 module.exports = mongoose.model('User', registerSchema);

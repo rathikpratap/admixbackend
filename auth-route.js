@@ -88,8 +88,9 @@ router.post('/login', (req, res) => {
         const currentTime = new Date();
         
         // Push the login time to the user's loginTimes array
-        user.loginTimes = user.loginTimes || []; // Initialize if not already an array
-        user.loginTimes.push(currentTime);
+        // user.loginTimes = user.loginTimes || []; // Initialize if not already an array
+        // user.loginTimes.push(currentTime);
+        user.loginSessions.push({ loginTime: currentTime });
 
         user.save()
           .then(() => {
@@ -139,11 +140,16 @@ router.post('/logout', (req, res) => {
         }
         
         // Save the current logout time
-        const currentTime = new Date();
+        // const currentTime = new Date();
         
-        // Push the logout time to the user's logoutTimes array
-        user.logoutTimes = user.logoutTimes || []; // Initialize if not already an array
-        user.logoutTimes.push(currentTime);
+        // // Push the logout time to the user's logoutTimes array
+        // user.logoutTimes = user.logoutTimes || []; // Initialize if not already an array
+        // user.logoutTimes.push(currentTime);
+
+        const lastSession = user.loginSessions.find(session => !session.logoutTime);
+        if (lastSession) {
+          // Save the current logout time
+          lastSession.logoutTime = new Date();
 
         // Save the updated user document
         user.save()
@@ -157,6 +163,9 @@ router.post('/logout', (req, res) => {
             console.error("Error saving logout time: ", err);
             return res.json({ success: false, message: "Failed to save logout time." });
           });
+        } else{
+          return res.json({ success: false, message: "No active session found to log out." });
+        }
       })
       .catch(err => {
         console.error("Error during logout: ", err);
@@ -1967,16 +1976,16 @@ router.get('/facebook-leads', async (req, res) => {
 // sales automatic facebook leads
 
 //itwebdeveloper
-// const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
-// const CLIENT_SECRET = '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';
-// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04n5jdhOXIcDxCgYIARAAGAQSNwF-L9Ir2mggd__Ojf-7NV9vP93p8Skkobx4bYzHSIWhsPNRiQsziR2z7TlyGgJNbxnlkZg-VCo';
+const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+const REFERESH_TOKEN = '1//04WyOuVf_8cWECgYIARAAGAQSNwF-L9IrHUOLzq0KqC9RMDS7QwUOhlbM3YYr25Vnk19WA8IZoA7R34yHIxmFEME5uk_7GPpsj6E';
 
 // AdmixmediaIndia
-const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04Py7se3HPDEKCgYIARAAGAQSNwF-L9IrkGNhP3_z04izBQXvuYXUzvlF8LmMl7qP0tOvcEgwhf5mNqcBoUKDUq5X-eim9rCdic8';
+// const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
+// const CLIENT_SECRET = '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';
+// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+// const REFERESH_TOKEN = '1//04Py7se3HPDEKCgYIARAAGAQSNwF-L9IrkGNhP3_z04izBQXvuYXUzvlF8LmMl7qP0tOvcEgwhf5mNqcBoUKDUq5X-eim9rCdic8';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -5337,34 +5346,79 @@ router.get('/conversionRateMonthly', async (req, res) => {
   }
 });
 
+//Attendance & totalLoggedInTime
 
+router.get('/attendance', (req, res) => {
+  const { year, month } = req.query; // Expecting year and month in the query params
 
+  // Validate the year and month
+  if (!year || !month) {
+    return res.status(400).json({ success: false, message: "Year and month are required." });
+  }
 
+  // Calculate the start and end dates for the month
+  const startDate = new Date(Date.UTC(year, month - 1, 1)); // Start of the specified month in UTC
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59)); // End of the specified month in UTC
 
+  // Query to find all users with login times within the specified month
+  User.find({
+    "loginSessions.loginTime": {
+      $gte: startDate,
+      $lte: endDate
+    }
+  })
+    .exec()
+    .then(users => {
+      // Prepare attendance data for each user
+      const attendanceData = users.map(user => {
+        // Create an array to store the attendance status and total logged-in time for each day of the month
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const attendance = Array.from({ length: daysInMonth }, (_, day) => {
+          const currentDate = new Date(year, month - 1 , day + 2);
+          const formattedDate = currentDate.toISOString().slice(0, 10);
 
+          // Filter the login sessions that occurred on this day
+          const sessionsForDay = user.loginSessions.filter(session =>
+            session.loginTime.toISOString().slice(0, 10) === formattedDate
+          );
 
+          let totalLoggedInTime = 0;
 
-// function getAccessToken() {
-//   return new Promise(function(resolve, reject) {
-//     const key = require('./admix-demo-firebase-adminsdk-952at-48ec8627f9.json');
-//     const jwtClient = new google.auth.JWT(
-//       key.client_email,
-//       null,
-//       key.private_key,
-//       SCOPES,
-//       null
-//     );
-//     jwtClient.authorize(function(err, tokens) {
-//       if (err) {
-//         reject(err);
-//         return;
-//       }
-//       console.log("tokens.access_token ==>",tokens.access_token)
-//       resolve(tokens.access_token);
-//     });
-//   });
-// }
+          // Calculate total logged-in time for the day
+          sessionsForDay.forEach(session => {
+            if (session.logoutTime) {
+              const loginTime = new Date(session.loginTime);
+              const logoutTime = new Date(session.logoutTime);
+              totalLoggedInTime += (logoutTime - loginTime); // Time in milliseconds
+            }
+          });
 
-// getAccessToken();
+          // Convert totalLoggedInTime from milliseconds to hours, minutes, and seconds
+          const totalHours = Math.floor(totalLoggedInTime / (1000 * 60 * 60));
+          const totalMinutes = Math.floor((totalLoggedInTime % (1000 * 60 * 60)) / (1000 * 60));
+          const totalSeconds = Math.floor((totalLoggedInTime % (1000 * 60)) / 1000);
+
+          return {
+            date: formattedDate,
+            status: sessionsForDay.length > 0 ? 'Present' : 'Absent',
+            totalLoggedInTime: sessionsForDay.length > 0
+              ? `${totalHours} h, ${totalMinutes} min, ${totalSeconds} sec`
+              : 'N/A'
+          };
+        });
+
+        return {
+          username: user.signupUsername,
+          attendance: attendance
+        };
+      });
+
+      res.json({ success: true, data: attendanceData });
+    })
+    .catch(err => {
+      console.error("Error fetching attendance data:", err);
+      res.status(500).json({ success: false, message: "Error fetching attendance data." });
+    });
+});
 
 module.exports = router
