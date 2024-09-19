@@ -7,6 +7,7 @@ const B2bCustomer = require('./models/b2bProjects');
 const User = require('./models/user');
 const Customer = require('./models/newcustomer');
 const WhatsAppCategory = require('./models/whatsAppCategory');
+const Subsidiary = require('./models/subsidiary');
 const ClosingCategory = require('./models/closingCategory');
 const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
@@ -51,7 +52,8 @@ router.post('/register', async (req, res) => {
     signupAddress: req.body.signupAddress,
     signupRole: req.body.signupRole,
     signupPayment: req.body.signupPayment,
-    salesTeam: req.body.salesTeam
+    salesTeam: req.body.salesTeam,
+    subsidiaryName: req.body.subsidiaryName
   })
   await user.save()
     .then((_) => {
@@ -63,8 +65,7 @@ router.post('/register', async (req, res) => {
       }
       res.json({ success: false, message: "Authentication Failed" })
     });
-}
-)
+});
 
 // Login Bellow 
 
@@ -86,7 +87,7 @@ router.post('/login', (req, res) => {
 
         // Save the current login time
         const currentTime = new Date();
-        
+
         // Push the login time to the user's loginTimes array
         // user.loginTimes = user.loginTimes || []; // Initialize if not already an array
         // user.loginTimes.push(currentTime);
@@ -138,10 +139,10 @@ router.post('/logout', (req, res) => {
         if (!user) {
           return res.json({ success: false, message: "User not found!" });
         }
-        
+
         // Save the current logout time
         // const currentTime = new Date();
-        
+
         // // Push the logout time to the user's logoutTimes array
         // user.logoutTimes = user.logoutTimes || []; // Initialize if not already an array
         // user.logoutTimes.push(currentTime);
@@ -151,19 +152,19 @@ router.post('/logout', (req, res) => {
           // Save the current logout time
           lastSession.logoutTime = new Date();
 
-        // Save the updated user document
-        user.save()
-          .then(() => {
-            return res.json({
-              success: true,
-              message: "Logout Successful"
+          // Save the updated user document
+          user.save()
+            .then(() => {
+              return res.json({
+                success: true,
+                message: "Logout Successful"
+              });
+            })
+            .catch(err => {
+              console.error("Error saving logout time: ", err);
+              return res.json({ success: false, message: "Failed to save logout time." });
             });
-          })
-          .catch(err => {
-            console.error("Error saving logout time: ", err);
-            return res.json({ success: false, message: "Failed to save logout time." });
-          });
-        } else{
+        } else {
           return res.json({ success: false, message: "No active session found to log out." });
         }
       })
@@ -187,7 +188,7 @@ router.get('/profile', checkAuth, async (req, res) => {
   }).catch(err => {
     res.json({ success: false, message: "Server Error!!" })
   })
-})
+});
 
 // Monthwise Ongoing Projects
 
@@ -392,7 +393,7 @@ router.get('/allTwoPreviousProjectsAdmin', async (req, res) => {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
   }
-})
+});
 
 //database Length
 
@@ -410,7 +411,7 @@ router.get('/allEmployee', async (req, res) => {
   } else {
     res.send({ result: "No Users Found" })
   }
-})
+});
 
 //All Monthwise Ongoing Projects Admin
 
@@ -522,7 +523,7 @@ router.get('/read-emp/:id', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-})
+});
 
 //read company
 
@@ -538,7 +539,7 @@ router.get('/getCompanyPay/:id', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-})
+});
 
 // delete Emp
 
@@ -554,7 +555,7 @@ router.delete('/delete-emp/:id', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-})
+});
 
 // Delete Customers
 
@@ -598,7 +599,7 @@ router.put('/updateEditor/:id', async (req, res) => {
   } else {
     res.send({ result: "No No Data" })
   }
-})
+});
 
 // Edit Customer Details
 
@@ -709,7 +710,7 @@ router.put('/updateEmp/:id', async (req, res) => {
   } else {
     res.send({ result: "No Employee Found" })
   }
-})
+});
 
 //update Payment
 
@@ -832,7 +833,7 @@ router.post('/customer', async (req, res) => {
     .catch((err) => {
       res.json({ success: false, message: "User Not Added!!" })
     })
-})
+});
 
 // Country State City
 
@@ -959,7 +960,7 @@ router.get('/totalEntriesDueDownload', async (req, res) => {
       }
     };
     const dueAmount = await Customer.find(query);
-    const data = dueAmount.map(customer=>({
+    const data = dueAmount.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
       'custNumb': customer.custNumb,
@@ -982,11 +983,11 @@ router.get('/totalEntriesDueDownload', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'dueAmountCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'dueAmountCustomers.xlsx');
     res.download('dueAmountCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
@@ -1025,7 +1026,7 @@ router.get('/totalEntriesRestDownload', async (req, res) => {
       }
     };
     const restAmount = await Customer.find(query);
-    const data = restAmount.map(customer=>({
+    const data = restAmount.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
       'custNumb': customer.custNumb,
@@ -1048,11 +1049,11 @@ router.get('/totalEntriesRestDownload', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'restAmountCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'restAmountCustomers.xlsx');
     res.download('restAmountCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
@@ -1107,7 +1108,7 @@ router.get('/totalEntriesRestDownloadAdmin', async (req, res) => {
       }
     };
     const restAmount = await Customer.find(query);
-    const data = restAmount.map(customer=>({
+    const data = restAmount.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
       'custNumb': customer.custNumb,
@@ -1130,11 +1131,11 @@ router.get('/totalEntriesRestDownloadAdmin', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'restAmountCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'restAmountCustomers.xlsx');
     res.download('restAmountCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
@@ -1151,7 +1152,7 @@ router.get('/totalEntriesDueDownloadAdmin', async (req, res) => {
       }
     };
     const dueAmount = await Customer.find(query);
-    const data = dueAmount.map(customer=>({
+    const data = dueAmount.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
       'custNumb': customer.custNumb,
@@ -1174,11 +1175,11 @@ router.get('/totalEntriesDueDownloadAdmin', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'dueAmountCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'dueAmountCustomers.xlsx');
     res.download('dueAmountCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
@@ -1250,7 +1251,7 @@ router.get('/todayEntriesDownloadAdmin', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    const data = totalDayEntry.map(customer=>({
+    const data = totalDayEntry.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
       'custNumb': customer.custNumb,
@@ -1273,17 +1274,17 @@ router.get('/todayEntriesDownloadAdmin', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'todayEntryCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'todayEntryCustomers.xlsx');
     res.download('todayEntryCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
 
 router.get('/totalEntriesDownloadAdmin', async (req, res) => {
-  const currentMonth = new Date().getMonth()+1;
+  const currentMonth = new Date().getMonth() + 1;
   try {
     let query;
     query = {
@@ -1293,10 +1294,10 @@ router.get('/totalEntriesDownloadAdmin', async (req, res) => {
       }
     };
     const totalEntry = await Customer.find(query);
-    const data = totalEntry.map(customer=>({
+    const data = totalEntry.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
-      'custNumb': customer.custNumb,  
+      'custNumb': customer.custNumb,
       'custBussiness': customer.custBussiness,
       'closingDate': customer.closingDate,
       'closingPrice': customer.closingPrice,
@@ -1316,17 +1317,17 @@ router.get('/totalEntriesDownloadAdmin', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'totalEntryCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'totalEntryCustomers.xlsx');
     res.download('totalEntryCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
 
 router.get('/allOngoingProjectsDownloadAdmin', async (req, res) => {
-  const currentMonth = new Date().getMonth()+1;
+  const currentMonth = new Date().getMonth() + 1;
   try {
     let query;
     query = {
@@ -1334,13 +1335,13 @@ router.get('/allOngoingProjectsDownloadAdmin', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      projectStatus: {$ne: 'Completed'}
+      projectStatus: { $ne: 'Completed' }
     };
     const allOngoingEntry = await Customer.find(query);
-    const data = allOngoingEntry.map(customer=>({
+    const data = allOngoingEntry.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
-      'custNumb': customer.custNumb,  
+      'custNumb': customer.custNumb,
       'custBussiness': customer.custBussiness,
       'closingDate': customer.closingDate,
       'closingPrice': customer.closingPrice,
@@ -1360,11 +1361,11 @@ router.get('/allOngoingProjectsDownloadAdmin', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'ActiveCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'ActiveCustomers.xlsx');
     res.download('ActiveCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
@@ -1373,13 +1374,13 @@ router.get('/allActiveProjectsDownloadAdmin', async (req, res) => {
   try {
     let query;
     query = {
-      projectStatus: {$ne: 'Completed'}
+      projectStatus: { $ne: 'Completed' }
     };
     const allActiveEntry = await Customer.find(query);
-    const data = allActiveEntry.map(customer=>({
+    const data = allActiveEntry.map(customer => ({
       'custCode': customer.custCode,
       'custName': customer.custName,
-      'custNumb': customer.custNumb,  
+      'custNumb': customer.custNumb,
       'custBussiness': customer.custBussiness,
       'closingDate': customer.closingDate,
       'closingPrice': customer.closingPrice,
@@ -1399,11 +1400,11 @@ router.get('/allActiveProjectsDownloadAdmin', async (req, res) => {
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Customers');
-    XLSX.writeFile(wb,'AllActiveCustomers.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'AllActiveCustomers.xlsx');
     res.download('AllActiveCustomers.xlsx');
   } catch (error) {
-    console.error('Error Downloading File',error);
+    console.error('Error Downloading File', error);
     res.status(500).json({ message: 'Failed to download File' });
   }
 });
@@ -1493,7 +1494,7 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
   }
-})
+});
 
 //Excel Upload
 
@@ -1510,7 +1511,7 @@ router.post('/uploadFile', upload.single('file'), async (req, res) => {
     console.error("Error Uploading File", err);
     res.status(500).json({ error: "Failed to Upload File" });
   }
-})
+});
 
 //donwload Excel
 
@@ -1859,7 +1860,7 @@ router.delete('/delete-comp/:id', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-})
+});
 
 //store Access Token
 
@@ -1985,7 +1986,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//046EJvRESb_25CgYIARAAGAQSNwF-L9Irfj9vSs9u9o5uEgNtqrbWVx0JlVcefe80yALoUqDD4dAqxL5p7XjhfuMTn7Qf1zbYOA0';
+const REFERESH_TOKEN = '1//04IJf_A27HdjiCgYIARAAGAQSNwF-L9Ir_wMaeDn7k_6_HrqfCiQMq-sbCndAfr5bjc9c64IojauWwXlE4uQ8sen-UXx8cvyDhOk';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2769,7 +2770,7 @@ router.post('/updateEditor', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-})
+});
 
 //Script writer Projects
 router.get('/scriptProjects', async (req, res) => {
@@ -4585,7 +4586,7 @@ router.get('/estInvoiceCount', async (req, res) => {
 router.get('/mainInvoiceCount', async (req, res) => {
   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
   return res.json(dataLength);
-})
+});
 
 // sales Whatsapp Work Admin
 
@@ -5203,7 +5204,7 @@ router.get('/topProduct', async (req, res) => {
 router.get('/conversionRate', async (req, res) => {
   const startOfMonth = moment().startOf('month').toDate();
   const endOfMonth = moment().endOf('month').toDate();
-  
+
   try {
     // Aggregate total leads by salesPerson
     const totalLeads = await salesLead.aggregate([
@@ -5271,13 +5272,6 @@ router.get('/conversionRate', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
 router.get('/conversionRateMonthly', async (req, res) => {
   try {
     // Aggregate total leads by salesPerson and month
@@ -5311,8 +5305,8 @@ router.get('/conversionRateMonthly', async (req, res) => {
     // Merge totalLeads and totalSales to calculate conversion rate
     const conversionRates = totalLeads.map(lead => {
       // Find the matching sales entry for the current lead's salesPerson and month/year
-      const sales = totalSales.find(sale => 
-        sale._id.salesPerson && 
+      const sales = totalSales.find(sale =>
+        sale._id.salesPerson &&
         sale._id.salesPerson === lead._id.salesPerson &&
         sale._id.month === lead._id.month &&
         sale._id.year === lead._id.year
@@ -5348,7 +5342,7 @@ router.get('/conversionRateMonthly', async (req, res) => {
 
 //Attendance & totalLoggedInTime
 
-router.get('/attendance', (req, res) => {
+router.get('/attendance1', (req, res) => {
   const { year, month } = req.query; // Expecting year and month in the query params
 
   // Validate the year and month
@@ -5374,7 +5368,7 @@ router.get('/attendance', (req, res) => {
         // Create an array to store the attendance status and total logged-in time for each day of the month
         const daysInMonth = new Date(year, month, 0).getDate();
         const attendance = Array.from({ length: daysInMonth }, (_, day) => {
-          const currentDate = new Date(year, month - 1 , day + 2);
+          const currentDate = new Date(year, month - 1, day + 2);
           const formattedDate = currentDate.toISOString().slice(0, 10);
 
           // Filter the login sessions that occurred on this day
@@ -5420,5 +5414,212 @@ router.get('/attendance', (req, res) => {
       res.status(500).json({ success: false, message: "Error fetching attendance data." });
     });
 });
+
+// Route to add or update attendance manually
+// router.get('/attendance', (req, res) => {
+//   const { year, month } = req.query;
+
+//   if (!year || !month) {
+//     return res.status(400).json({ success: false, message: "Year and month are required." });
+//   }
+
+//   User.find({
+//     [`attendance.${year}.${month}`]: { $exists: true }
+//   })
+//     .exec()
+//     .then(users => {
+//       const attendanceData = users.map(user => {
+//         const attendance = user.attendance?.get(`${year}`)?.get(`${month}`);
+//         return {
+//           username: user.signupUsername,
+//           attendance: attendance || []
+//         };
+//       });
+
+//       res.json({ success: true, data: attendanceData });
+//     })
+//     .catch(err => {
+//       console.error("Error fetching attendance data:", err);
+//       res.status(500).json({ success: false, message: "Error fetching attendance data." });
+//     });
+// });
+
+// Save updated attendance
+router.post('/update-attendance', async (req, res) => {
+  const { username, year, month, attendance } = req.body;
+
+  if (!username || !year || !month || !attendance) {
+    return res.status(400).json({ success: false, message: "Username, year, month, and attendance data are required." });
+  }
+
+  try {
+    // Update the user's attendance in the database
+    await User.updateOne(
+      { signupUsername: username },
+      { $set: { [`attendance.${year}.${month}`]: attendance } }
+    );
+
+    res.json({ success: true, message: "Attendance updated successfully." });
+  } catch (err) {
+    console.error("Error updating attendance:", err);
+    res.status(500).json({ success: false, message: "Error updating attendance." });
+  }
+});
+
+
+router.get('/attendance', async (req, res) => {
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({ success: false, message: "Year and month are required." });
+  }
+
+  try {
+    const users = await User.find({}).exec();
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const attendancePromises = users.map(async user => {
+      //console.log("USER DATA====>>", user);  // Log user data to verify structure
+
+      let currentAttendance;
+
+      // If attendance is stored as a Map, use get() method to access it
+      if (user.attendance instanceof Map) {
+        const yearAttendance = user.attendance.get(year);  // Get the attendance for the year
+        if (yearAttendance instanceof Map) {
+          currentAttendance = yearAttendance.get(month);  // Get the attendance for the month
+        }
+      } else {
+        currentAttendance = user.attendance?.[year]?.[month];  // Fallback to object access
+      }
+
+      //console.log("CURRENT ATTENDANCE========>>", currentAttendance);  // Log current attendance
+
+      if (!currentAttendance) {
+        // Generate default attendance data if it doesn't exist
+        const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
+          const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
+          return {
+            date: currentDate.toISOString().slice(0, 10),
+            status: 'Select'  // Default status
+          };
+        });
+
+        // Update user's attendance with default data
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { [`attendance.${year}.${month}`]: defaultAttendance } }
+        );
+
+        return {
+          username: user.signupUsername,
+          attendance: defaultAttendance,
+          totalPresent: 0,
+          totalAbsent: 0,
+          totalHalfDay: 0
+        };
+      }
+
+      let totalPresent = 0;
+      let totalAbsent = 0;
+      let totalHalfDay = 0;
+
+      currentAttendance.forEach(day => {
+        if (day.status === 'Present') {
+          totalPresent++;
+        } else if (day.status === 'Absent') {
+          totalAbsent++;
+        } else if (day.status === 'HalfDay') {
+          totalHalfDay++;
+        }
+      });
+
+      // Return existing attendance if it exists
+      return {
+        username: user.signupUsername,
+        attendance: currentAttendance,
+        totalPresent,
+        totalAbsent,
+        totalHalfDay
+      };
+    });
+
+    const attendanceData = await Promise.all(attendancePromises);
+    res.json({ success: true, data: attendanceData });
+  } catch (err) {
+    console.error("Error fetching or updating attendance data:", err);
+    res.status(500).json({ success: false, message: "Error fetching or updating attendance data." });
+  }
+});
+
+// router.post('/attendance', async (req, res) => {
+//   const { year, month, attendanceData } = req.body;
+
+//   if (!year || !month || !attendanceData) {
+//       return res.status(400).json({ success: false, message: "Year, month, and attendance data are required." });
+//   }
+
+//   try {
+//       const yearStr = String(year);
+//       const monthStr = String(month);
+
+//       console.log(`Received attendance data for ${monthStr}/${yearStr}:`, attendanceData);
+
+//       // Prepare bulk update operations
+//       const bulkOps = attendanceData.map(attendance => {
+//           return {
+//               updateOne: {
+//                   filter: { signupUsername: attendance.username },
+//                   update: {
+//                       $set: {
+//                           [`attendance.${yearStr}.${monthStr}`]: attendance.attendance
+//                       }
+//                   }
+//               }
+//           };
+//       });
+
+//       const bulkWriteResult = await User.bulkWrite(bulkOps);
+//       console.log("Bulk write result:", bulkWriteResult);
+
+//       res.json({ success: true, message: 'Attendance updated successfully.' });
+//   } catch (err) {
+//       console.error("Error updating attendance:", err);
+//       res.status(500).json({ success: false, message: "Error updating attendance." });
+//   }
+// });
+
+// new Subsidiary
+
+router.post('/newSubsidiary', async (req, res) => {
+  try {
+    const subsidiary = new Subsidiary({
+      subsidiaryName: req.body.subsidiaryName
+    })
+    await subsidiary.save().then((_) => {
+      res.json({ success: true, message: "New Subsidiary Added" })
+    }).catch((err) => {
+      if (err.code === 11000) {
+        return res.json({ success: false, message: "Subsidiary Already Added" })
+      }
+    });
+  } catch (error) {
+    console.error('Error Adding Subsidiary', error);
+    res.status(500).json({ error: 'Failed to add Subsidiary' });
+  }
+});
+
+// Get Subsidiary
+
+router.get('/getSubsidiary', async (req, res) => {
+  try {
+    const subsidiaries = await Subsidiary.find();
+    res.json(subsidiaries);
+  } catch (error) {
+    console.error("Error Fetching Subsidiaries", error);
+    res.status(500).json({ error: 'Failed to Fetch Subsidiary Data' });
+  }
+});
+
 
 module.exports = router
