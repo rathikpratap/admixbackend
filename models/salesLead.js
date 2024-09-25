@@ -15,7 +15,8 @@ const salesLeadSchema = new mongoose.Schema({
     remark: String,
     leadsCreatedDate: Date,
     salesPerson: String,
-    companyName: String
+    companyName: String,
+    subsidiaryName: String
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);

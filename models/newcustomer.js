@@ -25,6 +25,8 @@ const customerSchema = new mongoose.Schema({
     restPaymentDate : {type:Date},
     graphicDesigner : {type:String},
     graphicPassDate : {type:Date},
+    graphicStatus : {type:String},
+    graphicDeliveryDate : {type: Date},
     editor: {type:String},
     scriptWriter: {type: String},
     voiceOver:{type: String},
@@ -74,7 +76,8 @@ const customerSchema = new mongoose.Schema({
     voiceOverPaymentDate: {type:Date},
     EditorCNR: {type:String},
     ScriptCNR: {type:String},
-    VoCNR: {type:String}
+    VoCNR: {type:String},
+    priority: {type:String}
 });
 
 //customerSchema.pre('save', function(next) {

@@ -822,7 +822,9 @@ router.post('/customer', async (req, res) => {
     voiceOver: req.body.voiceOver,
     salesTeam: req.body.salesTeam,
     companyName: req.body.companyName,
-    scriptPassDate: req.body.scriptPassDate
+    scriptPassDate: req.body.scriptPassDate,
+    graphicDesigner: req.body.graphicDesigner,
+    graphicPassDate: req.body.graphicPassDate
 
   })
 
@@ -1986,7 +1988,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04IJf_A27HdjiCgYIARAAGAQSNwF-L9Ir_wMaeDn7k_6_HrqfCiQMq-sbCndAfr5bjc9c64IojauWwXlE4uQ8sen-UXx8cvyDhOk';
+const REFERESH_TOKEN = '1//04cvpWPDoviiRCgYIARAAGAQSNwF-L9IrUEgd--Y7nASNVJWr-Y7qUymzVDj4Pkw1GnypON8IjlhWGU_bYt71q4vil_3gNyu4p34';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2069,7 +2071,8 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     custNumb: phone,
                     state: state,
                     salesTeam: personTeam,
-                    leadsCreatedDate: createdTime
+                    leadsCreatedDate: createdTime,
+                    subsidiaryName: 'AdmixMedia'
                   });
                   await newLead.save();
                   tempLeadsData.push({ custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone });
@@ -2763,6 +2766,9 @@ router.post('/updateEditor', async (req, res) => {
         existingItem.voicePassDate = item.voicePassDate;
         existingItem.graphicDesigner = item.graphicDesigner;
         existingItem.graphicPassDate = item.graphicPassDate;
+        existingItem.priority = item.priority;
+        existingItem.graphicStatus = item.graphicStatus;
+        existingItem.graphicDeliveryDate = item.graphicDeliveryDate;
         await existingItem.save();
       }
     }
@@ -5618,6 +5624,322 @@ router.get('/getSubsidiary', async (req, res) => {
   } catch (error) {
     console.error("Error Fetching Subsidiaries", error);
     res.status(500).json({ error: 'Failed to Fetch Subsidiary Data' });
+  }
+});
+
+// Urgent Script Projects
+
+router.get('/urgentScriptProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Urgent',
+      scriptStatus: { $ne: 'Complete'}
+    }).sort({ scriptPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/highScriptProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'High',
+      scriptStatus: { $ne: 'Complete'}
+    }).sort({ scriptPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/mediumScriptProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      scriptWriter: person,
+      scriptPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Medium',
+      scriptStatus: { $ne: 'Complete'}
+    }).sort({ scriptPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+// Urgent Editor Projects
+
+router.get('/urgentEditorProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      editor: person,
+      editorPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Urgent',
+      editorStatus: { $ne: 'Completed'}
+    }).sort({ editorPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/highEditorProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      editor: person,
+      editorPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'High',
+      editorStatus: { $ne: 'Completed'}
+    }).sort({ editorPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/mediumEditorProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      editor: person,
+      editorPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Medium',
+      editorStatus: { $ne: 'Completed'}
+    }).sort({ editorPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+// Urgent Vo Projects
+
+router.get('/urgentVoProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      voiceOver: person,
+      voicePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Urgent',
+      voiceOverStatus: { $ne: 'Complete'}
+    }).sort({ voicePassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/highVoProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      voiceOver: person,
+      voicePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'High',
+      voiceOverStatus: { $ne: 'Complete'}
+    }).sort({ voicePassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/mediumVoProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      voiceOver: person,
+      voicePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Medium',
+      voiceOverStatus: { $ne: 'Complete'}
+    }).sort({ voicePassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+// Urgent Graphic Projects
+
+router.get('/urgentGraphicProjects', async(req,res)=>{
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const urgentProjects = await Customer.find({
+      graphicDesigner: person,
+      graphicPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      priority: 'Urgent',
+      graphicStatus: { $ne: 'Complete'}
+    }).sort({ graphicPassDate: -1});
+    return res.json(urgentProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/pendingGraphicProjects', async(req,res)=>{
+  try{
+    const pendingProjects = await Customer.find({
+      graphicDesigner: person,
+      graphicStatus: { $ne: 'Complete'}
+    }).sort({ graphicPassDate: -1});
+    return res.json(pendingProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/todayGraphicProjects', async(req,res)=>{
+  try{
+    const today = new Date();
+    const todayProjects = await Customer.find({
+      graphicDesigner: person,
+      graphicPassDate: {
+        $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
+        $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+      },
+      graphicStatus: { $ne: 'Complete'}
+    }).sort({ graphicPassDate: -1});
+    return res.json(todayProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/changesGraphicProjects', async(req,res)=>{
+  try{
+    const changesProjects = await Customer.find({
+      graphicDesigner: person,
+      graphicStatus: { $eq: 'Graphic Designing Changes'}
+    }).sort({ graphicPassDate: -1});
+    console.log('PROJECT======>>', changesProjects);
+    return res.json(changesProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/todayEntriesGraphic', async (req, res) => {
+  const currentDate = new Date();
+  try {
+    let query;
+    query = {
+      graphicDesigner: person,
+      graphicPassDate: {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
+    const totalDayEntry = await Customer.find(query);
+    //console.log("Total Entries===>>", totalDayEntry)
+    res.json({ totalDayEntry });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.get('/graphicActiveList', async (req, res) => {
+  //console.log("person hjjj ==>", person);
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      graphicDesigner: person,
+      graphicPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      //remainingAmount: { $gt: 0 },
+      graphicStatus: { $ne: 'Complete' }
+    }).sort({ closingDate: -1 });
+
+    res.json(products);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/graphicCompleteList', async (req, res) => {
+  //console.log("person hjjj ==>", person);
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      graphicDesigner: person,
+      graphicPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      },
+      //remainingAmount: { $gt: 0 },
+      graphicStatus: { $regex: /^Complete$/i }
+    }).sort({ graphicPassDate: -1 });
+
+    res.json(products);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/allGraphicProjects', async (req, res) => {
+  const allProjects = await Customer.find({ graphicDesigner: person }).sort({ closingDate: -1 });
+  if (allProjects) {
+    return res.json(allProjects)
+  } else {
+    res.send({ result: "No Data Found" })
   }
 });
 
