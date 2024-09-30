@@ -11,6 +11,7 @@ const Subsidiary = require('./models/subsidiary');
 const ClosingCategory = require('./models/closingCategory');
 const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
+const Task = require('./models/task');
 const salesLead = require('./models/salesLead');
 const transferLead = require('./models/adminLeads');
 const Payroll = require('./models/payroll');
@@ -286,22 +287,44 @@ router.get('/completeProject', async (req, res) => {
   }
 });
 
+// router.get('/allProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const fetchedLeads = await Customer.find({
+//       salesPerson: person,
+//       closingDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//       }
+//     }).sort({ closingDate: -1 });
+//     return res.json(fetchedLeads);
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to Fetch Leads' })
+//   }
+// });
+
 router.get('/allProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // First day of the current month
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999); // End of today
+
     const fetchedLeads = await Customer.find({
       salesPerson: person,
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $gte: startOfMonth,
+        $lte: endOfToday
       }
     }).sort({ closingDate: -1 });
+
     return res.json(fetchedLeads);
   } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to Fetch Leads' })
+    res.status(500).json({ error: 'Failed to Fetch Leads' });
   }
 });
+
 
 // all previous Month projects
 
@@ -1988,7 +2011,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04cvpWPDoviiRCgYIARAAGAQSNwF-L9IrUEgd--Y7nASNVJWr-Y7qUymzVDj4Pkw1GnypON8IjlhWGU_bYt71q4vil_3gNyu4p34';
+const REFERESH_TOKEN = '1//04AdsJzovo6dPCgYIARAAGAQSNwF-L9IrZifZkiKxyAKu0i7a58FjDsB6FTCpBiyfU9Igdd18JWEDgG22-tavSIwVEIu15berHv8';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -5827,8 +5850,11 @@ router.get('/urgentGraphicProjects', async(req,res)=>{
 
 router.get('/pendingGraphicProjects', async(req,res)=>{
   try{
+    const startOfDay = new Date();
+    startOfDay.setHours(0,0,0,0);
     const pendingProjects = await Customer.find({
       graphicDesigner: person,
+      graphicPassDate: {$lt: startOfDay},
       graphicStatus: { $ne: 'Complete'}
     }).sort({ graphicPassDate: -1});
     return res.json(pendingProjects)
@@ -5941,6 +5967,64 @@ router.get('/allGraphicProjects', async (req, res) => {
   } else {
     res.send({ result: "No Data Found" })
   }
+});
+
+router.get('/todayAssignedTask', async(req,res)=>{
+  try{
+    const today = new Date();
+    const todayProjects = await Task.find({
+      graphicDesigner: person,
+      assignedDate: {
+        $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
+        $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+      },
+      graphicStatus: { $ne: 'Complete'}
+    }).sort({ assignedDate: -1});
+    return res.json(todayProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+router.get('/pendingAssignedTask', async(req,res)=>{
+  try{
+    const startOfDay = new Date();
+    startOfDay.setHours(0,0,0,0);
+    const pendingProjects = await Task.find({
+      graphicDesigner: person,
+      assignedDate: {$lt: startOfDay},
+      graphicStatus: { $ne: 'Complete'}
+    }).sort({ assignedDate: -1});
+    return res.json(pendingProjects)
+  }catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({error: 'Failed to fetch Leads'})
+  }
+});
+
+//Tasks
+
+router.get('/taskDataLength', async(req,res)=>{
+  const taskLength = await Task.countDocuments();
+  return res.json(taskLength);
+});
+
+router.post('/addTask', async(req,res)=>{
+  const task = new Task({
+    SrNo: req.body.SrNo,
+    taskName: req.body.taskName,
+    taskDescription: req.body.taskDescription,
+    assignedDate: req.body.assignedDate,
+    graphicDesigner: req.body.graphicDesigner,
+    graphicStatus: req.body.graphicStatus,
+    assignedBy: req.body.assignedBy
+  })
+  await task.save().then((_)=>{
+    res.json({ success: true, message: "Task Added!!"})
+  }).catch((err)=>{
+    res.json({success: false, message: "Task Not Added!!"})
+  })
 });
 
 
