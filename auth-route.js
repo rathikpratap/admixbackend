@@ -5527,7 +5527,8 @@ router.get('/attendance', async (req, res) => {
       if (!currentAttendance) {
         // Generate default attendance data if it doesn't exist
         const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
-          const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
+          // const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
+          const currentDate = new Date(year, month - 1, day + 1);
           return {
             date: currentDate.toISOString().slice(0, 10),
             status: 'Select'  // Default status
@@ -6025,6 +6026,40 @@ router.post('/addTask', async(req,res)=>{
   }).catch((err)=>{
     res.json({success: false, message: "Task Not Added!!"})
   })
+});
+
+//transfer leads to leads
+
+router.post('/transferNewLeads', async(req,res)=>{
+  try{
+    const {custId, salesTeam, closingDate} = req.body;
+
+    console.log("CUSTid=====>>", custId);
+    if(!custId){
+      return res.status(404).json({message: 'Customer Id is Required'});
+    }
+    const cust = await salesLead.findById(custId);
+
+    if(!cust){
+      return res.status(404).json({message: 'Customer Not Found'});
+    }
+
+    const newSalesLead = new salesLead({
+      custName: cust.custName,
+      custNumb: cust.custNumb,
+      custBussiness: cust.custBussiness,
+      companyName: cust.companyName,
+      salesTeam: salesTeam,
+      remark: cust.remark,
+      closingDate: closingDate,
+      leadsCreatedDate: closingDate
+    })
+    await newSalesLead.save();
+
+    return res.status(200).json({ message: 'Customer transferred to salesLead Successfully'});
+  }catch(error){
+    return res.status(500).json({ message: 'Error transferring customer' });
+  }
 });
 
 
