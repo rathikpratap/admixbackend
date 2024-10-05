@@ -2011,7 +2011,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04AdsJzovo6dPCgYIARAAGAQSNwF-L9IrZifZkiKxyAKu0i7a58FjDsB6FTCpBiyfU9Igdd18JWEDgG22-tavSIwVEIu15berHv8';
+const REFERESH_TOKEN = '1//048lWWlVLlPyFCgYIARAAGAQSNwF-L9IrEDM2fXVwSVJqMPLnQoqTmvC-53Px1ezbu1GMS4tW5O5IQS8CMj-ygOiFBG7htYCsy00';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -5582,6 +5582,96 @@ router.get('/attendance', async (req, res) => {
   }
 });
 
+// salesPerson wise Attendance
+
+router.get('/usersAttendance', async (req, res) => {
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({ success: false, message: "Year and month are required." });
+  }
+
+  try {
+    const salesPerson = person;    
+    const users = await User.find({signupUsername: salesPerson});
+    console.log("Attendance Person===>>", users);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const attendancePromises = users.map(async user => {
+      //console.log("USER DATA====>>", user);  // Log user data to verify structure
+
+      let currentAttendance;
+
+      // If attendance is stored as a Map, use get() method to access it
+      if (user.attendance instanceof Map) {
+        const yearAttendance = user.attendance.get(year);  // Get the attendance for the year
+        if (yearAttendance instanceof Map) {
+          currentAttendance = yearAttendance.get(month);  // Get the attendance for the month
+        }
+      } else {
+        currentAttendance = user.attendance?.[year]?.[month];  // Fallback to object access
+      }
+
+      //console.log("CURRENT ATTENDANCE========>>", currentAttendance);  // Log current attendance
+
+      if (!currentAttendance) {
+        // Generate default attendance data if it doesn't exist
+        const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
+          // const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
+          const currentDate = new Date(year, month - 1, day + 1);
+          return {
+            date: currentDate.toISOString().slice(0, 10),
+            status: 'Select'  // Default status
+          };
+        });
+
+        // Update user's attendance with default data
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { [`attendance.${year}.${month}`]: defaultAttendance } }
+        );
+
+        return {
+          username: user.signupUsername,
+          attendance: defaultAttendance,
+          totalPresent: 0,
+          totalAbsent: 0,
+          totalHalfDay: 0
+        };
+      }
+
+      let totalPresent = 0;
+      let totalAbsent = 0;
+      let totalHalfDay = 0;
+
+      currentAttendance.forEach(day => {
+        if (day.status === 'Present') {
+          totalPresent++;
+        } else if (day.status === 'Absent') {
+          totalAbsent++;
+        } else if (day.status === 'HalfDay') {
+          totalHalfDay++;
+        }
+      });
+
+      // Return existing attendance if it exists
+      return {
+        username: user.signupUsername,
+        attendance: currentAttendance,
+        totalPresent,
+        totalAbsent,
+        totalHalfDay
+      };
+    });
+
+    const attendanceData = await Promise.all(attendancePromises);
+    res.json({ success: true, data: attendanceData });
+  } catch (err) {
+    console.error("Error fetching or updating attendance data:", err);
+    res.status(500).json({ success: false, message: "Error fetching or updating attendance data." });
+  }
+});
+
 // router.post('/attendance', async (req, res) => {
 //   const { year, month, attendanceData } = req.body;
 
@@ -6032,7 +6122,7 @@ router.post('/addTask', async(req,res)=>{
 
 router.post('/transferNewLeads', async(req,res)=>{
   try{
-    const {custId, salesTeam, closingDate} = req.body;
+    const {custId, salesTeam, closingDate, name} = req.body;
 
     console.log("CUSTid=====>>", custId);
     if(!custId){
@@ -6044,6 +6134,10 @@ router.post('/transferNewLeads', async(req,res)=>{
       return res.status(404).json({message: 'Customer Not Found'});
     }
 
+      cust.transferBy= name;
+      cust.newSalesTeam = salesTeam;
+      await cust.save();
+
     const newSalesLead = new salesLead({
       custName: cust.custName,
       custNumb: cust.custNumb,
@@ -6052,13 +6146,49 @@ router.post('/transferNewLeads', async(req,res)=>{
       salesTeam: salesTeam,
       remark: cust.remark,
       closingDate: closingDate,
-      leadsCreatedDate: closingDate
+      leadsCreatedDate: closingDate,
+      transferBy: name
     })
     await newSalesLead.save();
 
     return res.status(200).json({ message: 'Customer transferred to salesLead Successfully'});
   }catch(error){
     return res.status(500).json({ message: 'Error transferring customer' });
+  }
+});
+
+router.post('/transferCustomerToSalesLead', async(req,res)=>{
+  try{
+    const {custId, salesTeam, closingDate, name} = req.body;
+    if(!custId){
+      return res.status(404).json({message: 'Customer Id is Required'});
+    }
+    const cust = await Customer.findById(custId);
+
+    if(!cust){
+      return res.status(404).json({message: 'Customer Not Found'});
+    }
+
+    cust.transferBy = name;
+    cust.newSalesTeam = salesTeam;
+    await cust.save();
+
+    const newSalesLead = new salesLead({
+      custName: cust.custName,
+      custNumb: cust.custNumb,
+      custBussiness: cust.custBussiness,
+      companyName: cust.companyName,
+      salesTeam: salesTeam,
+      remark: cust.remark,
+      closingDate: closingDate,
+      leadsCreatedDate: closingDate,
+      transferBy: name
+    })
+    await newSalesLead.save();
+
+    return res.status(200).json({ message: 'Customer transferred to salesLead'});
+  }catch(error){
+    return res.status(500).json({ message: 'Error transferring customer'});
   }
 });
 

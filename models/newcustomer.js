@@ -77,7 +77,9 @@ const customerSchema = new mongoose.Schema({
     EditorCNR: {type:String},
     ScriptCNR: {type:String},
     VoCNR: {type:String},
-    priority: {type:String}
+    priority: {type:String},
+    transferBy: {type:String},
+    newSalesTeam: {type: String}
 });
 
 //customerSchema.pre('save', function(next) {
