@@ -785,26 +785,66 @@ router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (
 
 router.get('/searchCustomer/:mobile', async (req, res) => {
   try {
-    let data = await Customer.find(
-      {
-        "$or": [
-          // { custNumb: { $regex: req.params.mobile } },
-          { custName: { $regex: req.params.mobile } }
-        ]
-      }
-    )
+    const mobile = req.params.mobile;
+    
+    // Check if the mobile parameter is a valid number
+    const isNumeric = !isNaN(mobile);
+    
+    let searchCriteria = {
+      "$or": [
+        { custName: { $regex: mobile, $options: 'i' }},
+        {  projectStatus: {$regex: mobile, $options: 'i'} } // Always search by custName using regex
+      ]
+    };
+    
+    // If mobile is a valid number, add custNumb search
+    if (isNumeric) {
+      searchCriteria["$or"].push({ custNumb: Number(mobile) });
+    }
+
+    let data = await Customer.find(searchCriteria);
+    
     res.send(data);
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    res.status(500).send("Error searching for customer");
   }
 });
+
+router.get('/searchLeads/:mobile', async (req, res) => {
+  try {
+    const mobile = req.params.mobile;
+    
+    // Check if the mobile parameter is a valid number
+    const isNumeric = !isNaN(mobile);
+    
+    let searchCriteria = {
+      "$or": [
+        { custName: { $regex: mobile, $options: 'i' }},
+        {  projectStatus: {$regex: mobile, $options: 'i'} } // Always search by custName using regex
+      ]
+    };
+    
+    // If mobile is a valid number, add custNumb search
+    if (isNumeric) {
+      searchCriteria["$or"].push({ custNumb: Number(mobile) });
+    }
+
+    let data = await salesLead.find(searchCriteria);
+    
+    res.send(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error searching for customer");
+  }
+});
+
 
 router.get('/customerProject/:projectStatus', async (req, res) => {
   let data = await salesLead.find(
     {
-      "$or": [
-        { projectStatus: { $regex: req.params.projectStatus } }
-      ]
+        projectStatus: { $regex: req.params.projectStatus } 
+     
     }
   )
   res.send(data);
@@ -2011,7 +2051,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//043w8YMQjcn5LCgYIARAAGAQSNwF-L9IrXXIMCiK9vUoA8AoPu_8kW6O7NEk0zaY4qDwZa1hsrdD2V2uFMjxbtAssvWnbQlJM3yI';
+const REFERESH_TOKEN = '1//04uB1ssKWDulTCgYIARAAGAQSNwF-L9IrcIq-hu7YySbUlDI6hgIoGxSm-UREJprrOqZ1ed77quc6cMcGuTlvsOJgLZiXWYIooE0';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2419,7 +2459,8 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
 //    }
 //  })
 
-router.get('/getTeams-leads/', async (req, res) => {
+router.get('/getTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2434,7 +2475,7 @@ router.get('/getTeams-leads/', async (req, res) => {
         $gte: startOfToday,
         $lt: endOfToday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(todayLeads);
   } catch (error) {
@@ -2467,7 +2508,8 @@ router.get('/getSalesTeamWork/', async (req, res) => {
 
 //get Yesterday Team Leads
 
-router.get('/getYesterdayTeams-leads/', async (req, res) => {
+router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2483,7 +2525,7 @@ router.get('/getYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2517,7 +2559,8 @@ router.get('/getSalesYesterdayTeamWork/', async (req, res) => {
   }
 });
 
-router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
+router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2533,7 +2576,7 @@ router.get('/getOneYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2567,7 +2610,8 @@ router.get('/getSalesOneYesterdayTeamWork/', async (req, res) => {
   }
 });
 
-router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
+router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2583,7 +2627,7 @@ router.get('/getTwoYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2617,7 +2661,8 @@ router.get('/getSalesTwoYesterdayTeamWork/', async (req, res) => {
   }
 });
 
-router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
+router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2633,7 +2678,7 @@ router.get('/getThreeYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2667,7 +2712,8 @@ router.get('/getSalesThreeYesterdayTeamWork/', async (req, res) => {
   }
 });
 
-router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
+router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2683,7 +2729,7 @@ router.get('/getFourYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -2717,7 +2763,8 @@ router.get('/getSalesFourYesterdayTeamWork/', async (req, res) => {
   }
 });
 
-router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
+router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
+  const name = req.params.name;
   try {
     // Get today's date
     const today = new Date();
@@ -2733,7 +2780,7 @@ router.get('/getFiveYesterdayTeams-leads/', async (req, res) => {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $ne: 'WhatsApp' }
+      campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
 
     return res.json(yesterdayLeads);
@@ -6284,7 +6331,8 @@ router.post('/transferNewLeads', async(req,res)=>{
       remark: cust.remark,
       closingDate: closingDate,
       leadsCreatedDate: closingDate,
-      transferBy: name
+      transferBy: name,
+      campaign_Name: cust.salesTeam
     })
     await newSalesLead.save();
 
@@ -6326,6 +6374,18 @@ router.post('/transferCustomerToSalesLead', async(req,res)=>{
     return res.status(200).json({ message: 'Customer transferred to salesLead'});
   }catch(error){
     return res.status(500).json({ message: 'Error transferring customer'});
+  }
+});
+
+//get Campaign NAmes for leads
+
+router.get('/getCampaignNames', async(req,res)=>{
+  try{
+    const allLeads = await salesLead.find();
+    return res.json(allLeads)
+  }catch(error){
+    console.error('Error Fetching Leads:', error);
+    res.status(500).json({error: 'Failed to fetch leads'});
   }
 });
 
