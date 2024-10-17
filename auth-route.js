@@ -6367,7 +6367,8 @@ router.post('/transferCustomerToSalesLead', async(req,res)=>{
       remark: cust.remark,
       closingDate: closingDate,
       leadsCreatedDate: closingDate,
-      transferBy: name
+      transferBy: name,
+      campaign_Name: cust.salesTeam
     })
     await newSalesLead.save();
 
