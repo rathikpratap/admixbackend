@@ -6500,5 +6500,26 @@ router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async(req,res)
   }
 });
 
+// get Invoices
+
+router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      date:{
+        $gte: startDate, $lte: endDate
+      },
+      custGST: {$ne: ''}
+    };
+    const invoiceData = await EstInvoice.find(query);
+    res.json(invoiceData);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
 
 module.exports = router
