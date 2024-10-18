@@ -6332,7 +6332,7 @@ router.post('/transferNewLeads', async(req,res)=>{
       closingDate: closingDate,
       leadsCreatedDate: closingDate,
       transferBy: name,
-      campaign_Name: cust.salesTeam
+      campaign_Name: 'Transfer By ' + cust.salesTeam
     })
     await newSalesLead.save();
 
@@ -6368,7 +6368,7 @@ router.post('/transferCustomerToSalesLead', async(req,res)=>{
       closingDate: closingDate,
       leadsCreatedDate: closingDate,
       transferBy: name,
-      campaign_Name: cust.salesTeam
+      campaign_Name: 'Transfer By ' + cust.salesTeam
     })
     await newSalesLead.save();
 
@@ -6387,6 +6387,116 @@ router.get('/getCampaignNames', async(req,res)=>{
   }catch(error){
     console.error('Error Fetching Leads:', error);
     res.status(500).json({error: 'Failed to fetch leads'});
+  }
+});
+
+// Data By Campaign
+
+router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const campaign =  req.params.campaign;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      closingDate: {
+        $gte: startDate, $lte: endDate
+      },
+      campaign_Name: campaign
+    };
+    const campaignData = await salesLead.find(query);
+    res.json(campaignData);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+//download Campaign Lead
+
+router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const campaign = req.params.campaign;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      closingDate: {
+        $gte: startDate, $lte: endDate
+      },
+      campaign_Name: campaign
+    };
+    const campaignData = await salesLead.find(query);
+    const data = campaignData.map(customer => ({
+      'Name': customer.custName,
+      'Number': customer.custNumb,
+      'Bussiness': customer.custBussiness,
+      'Closing Date': customer.closingDate,
+      'Campaign Name': customer.campaign_Name
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'LeadsData');
+    XLSX.writeFile(wb, 'LeadsData.xlsx');
+    res.download('LeadsData.xlsx');
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+// Data By Closing Campaign
+
+router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const campaign = req.params.campaign;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      closingDate: {
+        $gte: startDate, $lte: endDate
+      },
+      closingCateg: campaign
+    };
+    const campaignData = await Customer.find(query);
+    res.json(campaignData);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+//download Category Campaign
+
+router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  const campaign = req.params.campaign;
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      closingDate: {
+        $gte: startDate, $lte: endDate
+      },
+      closingCateg: campaign
+    };
+    const campaignData = await Customer.find(query);
+    const data = campaignData.map(customer => ({
+      'Name': customer.custName,
+      'Number': customer.custNumb,
+      'Bussiness': customer.custBussiness,
+      'closing Date': customer.closingDate,
+      'Campaign Name': customer.campaign_Name
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'ClosingData');
+    XLSX.writeFile(wb, 'ClosingData.xlsx');
+    res.download('ClosingData.xlsx');
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message:"Server Error"});
   }
 });
 
