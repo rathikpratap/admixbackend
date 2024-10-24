@@ -6390,6 +6390,18 @@ router.get('/getCampaignNames', async(req,res)=>{
   }
 });
 
+// get all Closing Names
+
+router.get('/getClosingNames', async(req,res)=>{
+  try{
+    const allClosing = await Customer.find();
+    return res.json(allClosing)
+  }catch(error){
+    console.log("Error Fetching Closing:", error);
+    res.status(500).json({error: 'Failed to fetch Closing'});
+  }
+});
+
 // Data By Campaign
 
 router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
