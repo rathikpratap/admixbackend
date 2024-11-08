@@ -2883,6 +2883,26 @@ router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => 
   }
 });
 
+router.get('/salesleadsByRange/:startDate/:endDate', async (req, res) => {
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try {
+    let query = {
+      salesTeam: personTeam,
+      closingDate: {
+        $gte: startDate, $lte: endDate
+      }
+    };
+    const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
+    //console.log("Leads Data===>", rangeTotalData);
+    res.json({ rangeTotalData: rangeTotalData });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 router.get('/salesleadsByRangeAdmin/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
