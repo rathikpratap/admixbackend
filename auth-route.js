@@ -2864,7 +2864,8 @@ router.get('/getSales-Leads', async (req, res) => {
 router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
-  const categ = new Date(req.params.categ);
+  const categ = req.params.categ;
+  console.log("CATEG================>>>", categ);
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
