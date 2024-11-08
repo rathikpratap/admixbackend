@@ -13,6 +13,7 @@ const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
 const Task = require('./models/task');
 const salesLead = require('./models/salesLead');
+const incentive = require('./models/incentive');
 const transferLead = require('./models/adminLeads');
 const Payroll = require('./models/payroll');
 const EstInvoice = require('./models/estInvoice');
@@ -389,7 +390,7 @@ router.get('/allPreviousProjectsAdmin', async (req, res) => {
     const currentMonth = new Date().getMonth() + 1;
     const previousMonthData = await Customer.find({
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
     }).sort({ closingDate: -1 });
@@ -407,8 +408,8 @@ router.get('/allTwoPreviousProjectsAdmin', async (req, res) => {
     const currentMonth = new Date().getMonth() + 1;
     const previousTwoMonthData = await Customer.find({
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 1)
       }
     }).sort({ closingDate: -1 });
     return res.json(previousTwoMonthData)
@@ -6530,6 +6531,43 @@ router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
   }catch(error){
     console.log(error);
     res.status(500).json({message: "Server Error"});
+  }
+});
+
+//Incentives
+
+router.put('/addIncentive', async(req,res)=>{
+  try{
+    const {employeeName, category} = req.body;
+    const incentiveInfo = req.body;
+
+    let updateIncentive;
+
+    const existingIncentive = await incentive.findOne({employeeName, category});
+    if(existingIncentive){
+      updateIncentive = await incentive.findOneAndUpdate(
+        {employeeName, category},
+        { $set: incentiveInfo},
+        { new: true}
+      );
+    }else{
+      const newEntry = {employeeName, category, ...incentiveInfo};
+      updateIncentive = await new incentive(newEntry).save();
+    }
+    res.json({success: true, message:"Incentive Added!!"});
+  }catch(err){
+    console.error("Error Adding/Updating Incentive:", err);
+    res.json({success: false, message:"Incentive Not Added!!"});
+  }
+});
+
+router.get('/allIncentive',async(req,res)=>{
+  try{
+    const allIncentive = await incentive.find();
+    return res.json(allIncentive)
+  }catch(error){
+    console.log("Error Fetching Incentive:", error);
+    res.status(500).json({error: 'Failed to fetch Incentive'})
   }
 });
 
