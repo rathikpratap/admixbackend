@@ -2861,13 +2861,15 @@ router.get('/getSales-Leads', async (req, res) => {
 
 // SalesLead by Range
 
-router.get('/salesleadsByRange/:startDate/:endDate', async (req, res) => {
+router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
+  const categ = new Date(req.params.categ);
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
       salesTeam: personTeam,
+      campaign_Name: categ,
       closingDate: {
         $gte: startDate, $lte: endDate
       }
