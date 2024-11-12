@@ -41,7 +41,8 @@ const registerSchema = new mongoose.Schema({
     },
     default: {}
   },
-  subsidiaryName: {type: String}
+  subsidiaryName: {type: String},
+  incentivePassword: {type: String}
 });
 
 module.exports = mongoose.model('User', registerSchema);

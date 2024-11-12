@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 
 const estInvoiceSchema = new mongoose.Schema({
     custGST: {type: String},
-    custADD: {type: String},
+    //custADD: {type: String},
+    custAddLine1: {type: String},
+    custAddLine2: {type: String},
+    custAddLine3: {type: String},
     billType : {type: String},
     custName: {type:String},
     custNumb:{type:Number},
