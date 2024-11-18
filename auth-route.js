@@ -5744,7 +5744,8 @@ router.get('/attendance', async (req, res) => {
           const currentDate = new Date(year, month - 1, day + 1);
           return {
             date: currentDate.toISOString().slice(0, 10),
-            status: 'Select'  // Default status
+            status: 'Select', // Default status
+            reason: ''
           };
         });
 

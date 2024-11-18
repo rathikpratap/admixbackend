@@ -3,8 +3,9 @@ const mongoose = require('mongoose');
 // Define the schema for attendance records
 const AttendanceDaySchema = new mongoose.Schema({
   date: { type: String, required: true },
-  status: { type: String, enum: ['Present', 'Absent', 'Half Day', 'Select'], default: 'Select' }
-});
+  status: { type: String, enum: ['Present', 'Absent', 'Half Day', 'Select'], default: 'Select' },
+  reason: { type: String, default: null }
+}); 
 
 const registerSchema = new mongoose.Schema({
 
