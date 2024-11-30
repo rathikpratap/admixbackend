@@ -447,7 +447,7 @@ router.get('/allOngoingProjects', async (req, res) => {
     const products = await Customer.find({
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
