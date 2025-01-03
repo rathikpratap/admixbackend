@@ -1551,11 +1551,13 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
     const rangeTotalAmount = rangeTotalData.reduce((sum, doc) => sum + doc.closingPrice, 0);
     const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay, 0);
     const rangeTotalDue = rangeTotalData.reduce((sum, doc) => sum + doc.remainingAmount, 0);
+    const rangeMonthAmount = rangeTotalData.reduce((sum, doc) => sum + doc.restAmount, 0);
     res.json({
       rangeTotalData: rangeTotalData,
       rangeTotalAmount: rangeTotalAmount,
       rangeTotalRecv: rangeTotalRecv,
-      rangeTotalDue: rangeTotalDue
+      rangeTotalDue: rangeTotalDue,
+      rangeMonthAmount: rangeMonthAmount
     });
   } catch (error) {
     console.log(error);
