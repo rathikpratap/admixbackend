@@ -2845,14 +2845,14 @@ router.get('/getSales-Leads', async (req, res) => {
     const previousMonthLeads = await Customer.find({
       salesTeam: personTeam,
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
     }).sort({ closingDate: -1 });
     const previousTwoMonthLeads = await Customer.find({
       salesTeam: personTeam,
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
     }).sort({ closingDate: -1 });
