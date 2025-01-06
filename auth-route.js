@@ -1557,8 +1557,7 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
       rangeTotalData: rangeTotalData,
       rangeTotalAmount: rangeTotalAmount,
       rangeTotalRecv: rangeTotalRecv,
-      rangeTotalDue: rangeTotalDue,
-      rangeMonthAmount: rangeMonthAmount
+      rangeTotalDue: rangeTotalDue
     });
   } catch (error) {
     console.log(error);
