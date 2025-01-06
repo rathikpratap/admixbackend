@@ -2853,7 +2853,7 @@ router.get('/getSales-Leads', async (req, res) => {
       salesTeam: personTeam,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 1)
       }
     }).sort({ closingDate: -1 });
     res.json({ fetchedLeads, previousMonthLeads, previousTwoMonthLeads });
