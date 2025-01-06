@@ -336,7 +336,8 @@ router.get('/allPreviousProjects', async (req, res) => {
     const previousMonthData = await Customer.find({
       salesPerson: person,
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+        // $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
     }).sort({ closingDate: -1 });
@@ -355,7 +356,8 @@ router.get('/allTwoPreviousProjects', async (req, res) => {
     const previousTwoMonthData = await Customer.find({
       salesPerson: person,
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+        // $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
     }).sort({ closingDate: -1 });
@@ -1549,9 +1551,8 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
     }
     const rangeTotalData = await Customer.find(query);
     const rangeTotalAmount = rangeTotalData.reduce((sum, doc) => sum + doc.closingPrice, 0);
-    const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay, 0);
+    const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
     const rangeTotalDue = rangeTotalData.reduce((sum, doc) => sum + doc.remainingAmount, 0);
-    const rangeMonthAmount = rangeTotalData.reduce((sum, doc) => sum + doc.restAmount, 0);
     res.json({
       rangeTotalData: rangeTotalData,
       rangeTotalAmount: rangeTotalAmount,
@@ -6717,8 +6718,15 @@ router.get('/allIncentive',async(req,res)=>{
 
 // GET route to calculate incentive based on sales
 router.get('/categoryAmount', async (req, res) => {
-  const startMonth = moment().startOf('month').toDate();
-  const endMonth = moment().endOf('month').toDate();
+
+  const {year, month} =req.query;
+
+  // const startMonth = moment().startOf('month').toDate();
+  // const endMonth = moment().endOf('month').toDate();
+
+  const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
+const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
+
 
   try {
     // Step 1: Aggregate customer data within the current month date range
@@ -6878,10 +6886,13 @@ router.get('/categoryAmount', async (req, res) => {
 
 
 router.get('/salesIncentive', checkAuth, async (req, res) => {
+  const {year, month} = req.query;
   const password = req.query.pass;
   const person1 = req.userData.name;
-  const startMonth = moment().startOf('month').toDate();
-  const endMonth = moment().endOf('month').toDate();
+  // const startMonth = moment().startOf('month').toDate();
+  // const endMonth = moment().endOf('month').toDate();
+  const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
+const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
 
   try {
     // Verify user's password
