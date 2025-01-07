@@ -3003,6 +3003,9 @@ router.post('/updateEditor', async (req, res) => {
         existingItem.priority = item.priority;
         existingItem.graphicStatus = item.graphicStatus;
         existingItem.graphicDeliveryDate = item.graphicDeliveryDate;
+        existingItem.bundleHandler = item.bundleHandler;
+        existingItem.bundleStatus = item.bundleStatus;
+        existingItem.bundlePassDate = item.bundlePassDate;
         await existingItem.save();
       }
     }
@@ -6957,6 +6960,106 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
   } catch (error) {
     console.error("Error retrieving incentives:", error.message);
     res.status(500).json({ status: "fail", error: error.message });
+  }
+});
+
+router.get('/bundleActiveList', async(req,res)=>{
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    const bundles = await Customer.find({
+      bundleHandler: person,
+      bundlePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth)
+      },
+      bundleStatus: { $ne: 'Created'}
+    }).sort({bundlePassDate: -1});
+    res.json(bundles);
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
+  }
+});
+
+router.get('/bundleCompleteList', async (req, res) => {
+  //console.log("person hjjj ==>", person);
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      bundleHandler: person,
+      bundlePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth)
+      },
+      //remainingAmount: { $gt: 0 },
+      bundleStatus: { $regex: /^Created$/i }
+    }).sort({ bundlePassDate: -1 });
+
+    res.json(products);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/allBundleProjects', async(req,res)=>{
+  const allProjects = await Customer.find({bundleHandler: person}).sort({bundlePassDate: -1});
+  if(allProjects){
+    return res.json(allProjects)
+  }else{
+    res.send({result: "No Data Found"})
+  }
+});
+
+router.get('/bundleProjects', async (req, res) => {
+  try {
+    const currentMonth = new Date().getMonth() + 1;
+    const allProjects = await Customer.find({
+      bundleHandler: person,
+      bundlePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+      }
+    }).sort({ bundlePassDate: -1 });
+    return res.json(allProjects)
+  } catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/bundlePreviousProjects', async (req, res) => {
+  try {
+    const currentMonth = new Date().getMonth() + 1;
+    const allProjects = await Customer.find({
+      bundleHandler: person,
+      bundlePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+      }
+    }).sort({ bundlePassDate: -1 });
+    return res.json(allProjects)
+  } catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
+  }
+});
+
+router.get('/bundleTwoPreviousProjects', async (req, res) => {
+  try {
+    const currentMonth = new Date().getMonth() + 1;
+    const allProjects = await Customer.find({
+      bundleHandler: person,
+      bundlePassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 1)
+      }
+    }).sort({ bundlePassDate: -1 });
+    return res.json(allProjects)
+  } catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads' })
   }
 });
 

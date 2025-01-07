@@ -79,7 +79,10 @@ const customerSchema = new mongoose.Schema({
     VoCNR: {type:String},
     priority: {type:String},
     transferBy: {type:String},
-    newSalesTeam: {type: String}
+    newSalesTeam: {type: String},
+    bundleHandler: {type:String},
+    bundleStatus: {type:String},
+    bundlePassDate: {type:Date}
 });
 
 //customerSchema.pre('save', function(next) {
