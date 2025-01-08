@@ -891,8 +891,8 @@ router.post('/customer', async (req, res) => {
     companyName: req.body.companyName,
     scriptPassDate: req.body.scriptPassDate,
     graphicDesigner: req.body.graphicDesigner,
-    graphicPassDate: req.body.graphicPassDate
-
+    graphicPassDate: req.body.graphicPassDate,
+    Qr: req.body.Qr
   })
 
   await customer.save()
@@ -6570,44 +6570,51 @@ router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
 
 //Incentives
 
-// router.put('/addIncentive', async(req,res)=>{
-//   try{
-//     const {employeeName, category} = req.body;
-//     const incentiveInfo = req.body;
+// PUT route for adding or updating incentive
+// router.put('/addIncentive', async (req, res) => {
+//   try {
+//     const { employeeName, category, incentives } = req.body;
 
-//     let updateIncentive;
+//     // Check if the incentive entry for the employee and category already exists
+//     let updatedIncentive;
+//     const existingIncentive = await incentive.findOne({ employeeName, category });
 
-//     const existingIncentive = await incentive.findOne({employeeName, category});
-//     if(existingIncentive){
-//       updateIncentive = await incentive.findOneAndUpdate(
-//         {employeeName, category},
-//         { $set: incentiveInfo},
-//         { new: true}
+//     if (existingIncentive) {
+//       // Update existing incentive
+//       updatedIncentive = await incentive.findOneAndUpdate(
+//         { employeeName, category },
+//         { $set: { incentives } },
+//         { new: true }  // Return the updated document
 //       );
-//     }else{
-//       const newEntry = {employeeName, category, ...incentiveInfo};
-//       updateIncentive = await new incentive(newEntry).save();
+//     } else {
+//       // Create new incentive entry
+//       const newIncentive = new incentive({
+//         employeeName,
+//         category,
+//         incentives
+//       });
+//       updatedIncentive = await newIncentive.save();
 //     }
-//     res.json({success: true, message:"Incentive Added!!"});
-//   }catch(err){
+
+//     res.json({ success: true, message: "Incentive Added or Updated Successfully!", data: updatedIncentive });
+//   } catch (err) {
 //     console.error("Error Adding/Updating Incentive:", err);
-//     res.json({success: false, message:"Incentive Not Added!!"});
+//     res.status(500).json({ success: false, message: "Error Adding/Updating Incentive" });
 //   }
 // });
 
-// PUT route for adding or updating incentive
 router.put('/addIncentive', async (req, res) => {
   try {
-    const { employeeName, category, incentives } = req.body;
+    const { employeeName, incentives } = req.body;
 
     // Check if the incentive entry for the employee and category already exists
     let updatedIncentive;
-    const existingIncentive = await incentive.findOne({ employeeName, category });
+    const existingIncentive = await incentive.findOne({ employeeName });
 
     if (existingIncentive) {
       // Update existing incentive
       updatedIncentive = await incentive.findOneAndUpdate(
-        { employeeName, category },
+        { employeeName },
         { $set: { incentives } },
         { new: true }  // Return the updated document
       );
@@ -6615,7 +6622,6 @@ router.put('/addIncentive', async (req, res) => {
       // Create new incentive entry
       const newIncentive = new incentive({
         employeeName,
-        category,
         incentives
       });
       updatedIncentive = await newIncentive.save();
@@ -6639,14 +6645,21 @@ router.get('/allIncentive',async(req,res)=>{
   }
 });
 
-// Incentive Amount by Category
 
+// GET route to calculate incentive based on sales
 // router.get('/categoryAmount', async (req, res) => {
-//   const startMonth = moment().startOf('month').toDate();
-//   const endMonth = moment().endOf('month').toDate();
+
+//   const {year, month} =req.query;
+
+//   // const startMonth = moment().startOf('month').toDate();
+//   // const endMonth = moment().endOf('month').toDate();
+
+//   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
+// const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
+
 
 //   try {
-//     // Step 1: Aggregate the Customer data within the date range
+//     // Step 1: Aggregate customer data within the current month date range
 //     const results = await Customer.aggregate([
 //       {
 //         $match: {
@@ -6668,67 +6681,59 @@ router.get('/allIncentive',async(req,res)=>{
 //       }
 //     ]);
 
-//     // Step 2: For each aggregated result, find the matching incentive and calculate the incentive amount
+//     // Step 2: Calculate incentives for each sales person and category based on thresholds
 //     for (let result of results) {
 //       const { closingCateg, salesPerson } = result._id;
 //       const totalClosingPrice = result.totalClosingPrice;
 
-//       // Step 3: Find the corresponding incentive for the sales person and category
-//       const Incentive = await incentive.findOne({
+//       // Step 3: Find matching incentive for the sales person and category
+//       const incentivess = await incentive.findOne({
 //         employeeName: salesPerson,
 //         category: closingCateg
 //       });
 
-//       // Step 4: Calculate incentive based on the incentive's thresholds
-//       if (Incentive) {
+//       if (incentivess && incentivess.incentives) {
 //         let calculatedIncentive = 0;
 
-//         if (totalClosingPrice >= Incentive.amountThree) {
-//           calculatedIncentive = (totalClosingPrice - Incentive.amountThree) * (Incentive.amountThreeIncrement / 100);
-//         } else if (totalClosingPrice >= Incentive.amountTwo) {
-//           calculatedIncentive = (totalClosingPrice - Incentive.amountTwo) * (Incentive.amountTwoIncrement / 100);
-//         } else if (totalClosingPrice >= Incentive.amountOne) {
-//           calculatedIncentive = (totalClosingPrice - Incentive.amountOne) * (Incentive.amountOneIncrement / 100);
+//         // Loop through incentives thresholds to calculate the correct incentive
+//         for (let threshold of incentivess.incentives) {
+//           if (totalClosingPrice >= threshold.amount) {
+//             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
+//           }
 //         }
 
-//         // Add the calculated incentive to the result
+//         // Add calculated incentive to the result
 //         result.calculatedIncentive = calculatedIncentive;
 //       } else {
-//         // If no matching incentive found, set calculatedIncentive to 0 or some default value
+//         // No matching incentive found, set incentive to 0
 //         result.calculatedIncentive = 0;
 //       }
 //     }
 
-//     // Step 5: Send the final response
+//     // Step 4: Send the final response
 //     if (results.length > 0) {
-//       console.log('Top Category: ', results[0]);
+//       console.log('Top Category Results:', results);
 //       results.forEach(result => {
-//         console.log(`ClosingCateg: ${result._id.closingCateg}, SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
+//         console.log(`Category: ${result._id.closingCateg}, SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
 //       });
 //       res.json(results);
 //     } else {
-//       console.log('No sales entries found');
-//       res.json({ message: 'No sales entries found' });
+//       console.log('No sales entries found for the current month');
+//       res.json({ message: 'No sales entries found for the current month' });
 //     }
 
 //   } catch (error) {
-//     console.error("Error getting top performer", error.message);
+//     console.error("Error retrieving category amounts and incentives:", error.message);
 //     res.status(500).json({ status: "fail", error: error.message });
 //   }
 // });
 
-
-// GET route to calculate incentive based on sales
 router.get('/categoryAmount', async (req, res) => {
 
-  const {year, month} =req.query;
-
-  // const startMonth = moment().startOf('month').toDate();
-  // const endMonth = moment().endOf('month').toDate();
+  const {year, month} = req.query;
 
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
-const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
+  const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
 
   try {
     // Step 1: Aggregate customer data within the current month date range
@@ -6738,13 +6743,13 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
           closingDate: {
             $gte: startMonth,
             $lte: endMonth
-          }
+          },
+          remainingAmount: 0
         }
       },
       {
         $group: {
           _id: {
-            closingCateg: '$closingCateg',
             salesPerson: '$salesPerson'
           },
           numberOfClosings: { $sum: 1 },
@@ -6753,15 +6758,14 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
       }
     ]);
 
-    // Step 2: Calculate incentives for each sales person and category based on thresholds
+    // Step 2: Calculate incentives for each sales person based on thresholds
     for (let result of results) {
-      const { closingCateg, salesPerson } = result._id;
+      const { salesPerson } = result._id;
       const totalClosingPrice = result.totalClosingPrice;
 
-      // Step 3: Find matching incentive for the sales person and category
+      // Step 3: Find matching incentive for the sales person
       const incentivess = await incentive.findOne({
-        employeeName: salesPerson,
-        category: closingCateg
+        employeeName: salesPerson
       });
 
       if (incentivess && incentivess.incentives) {
@@ -6784,9 +6788,9 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
 
     // Step 4: Send the final response
     if (results.length > 0) {
-      console.log('Top Category Results:', results);
+      console.log('Results:', results);
       results.forEach(result => {
-        console.log(`Category: ${result._id.closingCateg}, SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
+        console.log(`SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
       });
       res.json(results);
     } else {
@@ -6795,106 +6799,95 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
     }
 
   } catch (error) {
-    console.error("Error retrieving category amounts and incentives:", error.message);
+    console.error("Error retrieving amounts and incentives:", error.message);
     res.status(500).json({ status: "fail", error: error.message });
   }
 });
 
-
-
 // Sales Person Incentives
 
 // router.get('/salesIncentive', checkAuth, async (req, res) => {
+//   const {year, month} = req.query;
 //   const password = req.query.pass;
 //   const person1 = req.userData.name;
-//   const startMonth = moment().startOf('month').toDate();
-//   const endMonth = moment().endOf('month').toDate();
+//   // const startMonth = moment().startOf('month').toDate();
+//   // const endMonth = moment().endOf('month').toDate();
+//   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
+//   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
 
-//     console.log("PASSWOERD=====>>", password);
 //   try {
+//     // Verify user's password
+//     const user = await User.findOne({ signupUsername: person1 });
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+//     if (user.incentivePassword !== password) {
+//       return res.status(401).json({ message: 'Password not matched' });
+//     }
+//     console.log("Password verified");
 
-//     const passUser = await User.findOne({signupUsername: person1});
-
-//     if(passUser){
-//       if(passUser.incentivePassword === password){
-//         console.log("Correct Password");
-//         const results = await Customer.aggregate([
-//           {
-//             $match: {
-//               closingDate: {
-//                 $gte: startMonth,
-//                 $lte: endMonth
-//               },
-//               salesPerson: person1
-//             }
+//     // Aggregate sales data for the user in the current month
+//     const results = await Customer.aggregate([
+//       {
+//         $match: {
+//           closingDate: { $gte: startMonth, $lte: endMonth },
+//           salesPerson: person1
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: {
+//             closingCateg: '$closingCateg',
+//             salesPerson: '$salesPerson'
 //           },
-//           {
-//             $group: {
-//               _id: {
-//                 closingCateg: '$closingCateg',
-//                 salesPerson: '$salesPerson'
-//               },
-//               numberOfClosings: { $sum: 1 },
-//               totalClosingPrice: { $sum: '$closingPrice' }
-//             }
-//           }
-//         ]);
-    
-//         for (let result of results) {
-//           const { closingCateg, salesPerson } = result._id;
-//           const totalClosingPrice = result.totalClosingPrice;
-    
-//           const Incentive = await incentive.findOne({
-//             employeeName: salesPerson,
-//             category: closingCateg
-//           });
-    
-//           if (Incentive) {
-//             let calculatedIncentive = 0;
-    
-//             if (totalClosingPrice >= Incentive.amountThree) {
-//               calculatedIncentive = (totalClosingPrice - Incentive.amountThree) * (Incentive.amountThreeIncrement / 100);
-//             } else if (totalClosingPrice >= Incentive.amountTwo) {
-//               calculatedIncentive = (totalClosingPrice - Incentive.amountTwo) * (Incentive.amountTwoIncrement / 100);
-//             } else if (totalClosingPrice >= Incentive.amountOne) {
-//               calculatedIncentive = (totalClosingPrice - Incentive.amountOne) * (Incentive.amountOneIncrement / 100);
-//             }
-    
-//             result.calculatedIncentive = calculatedIncentive;
-//           } else {
-//             result.calculatedIncentive = 0;
+//           numberOfClosings: { $sum: 1 },
+//           totalClosingPrice: { $sum: '$closingPrice' }
+//         }
+//       }
+//     ]);
+
+//     // Calculate incentives for each category and sales person
+//     for (let result of results) {
+//       const { closingCateg, salesPerson } = result._id;
+//       const totalClosingPrice = result.totalClosingPrice;
+
+//       // Find the incentive information for this sales person and category
+//       const incentivess = await incentive.findOne({ employeeName: salesPerson, category: closingCateg });
+//       if (incentivess && incentivess.incentives) {
+//         let calculatedIncentive = 0;
+
+//         // Loop through incentives to find the appropriate incentive level
+//         for (let threshold of incentivess.incentives) {
+//           if (totalClosingPrice >= threshold.amount) {
+//             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
 //           }
 //         }
-//         if (results.length > 0) {
-//           console.log('Top Category: ', results[0]);
-//           results.forEach(result => {
-//             console.log(`ClosingCateg: ${result._id.closingCateg}, SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
-//           });
-//           res.json(results);
-//         } else {
-//           console.log('No sales entries found');
-//           res.json({ message: 'No sales entries found' });
-//         }
-//       }else{
-//         console.log("PASSWORD NOT MATCHED");
-//         return res.status(200).json({ message: 'Password Not Matched' });
+//         result.calculatedIncentive = calculatedIncentive;
+//       } else {
+//         result.calculatedIncentive = 0;
 //       }
 //     }
+
+//     // Send response with calculated incentives
+//     if (results.length > 0) {
+//       console.log('Incentive Calculation Results:', results);
+//       res.json(results);
+//     } else {
+//       res.json({ message: 'No sales entries found for the current month' });
+//     }
+
 //   } catch (error) {
-//     console.error("Error getting top performer", error.message);
+//     console.error("Error retrieving incentives:", error.message);
 //     res.status(500).json({ status: "fail", error: error.message });
 //   }
 // });
-
 
 router.get('/salesIncentive', checkAuth, async (req, res) => {
   const {year, month} = req.query;
   const password = req.query.pass;
   const person1 = req.userData.name;
-  // const startMonth = moment().startOf('month').toDate();
-  // const endMonth = moment().endOf('month').toDate();
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
-const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
+  const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
 
   try {
     // Verify user's password
@@ -6907,18 +6900,18 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
     }
     console.log("Password verified");
 
-    // Aggregate sales data for the user in the current month
+    // Aggregate sales data for the user in the current month where remainingAmount is 0
     const results = await Customer.aggregate([
       {
         $match: {
           closingDate: { $gte: startMonth, $lte: endMonth },
-          salesPerson: person1
+          salesPerson: person1,
+          remainingAmount: 0
         }
       },
       {
         $group: {
           _id: {
-            closingCateg: '$closingCateg',
             salesPerson: '$salesPerson'
           },
           numberOfClosings: { $sum: 1 },
@@ -6927,13 +6920,13 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
       }
     ]);
 
-    // Calculate incentives for each category and sales person
+    // Calculate incentives for each sales person
     for (let result of results) {
-      const { closingCateg, salesPerson } = result._id;
+      const { salesPerson } = result._id;
       const totalClosingPrice = result.totalClosingPrice;
 
-      // Find the incentive information for this sales person and category
-      const incentivess = await incentive.findOne({ employeeName: salesPerson, category: closingCateg });
+      // Find the incentive information for this sales person
+      const incentivess = await incentive.findOne({ employeeName: salesPerson });
       if (incentivess && incentivess.incentives) {
         let calculatedIncentive = 0;
 
@@ -6962,6 +6955,8 @@ const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
     res.status(500).json({ status: "fail", error: error.message });
   }
 });
+
+
 
 router.get('/bundleActiveList', async(req,res)=>{
   const currentMonth = new Date().getMonth() + 1;

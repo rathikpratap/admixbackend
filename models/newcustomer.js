@@ -82,7 +82,8 @@ const customerSchema = new mongoose.Schema({
     newSalesTeam: {type: String},
     bundleHandler: {type:String},
     bundleStatus: {type:String},
-    bundlePassDate: {type:Date}
+    bundlePassDate: {type:Date},
+    Qr: {type:String}
 });
 
 //customerSchema.pre('save', function(next) {
