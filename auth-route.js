@@ -25,7 +25,6 @@ const checkAuth = require('./middleware/chech-auth');
 const axios = require('axios');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const adminLeads = require('./models/adminLeads');
 const sendNotif = require('./middleware/sendNotif');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -34,10 +33,6 @@ const moment = require('moment');
 
 const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 const SCOPES = [MESSAGING_SCOPE];
-
-//var admin = require("firebase-admin");
-
-//var serviceAccount = require("./admix-demo-firebase-adminsdk-952at-48ec8627f9.json");
 
 let person = '';
 let personTeam = '';
@@ -130,13 +125,9 @@ router.post('/logout', (req, res) => {
     if (err) {
       return res.json({ success: false, message: "Invalid token." });
     }
-    //console.log("TOKEN====>>", token);
 
-    const userId = decoded.userId; // Extract user ID from token
+    const userId = decoded.userId;
 
-    //console.log("USERID====>>", userId);
-
-    // Find the user by ID and update the logout time
     User.findById(userId).exec()
       .then(user => {
         if (!user) {
@@ -185,8 +176,6 @@ router.get('/profile', checkAuth, async (req, res) => {
   role = req.userData.signupRole;
 
   User.findById(userId).exec().then((result) => {
-    //console.log("data=====>>>>", person)
-    //console.log("SALESPERSON===>>>>", personTeam);
     return res.json({ success: true, data: result })
   }).catch(err => {
     res.json({ success: false, message: "Server Error!!" })
@@ -196,7 +185,6 @@ router.get('/profile', checkAuth, async (req, res) => {
 // Monthwise Ongoing Projects
 
 router.get('/list', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -205,7 +193,6 @@ router.get('/list', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -223,11 +210,9 @@ router.get('/list', async (req, res) => {
 //All ongoing Projects Sales
 
 router.get('/allList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   try {
     const products = await Customer.find({
       salesPerson: person,
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -245,10 +230,8 @@ router.get('/allList', async (req, res) => {
 // All ongoing projects Admin
 
 router.get('/allListAdmin', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   try {
     const products = await Customer.find({
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -274,7 +257,6 @@ router.get('/completeProject', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: 0,
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
 
@@ -289,28 +271,11 @@ router.get('/completeProject', async (req, res) => {
   }
 });
 
-// router.get('/allProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const fetchedLeads = await Customer.find({
-//       salesPerson: person,
-//       closingDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//       }
-//     }).sort({ closingDate: -1 });
-//     return res.json(fetchedLeads);
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to Fetch Leads' })
-//   }
-// });
-
 router.get('/allProjects', async (req, res) => {
   try {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // First day of the current month
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999); // End of today
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
     const fetchedLeads = await Customer.find({
       salesPerson: person,
@@ -336,7 +301,6 @@ router.get('/allPreviousProjects', async (req, res) => {
     const previousMonthData = await Customer.find({
       salesPerson: person,
       closingDate: {
-        // $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
@@ -356,7 +320,6 @@ router.get('/allTwoPreviousProjects', async (req, res) => {
     const previousTwoMonthData = await Customer.find({
       salesPerson: person,
       closingDate: {
-        // $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
@@ -443,7 +406,6 @@ router.get('/allEmployee', async (req, res) => {
 //All Monthwise Ongoing Projects Admin
 
 router.get('/allOngoingProjects', async (req, res) => {
-  //console.log("person ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -451,7 +413,6 @@ router.get('/allOngoingProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -468,15 +429,6 @@ router.get('/allOngoingProjects', async (req, res) => {
 
 //All Complete projects
 
-//router.get('/allCompleteProjects', async (req, res)=>{
-//    const allComplete = await Customer.find({ remainingAmount :{$eq: 0} });
-//    if(allComplete){
-//        return res.json(allComplete)
-//    }else{
-//        res.send({result: "No Data Found"})
-//    }
-//})
-
 router.get('/allCompleteProjects', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
@@ -485,7 +437,6 @@ router.get('/allCompleteProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: 0,
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
 
@@ -501,19 +452,6 @@ router.get('/allCompleteProjects', async (req, res) => {
 });
 
 //get Customer
-
-//router.get('/read-cust/:id', async (req, res)=>{
-//    try {
-//        const details = await Customer.findById(req.params.id);
-//        if (details) {
-//            return res.json(details);
-//        } else {
-//            return res.json({ result: "No Data" });
-//        }
-//    } catch (error) {
-//        return res.status(500).json({ error: error.message });
-//    }
-//})
 
 router.get('/read-cust/:id', async (req, res) => {
   try {
@@ -542,7 +480,6 @@ router.get('/read-emp/:id', async (req, res) => {
   try {
     const empDetails = await User.findById(req.params.id);
     if (empDetails) {
-      //console.log("Employee ==>", empDetails);
       return res.json(empDetails);
     } else {
       return res.json({ result: "No Employee Found" });
@@ -558,7 +495,6 @@ router.get('/getCompanyPay/:id', async (req, res) => {
   try {
     const compDetails = await newCompany.findById(req.params.id);
     if (compDetails) {
-      //console.log("Company===>", compDetails);
       return res.json(compDetails);
     } else {
       return res.json({ result: "No Company Found" });
@@ -574,7 +510,6 @@ router.delete('/delete-emp/:id', async (req, res) => {
   try {
     const deleteData = await User.findByIdAndDelete(req.params.id);
     if (deleteData) {
-      //console.log("Delete ==>", deleteData);
       return res.json(deleteData);
     } else {
       return res.json({ result: "No Data Deleted" });
@@ -617,7 +552,6 @@ router.delete('/delete-sales/:id', async (req, res) => {
 // Edit Customer Details By editor
 
 router.put('/updateEditor/:id', async (req, res) => {
-  //console.log("req.body ==>", req.body);
   const custDet = await Customer.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -634,8 +568,6 @@ router.put('/update/:id', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData.name;
     const personTeam1 = req.userData.Saleteam;
-    //console.log("UPDATE SALESPERSON==>", person1);
-    //console.log("UPDATE SALESTEAM==>", personTeam1);
     let custDet = await Customer.findById(req.params.id);
     let leadDet = await salesLead.findById(req.params.id);
     if (custDet) {
@@ -728,7 +660,6 @@ router.put('/update/:id', checkAuth, async (req, res) => {
 // Edit Employee
 
 router.put('/updateEmp/:id', async (req, res) => {
-  //console.log("req.body ==>", req.body);
   const EmpDet = await User.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -748,9 +679,7 @@ router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (
     const signupRole = req.params.signupRole;
     const videoType = req.params.videoType;
     const updatedPaymentInfo = req.body;
-
     let updatedCompany;
-
     if (signupRole === 'Editor') {
       const existingCompany = await newCompany.findOne({ companyName: companyName, signupName: signupName, videoType: videoType });
       if (existingCompany) {
@@ -790,24 +719,19 @@ router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (
 router.get('/searchCustomer/:mobile', async (req, res) => {
   try {
     const mobile = req.params.mobile;
-    
     // Check if the mobile parameter is a valid number
     const isNumeric = !isNaN(mobile);
-    
     let searchCriteria = {
       "$or": [
         { custName: { $regex: mobile, $options: 'i' }},
         {  projectStatus: {$regex: mobile, $options: 'i'} } // Always search by custName using regex
       ]
     };
-    
     // If mobile is a valid number, add custNumb search
     if (isNumeric) {
       searchCriteria["$or"].push({ custNumb: Number(mobile) });
     }
-
     let data = await Customer.find(searchCriteria);
-    
     res.send(data);
   } catch (error) {
     console.error(error);
@@ -818,24 +742,19 @@ router.get('/searchCustomer/:mobile', async (req, res) => {
 router.get('/searchLeads/:mobile', async (req, res) => {
   try {
     const mobile = req.params.mobile;
-    
     // Check if the mobile parameter is a valid number
     const isNumeric = !isNaN(mobile);
-    
     let searchCriteria = {
       "$or": [
         { custName: { $regex: mobile, $options: 'i' }},
         {  projectStatus: {$regex: mobile, $options: 'i'} } // Always search by custName using regex
       ]
     };
-    
     // If mobile is a valid number, add custNumb search
     if (isNumeric) {
       searchCriteria["$or"].push({ custNumb: Number(mobile) });
     }
-
     let data = await salesLead.find(searchCriteria);
-    
     res.send(data);
   } catch (error) {
     console.error(error);
@@ -843,12 +762,10 @@ router.get('/searchLeads/:mobile', async (req, res) => {
   }
 });
 
-
 router.get('/customerProject/:projectStatus', async (req, res) => {
   let data = await salesLead.find(
     {
-        projectStatus: { $regex: req.params.projectStatus } 
-     
+        projectStatus: { $regex: req.params.projectStatus }   
     }
   )
   res.send(data);
@@ -865,7 +782,6 @@ router.get('/customerProjectName/:projectName', async (req, res) => {
 
 router.post('/customer', async (req, res) => {
   const customer = new Customer({
-
     custCode: req.body.custCode,
     custName: req.body.custName,
     custNumb: req.body.custNumb,
@@ -894,7 +810,6 @@ router.post('/customer', async (req, res) => {
     graphicPassDate: req.body.graphicPassDate,
     Qr: req.body.Qr
   })
-
   await customer.save()
     .then((_) => {
       res.json({ success: true, message: "User Added!!" })
@@ -918,7 +833,6 @@ router.get('/countries', async (req, res) => {
 router.get('/states/:countryCode', (req, res) => {
   const { countryCode } = req.params;
   const states = State.getStatesOfCountry(countryCode);
-  //console.log("State===>", states);
   res.json(states);
 });
 
@@ -926,7 +840,6 @@ router.get('/cities/:countryCode/:stateCode', (req, res) => {
   const { countryCode } = req.params;
   const { stateCode } = req.params;
   const cities = City.getCitiesOfState(countryCode, stateCode);
-  //console.log("City===>", cities);
   res.json(cities);
 });
 
@@ -1075,7 +988,6 @@ router.get('/totalEntriesRest', async (req, res) => {
     };
     const restAmount = await Customer.find(query);
     res.json(restAmount);
-    console.log("RESTAMOUNT====>", restAmount);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -1253,41 +1165,6 @@ router.get('/totalEntriesDueDownloadAdmin', async (req, res) => {
   }
 });
 
-// router.get('/totalEntries', async (req, res) => {
-
-//   const currentMonth = new Date().getMonth() + 1;
-//   console.log("Month person1 ==>", person);
-//   try {
-//     let query;
-//     if (person === 'Shiva Varshney') {
-//       query = {
-//         closingDate: {
-//           $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//           $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//         }
-//       };
-//     } else {
-//       query = {
-//         salesPerson: person,
-//         closingDate: {
-//           $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//           $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//         }
-//       };
-//     }
-
-//    const totalEntries = await Customer.find(query);
-//     const totalAmount = totalEntries.reduce((sum,doc)=> sum + doc.closingPrice, 0);
-//     const totalRecv = totalEntries.reduce((sum, doc)=> sum + doc.AdvPay, 0);
-//     const totalDue = totalEntries.reduce((sum,doc)=> sum + doc.remainingAmount, 0);
-//     res.json({totalEntries,totalAmount, totalRecv, totalDue});
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server Error' });
-//   }
-// });
-
-
 // Current Day Entry
 
 router.get('/todayEntries', async (req, res) => {
@@ -1301,7 +1178,6 @@ router.get('/todayEntries', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -1490,42 +1366,12 @@ router.get('/todayEntriesEmp', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
   }
 });
-
-//router.get('/todayEntries', async( req, res)=>{
-//  const currentDate = new Date();
-//  try{
-//    let query;
-//    if(person === 'Shiva Varshney'){
-//      query = {
-//        closingDate : {
-//          $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
-//          $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
-//        }
-//      };
-//    } else{
-//      query = {
-//        salesPerson : person,
-//       closingDate : {
-//         $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
-//         $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
-//       }
-//     };
-//   }
-//   const totalDayEntry = await Customer.find(query);
-//   console.log("Total Entries===>>",totalDayEntry)
-//   res.json({totalDayEntry});
-// } catch(error){
-//   console.log(error);
-//   res.status(500).json({message: "Server Error"});
-// }
-//});
 
 //Data By Date Range
 
@@ -1568,14 +1414,13 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
 //Excel Upload
 
 router.post('/uploadFile', upload.single('file'), async (req, res) => {
-  //await Customer.deleteMany();
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
     await Customer.insertMany(data);
-    res.status(200).json({ message: 'Data Upload Successfulll' });
+    res.status(200).json({ message: 'Data Upload Successfull' });
   } catch (err) {
     console.error("Error Uploading File", err);
     res.status(500).json({ error: "Failed to Upload File" });
@@ -1586,7 +1431,6 @@ router.post('/uploadFile', upload.single('file'), async (req, res) => {
 
 router.get('/downloadFile', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  //console.log("person ==>", person);
   try {
     let query;
     if (role === 'Admin' || role === 'Manager') {
@@ -1642,7 +1486,6 @@ router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  //console.log("DOwnload PersonTeam===>", personTeam)
   try {
     let query;
     if (role === 'Admin' || role === 'Manager') {
@@ -1690,7 +1533,6 @@ router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
     console.error('Error Downloading File', err);
     res.status(500).json({ error: 'Failed to download File' });
   }
-
 });
 
 // Download Sales Range Data
@@ -1699,14 +1541,12 @@ router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  //console.log("DOwnload PersonTeam===>", personTeam)
   try {
     let query = {
       closingDate: {
         $gte: startDate, $lte: endDate
       }
     };
-
     const rangeFileData = await salesLead.find(query);
     const data = rangeFileData.map(customer => ({
       'campaign_Name': customer.campaign_Name,
@@ -1730,7 +1570,6 @@ router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
     console.error('Error Downloading File', err);
     res.status(500).json({ error: 'Failed to download File' });
   }
-
 });
 
 // Download Due Data
@@ -1788,7 +1627,6 @@ router.get('/downloadDueFile/:startDate/:endDate', async (req, res) => {
     console.error('Error Downloading File', err);
     res.status(500).json({ error: 'Failed to download File' });
   }
-
 });
 
 // Add New Category
@@ -1949,7 +1787,6 @@ router.post('/fbToken', async (req, res) => {
         res.json({ success: true, message: "New Access Token Stored" })
       })
     }
-
   } catch (error) {
     console.error('Error Storing Access Token', error);
     res.status(500).json({ error: 'Failed to store Access Token' });
@@ -2034,9 +1871,6 @@ router.get('/facebook-leads', async (req, res) => {
       }
     }
     res.json({ success: true });
-
-
-
   } catch (error) {
     console.error('Error fetching and saving Facebook leads:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2055,7 +1889,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04Mrb6vWXeRuSCgYIARAAGAQSNwF-L9IrG8rMpY-Ipy9yjGjiz9zPdjiW7WcNSJl_j3aUA1y4CT0_hsLD2sePu4SJGZx2gW7CVEU';
+const REFERESH_TOKEN = '1//040jWVZd35n1hCgYIARAAGAQSNwF-L9IrtpCo6T0OJA-WvUjBy4q5u37aDk6gQhk0INrHcggSx-F0kqTR92FQQbI_KolCvqzqiSQ';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2064,7 +1898,6 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
-
 // const drive = google.drive({
 //   version: 'v3',
 //   auth: oauth2Client
@@ -2075,7 +1908,6 @@ const people = google.people({
 });
 
 router.get('/salesFacebook-leads', async (req, res) => {
-  //await Lead.deleteMany();
   try {
     //Local
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
@@ -2102,14 +1934,11 @@ router.get('/salesFacebook-leads', async (req, res) => {
               let existingLead = await salesLead.findOne({ closingDate: lead.created_time });
 
               if (existingLead) {
-
                 existingLead.salesTeam = personTeam;
                 await existingLead.save();
-
               }
 
               if (!existingLead) {
-
                 for (const field of field_data) {
                   if (field.name === 'full_name') {
                     cust_name = field.values[0];
@@ -2123,8 +1952,6 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     state = field.values[0];
                   }
                 }
-
-
                 let customerLead = await Customer.findOne({ leadsCreatedDate: createdTime });
                 if (!customerLead) {
                   const newLead = new salesLead({
@@ -2158,7 +1985,6 @@ router.get('/salesFacebook-leads', async (req, res) => {
           }
         }
       }
-
       // Prepare VCF data
       // let vcfContent = "";
       // tempLeadsData.forEach(function (lead) {
@@ -2181,7 +2007,6 @@ router.get('/salesFacebook-leads', async (req, res) => {
       //     body: fs.createReadStream(tempFilePath)
       //   }
       // });
-
       tempLeadsData.forEach(async (lead) => {
         const contact = {
           names: [{
@@ -2199,7 +2024,6 @@ router.get('/salesFacebook-leads', async (req, res) => {
           console.error("Error Creating Contact", error);
         }
       })
-
     }
     //res.json({ success: true, fileId: driveResponse.data.id }); 
     res.json({ success: true });
@@ -2212,7 +2036,6 @@ router.get('/salesFacebook-leads', async (req, res) => {
 // Second account facebook meta leads
 
 router.get('/salesSecondFacebook-leads', async (req, res) => {
-  //await Lead.deleteMany();
   try {
     //Local
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
@@ -2221,11 +2044,9 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
     const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken2}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email = '';
-
     for (const leadData of leadsData) {
       const campaigns = leadData.campaigns.data;
       const tempLeadsData = [];
-
       for (const campaign of campaigns) {
         const { id: campId, name: campName, ads } = campaign;
 
@@ -2239,14 +2060,10 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
               let existingLead = await salesLead.findOne({ closingDate: lead.created_time });
 
               if (existingLead) {
-
                 existingLead.salesTeam = personTeam;
                 await existingLead.save();
-
               }
-
               if (!existingLead) {
-
                 for (const field of field_data) {
                   if (field.name === 'full_name') {
                     cust_name = field.values[0];
@@ -2260,8 +2077,6 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
                     state = field.values[0];
                   }
                 }
-
-
                 let customerLead = await Customer.findOne({ leadsCreatedDate: createdTime });
                 if (!customerLead) {
                   const newLead = new salesLead({
@@ -2295,7 +2110,6 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
           }
         }
       }
-
       // Prepare VCF data
       // let vcfContent = "";
       // tempLeadsData.forEach(function (lead) {
@@ -2318,7 +2132,6 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
       //     body: fs.createReadStream(tempFilePath)
       //   }
       // });
-
       tempLeadsData.forEach(async (lead) => {
         const contact = {
           names: [{
@@ -2336,7 +2149,6 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
           console.error("Error Creating Contact", error);
         }
       })
-
     }
     //res.json({ success: true, fileId: driveResponse.data.id }); 
     res.json({ success: true });
@@ -2370,29 +2182,21 @@ router.get('/getSalesFacebook-leads', async (req, res) => {
   }
 });
 
-
 // Leads Transfer
-
-
 
 router.post('/update-salespersons', async (req, res) => {
   try {
     const items = req.body.items;
     const updatedItems = [];
-
     for (const item of items) {
       let existingItem = await transferLead.findById(item._id);
-
       if (existingItem) {
         // Update the salesperson field
         existingItem.salesTeam = item.salesTeam;
         await existingItem.save();
-
         // Check if the item exists in the salesLead collection
         const salesLeadItem = await salesLead.findOne({ _id: existingItem._id });
-
         const customerLeadItem = await Customer.findOne({ _id: existingItem._id });
-
         if (!salesLeadItem && !customerLeadItem) {
           // Prepare the updated item for insertion into the salesLead collection
           const updatedItem = {
@@ -2408,7 +2212,6 @@ router.post('/update-salespersons', async (req, res) => {
             salesTeam: existingItem.salesTeam,
             projectStatus: ""
           };
-
           updatedItems.push(updatedItem);
         } else if (!salesLeadItem.salesTeam) {
           // Update salesTeam if not saved in salesLead
@@ -2417,12 +2220,10 @@ router.post('/update-salespersons', async (req, res) => {
         }
       }
     }
-
     // Insert updated items into the salesLead collection
     if (updatedItems.length > 0) {
       await salesLead.insertMany(updatedItems);
     }
-
     res.json({ message: "Items Updated Successfully" });
   } catch (err) {
     res.json({ message: "All Leads are Transfered Before." });
@@ -2442,7 +2243,6 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
       }
     };
     const rangeTotalData = await transferLead.find(query).sort({ created_time: -1 });
-    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -2452,27 +2252,12 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
 
 //get Teams Leads
 
-//  router.get('/getTeams-leads/', async(req,res)=>{
-//    try{
-//      //const team = req.params.data;
-//      console.log("Sales Team===>>",personTeam);
-//      const fetchedLeads = await salesLead.find({salesTeam: personTeam}).sort({ closingDate: -1 });
-//      res.json(fetchedLeads);
-//    }catch(error){
-//      res.status(500).json({error: 'Dailed to fetch Leads'})
-//    }
-//  })
-
 router.get('/getTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    //console.log("STart Date==>", startOfToday);
-    //console.log("End Date===>", endOfToday);
-    // Fetch leads with closing date within today's range
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); 
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const todayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2488,15 +2273,11 @@ router.get('/getTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesTeamWork/', async (req, res) => {
+router.get('/getSalesTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    //console.log("STart Date==>", startOfToday);
-    //console.log("End Date===>", endOfToday);
-    // Fetch leads with closing date within today's range
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const todayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfToday,
@@ -2515,14 +2296,11 @@ router.get('/getSalesTeamWork/', async (req, res) => {
 router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2531,7 +2309,6 @@ router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2539,23 +2316,19 @@ router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesYesterdayTeamWork/', async (req, res) => {
+router.get('/getSalesYesterdayTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2566,14 +2339,11 @@ router.get('/getSalesYesterdayTeamWork/', async (req, res) => {
 router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2582,7 +2352,6 @@ router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2590,23 +2359,19 @@ router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesOneYesterdayTeamWork/', async (req, res) => {
+router.get('/getSalesOneYesterdayTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2617,14 +2382,11 @@ router.get('/getSalesOneYesterdayTeamWork/', async (req, res) => {
 router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2633,7 +2395,6 @@ router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2641,23 +2402,19 @@ router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesTwoYesterdayTeamWork/', async (req, res) => {
+router.get('/getSalesTwoYesterdayTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2668,14 +2425,11 @@ router.get('/getSalesTwoYesterdayTeamWork/', async (req, res) => {
 router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2684,7 +2438,6 @@ router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2692,23 +2445,19 @@ router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesThreeYesterdayTeamWork/', async (req, res) => {
+router.get('/getSalesThreeYesterdayTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2719,14 +2468,11 @@ router.get('/getSalesThreeYesterdayTeamWork/', async (req, res) => {
 router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2735,7 +2481,6 @@ router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2743,23 +2488,19 @@ router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesFourYesterdayTeamWork/', async (req, res) => {
+router.get('/getSalesFourYesterdayTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2770,14 +2511,11 @@ router.get('/getSalesFourYesterdayTeamWork/', async (req, res) => {
 router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -2786,7 +2524,6 @@ router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2794,23 +2531,19 @@ router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-router.get('/getSalesFiveYesterdayTeamWork/', async (req, res) => {
+router.get('/getSalesFiveYesterdayTeamWork', async (req, res) => {
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -2818,18 +2551,7 @@ router.get('/getSalesFiveYesterdayTeamWork/', async (req, res) => {
   }
 });
 
-
 //Get Current Month Team Sales Leads
-
-// router.get('/getSales-leads', async(req, res)=>{
-//   try{
-//     const fetchedLeads = await Customer.find({salesTeam: personTeam}).sort({ closingDate: -1 });
-//     res.json(fetchedLeads);
-//   }catch(error){
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({error: 'Failed to Fetch Leads'})
-//   }
-// });
 
 router.get('/getSales-Leads', async (req, res) => {
   try {
@@ -2868,7 +2590,6 @@ router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => 
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const categ = req.params.categ;
-  console.log("CATEG================>>>", categ);
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
@@ -2879,7 +2600,6 @@ router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => 
       }
     };
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -2899,7 +2619,6 @@ router.get('/salesleadsByRange/:startDate/:endDate', async (req, res) => {
       }
     };
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -2918,7 +2637,6 @@ router.get('/salesleadsByRangeAdmin/:startDate/:endDate', async (req, res) => {
       }
     };
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    //console.log("Leads Data===>", rangeTotalData);
     res.json({ rangeTotalData: rangeTotalData });
   } catch (error) {
     console.log(error);
@@ -2935,9 +2653,7 @@ router.get('/transferLeads', async (req, res) => {
     let skipCount = 0;
     let Sales = 0;
     for (doc of fbLead) {
-
       let existingLead = await transferLead.findOne({ created_time: doc.created_time });
-
       if (!existingLead) {
         const adminLead = new transferLead({
           id: doc.id,
@@ -2957,13 +2673,11 @@ router.get('/transferLeads', async (req, res) => {
         const SalesLeadDoc = await salesLead.findOne({ closingDate: doc.created_time });
         Sales++;
         if (SalesLeadDoc && SalesLeadDoc.salesTeam) {
-          //console.log("Check SalesTeam==>>", salesLead.salesTeam);
           existingLead.salesTeam = SalesLeadDoc.salesTeam;
           await existingLead.save();
         } else {
           skipCount++;
         }
-
       }
     }
     res.status(200).json({ success: true, message: "Data Transfer Successful", successCount: successCount, skipCount: skipCount, Sales: Sales });
@@ -3107,7 +2821,6 @@ router.get('/todayEntriesScript', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -3116,7 +2829,6 @@ router.get('/todayEntriesScript', async (req, res) => {
 });
 
 router.get('/scriptActiveList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -3125,12 +2837,9 @@ router.get('/scriptActiveList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       scriptStatus: { $ne: 'Complete' }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3138,7 +2847,6 @@ router.get('/scriptActiveList', async (req, res) => {
 });
 
 router.get('/scriptCompleteList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -3147,12 +2855,9 @@ router.get('/scriptCompleteList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       scriptStatus: { $regex: /^Complete$/i }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3257,7 +2962,6 @@ router.get('/todayEntriesEditor', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -3266,7 +2970,6 @@ router.get('/todayEntriesEditor', async (req, res) => {
 });
 
 router.get('/editorActiveList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -3276,12 +2979,9 @@ router.get('/editorActiveList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth)
       },
-      //remainingAmount: { $gt: 0 },
       editorStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3289,7 +2989,6 @@ router.get('/editorActiveList', async (req, res) => {
 });
 
 router.get('/editorCompleteList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -3299,12 +2998,9 @@ router.get('/editorCompleteList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth)
       },
-      //remainingAmount: { $gt: 0 },
       editorStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3409,7 +3105,6 @@ router.get('/todayEntriesEditorOther', async (req, res) => {
       }
     };
     const totalDayEntry = await B2bCustomer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -3418,7 +3113,6 @@ router.get('/todayEntriesEditorOther', async (req, res) => {
 });
 
 router.get('/editorOtherActiveList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
@@ -3428,12 +3122,9 @@ router.get('/editorOtherActiveList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ b2bProjectDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3441,7 +3132,6 @@ router.get('/editorOtherActiveList', async (req, res) => {
 });
 
 router.get('/editorOtherCompleteList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
@@ -3451,12 +3141,9 @@ router.get('/editorOtherCompleteList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ b2bProjectDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3556,7 +3243,6 @@ router.get('/todayEntriesVo', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -3565,7 +3251,6 @@ router.get('/todayEntriesVo', async (req, res) => {
 });
 
 router.get('/voActiveList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -3574,12 +3259,9 @@ router.get('/voActiveList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       voiceOverStatus: { $ne: 'Complete' }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3587,7 +3269,6 @@ router.get('/voActiveList', async (req, res) => {
 });
 
 router.get('/voCompleteList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -3596,12 +3277,9 @@ router.get('/voCompleteList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       voiceOverStatus: { $regex: /^Complete$/i }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3615,7 +3293,6 @@ router.post('/update-projectStatus', async (req, res) => {
     const items = req.body.items;
     for (const item of items) {
       let existingItem = await salesLead.findById(item._id);
-
       if (existingItem) {
         existingItem.projectStatus = item.projectStatus;
         existingItem.remark = item.remark;
@@ -3717,7 +3394,6 @@ router.get('/allTotalEntriesB2b', async (req, res) => {
 });
 
 router.get('/listB2b', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
@@ -3726,10 +3402,8 @@ router.get('/listB2b', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
-
     if (products.length > 0) {
       res.json(products);
     } else {
@@ -3742,15 +3416,11 @@ router.get('/listB2b', async (req, res) => {
 });
 
 router.get('/allListB2b', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   try {
     const products = await B2bCustomer.find({
       salesPerson: person,
-
-      //remainingAmount: { $gt: 0 },
       projectStatus: { $ne: 'Completed' }
     }).sort({ b2bProjectDate: -1 });
-
     if (products.length > 0) {
       res.json(products);
     } else {
@@ -3771,10 +3441,8 @@ router.get('/completeProjectB2b', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: 0,
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
-
     if (completeProducts.length > 0) {
       res.json(completeProducts);
     } else {
@@ -3790,10 +3458,8 @@ router.get('/allCompleteProjectB2b', async (req, res) => {
   try {
     const completeProducts = await B2bCustomer.find({
       salesPerson: person,
-      //remainingAmount: 0,
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ b2bProjectDate: -1 });
-
     if (completeProducts.length > 0) {
       res.json(completeProducts);
     } else {
@@ -3812,7 +3478,7 @@ router.get('/totalPreviousEntriesB2b', async (req, res) => {
     query = {
       salesPerson: person,
       b2bProjectDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
     };
@@ -3831,8 +3497,8 @@ router.get('/totalTwoPreviousEntriesB2b', async (req, res) => {
     query = {
       salesPerson: person,
       b2bProjectDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 1)
       }
     };
     const totalEntries = await B2bCustomer.find(query);
@@ -3884,7 +3550,6 @@ router.delete('/delete-B2b/:id', async (req, res) => {
 
 router.get('/downloadFileB2b', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  //console.log("person ==>", person);
   try {
     let query;
     query = {
@@ -3928,7 +3593,6 @@ router.get('/downloadRangeFileB2b/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  //console.log("DOwnload PersonTeam===>", personTeam)
   try {
     let query;
     query = {
@@ -3937,7 +3601,6 @@ router.get('/downloadRangeFileB2b/:startDate/:endDate', async (req, res) => {
         $gte: startDate, $lte: endDate
       }
     };
-
     const rangeFileData = await B2bCustomer.find(query);
     const data = rangeFileData.map(customer => ({
       'ProjectCode': customer.b2bProjectCode,
@@ -3971,7 +3634,6 @@ router.get('/read-b2b/:id', async (req, res) => {
   try {
     // Search in the Customer collection
     const customerDetails = await B2bCustomer.findById(req.params.id);
-
     // Check if any data found in either collection
     if (customerDetails) {
       return res.json(customerDetails);
@@ -3984,7 +3646,6 @@ router.get('/read-b2b/:id', async (req, res) => {
 });
 
 router.put('/updateB2b/:id', async (req, res) => {
-  //console.log("req.body ==>", req.body);
   const EmpDet = await B2bCustomer.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -3996,7 +3657,6 @@ router.put('/updateB2b/:id', async (req, res) => {
 });
 
 router.put('/updateB2bEditor/:id', async (req, res) => {
-  //console.log("req.body ==>", req.body);
   const custDet = await B2bCustomer.findByIdAndUpdate(req.params.id, {
     $set: req.body
   })
@@ -4034,7 +3694,6 @@ router.post('/customLead', async (req, res) => {
       const year = String(date.getFullYear()).slice(-2);
       return `${day}${month}${year}`;
     }
-
     const contact = {
       names: [{ givenName: `${formatDate(req.body.closingDate)} ${req.body.custName}` }],
       emailAddresses: [{ value: req.body.custEmail }],
@@ -4066,10 +3725,7 @@ router.get('/updateSalesTeam', async (req, res) => {
     const query = { salesTeam: { $exists: false } };
     const update = { $set: { salesTeam: personTeam } };
     const options = { multi: true }; // This will update multiple documents
-
     const result = await salesLead.updateMany(query, update, options);
-    //console.log(`${result.matchedCount} documents matched the query criteria.`);
-    //console.log(`${result.modifiedCount} documents were updated.`);
     return (result.modifiedCount);
   } catch (err) {
     console.error(err);
@@ -4216,7 +3872,6 @@ router.put('/editorPayrollUpdate/:startDate/:endDate/:tmName', async (req, res) 
       $set: { EditorCNR: req.body.EditorCNR, EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate }
     };
     const result = await Customer.updateMany(query, update);
-    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -4252,7 +3907,6 @@ router.put('/editorPayrollUpdateScript/:startDate/:endDate/:tmName', async (req,
       $set: { ScriptCNR: req.body.ScriptCNR, ScriptPaymentStatus: req.body.ScriptPaymentStatus, scriptPaymentDate: req.body.scriptPaymentDate }
     };
     const result = await Customer.updateMany(query, update);
-    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -4287,7 +3941,6 @@ router.put('/editorPayrollUpdateVo/:startDate/:endDate/:tmName', async (req, res
       $set: { VoCNR: req.body.VoCNR, voiceOverPaymentDate: req.body.voiceOverPaymentDate, voiceOverPaymentStatus: req.body.voiceOverPaymentStatus }
     };
     const result = await Customer.updateMany(query, update);
-    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -4324,7 +3977,6 @@ router.get('/editorPayroll', async (req, res) => {
 });
 
 router.get('/editorPayroll/:EditorCNR', async (req, res) => {
-  //console.log("ENTEr");
   let data = await Payroll.find(
     { EditorCNR: { $regex: req.params.EditorCNR } }
   )
@@ -4367,7 +4019,6 @@ router.get('/scriptPayroll', async (req, res) => {
 });
 
 router.get('/scriptPayroll/:ScriptCNR', async (req, res) => {
-
   let data = await Payroll.find(
     { ScriptCNR: { $regex: req.params.ScriptCNR } }
   )
@@ -4393,8 +4044,6 @@ router.get('/payrollByDatePassRangeScript/:startDate/:endDate', async (req, res)
   }
 });
 
-
-
 router.get('/voPayroll', async (req, res) => {
   try {
     const allData = await Payroll.find({
@@ -4412,7 +4061,6 @@ router.get('/voPayroll', async (req, res) => {
 });
 
 router.get('/voPayroll/:VoCNR', async (req, res) => {
-
   let data = await Payroll.find(
     { VoCNR: { $regex: req.params.VoCNR } }
   )
@@ -4506,7 +4154,6 @@ router.put('/editorPayrollUpdateB2b/:startDate/:endDate/:tmName', async (req, re
       $set: { EditorCNR: req.body.EditorCNR, EditorPaymentStatus: req.body.EditorPaymentStatus, editorPaymentDate: req.body.editorPaymentDate }
     };
     const result = await B2bCustomer.updateMany(query, update);
-    //console.log(`${result.matchedCount} documents matched the filter, updated ${result.modifiedCount} documents`);
 
     const payrollData = new Payroll({
       startDate: startDate,
@@ -4586,13 +4233,9 @@ router.get('/payrollAll/:EditorCNR', async (req, res) => {
 router.get('/getWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    //console.log("STart Date==>", startOfToday);
-    //console.log("End Date===>", endOfToday);
-    // Fetch leads with closing date within today's range
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const todayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4611,14 +4254,11 @@ router.get('/getWhatsApp-leads/:name', async (req, res) => {
 router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4627,7 +4267,6 @@ router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4638,14 +4277,11 @@ router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
 router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4654,7 +4290,6 @@ router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4664,16 +4299,12 @@ router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
-  //console.log("NAME===>", name);
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4682,7 +4313,6 @@ router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4693,14 +4323,11 @@ router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
 router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4709,7 +4336,6 @@ router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4720,14 +4346,11 @@ router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
 router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4736,7 +4359,6 @@ router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4747,14 +4369,11 @@ router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
 router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -4763,7 +4382,6 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4840,13 +4458,9 @@ router.get('/mainInvoiceCount', async (req, res) => {
 router.get('/getSalesWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
-    //console.log("STart Date==>", startOfToday);
-    //console.log("End Date===>", endOfToday);
-    // Fetch leads with closing date within today's range
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const todayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfToday,
@@ -4864,14 +4478,11 @@ router.get('/getSalesWhatsAppWork/:name', async (req, res) => {
 router.get('/getSalesYesterdayWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4879,7 +4490,6 @@ router.get('/getSalesYesterdayWhatsAppWork/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4890,14 +4500,11 @@ router.get('/getSalesYesterdayWhatsAppWork/:name', async (req, res) => {
 router.get('/getSalesOneYesterdayWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4905,7 +4512,6 @@ router.get('/getSalesOneYesterdayWhatsAppWork/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4916,14 +4522,11 @@ router.get('/getSalesOneYesterdayWhatsAppWork/:name', async (req, res) => {
 router.get('/getSalesTwoYesterdayWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4931,7 +4534,6 @@ router.get('/getSalesTwoYesterdayWhatsAppWork/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4942,14 +4544,11 @@ router.get('/getSalesTwoYesterdayWhatsAppWork/:name', async (req, res) => {
 router.get('/getSalesThreeYesterdayWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4968,14 +4567,11 @@ router.get('/getSalesThreeYesterdayWhatsAppWork/:name', async (req, res) => {
 router.get('/getSalesFourYesterdayWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -4983,7 +4579,6 @@ router.get('/getSalesFourYesterdayWhatsAppWork/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -4994,14 +4589,11 @@ router.get('/getSalesFourYesterdayWhatsAppWork/:name', async (req, res) => {
 router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    // Get today's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 6);
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
-    //console.log("YesterdayStart==>", startOfYesterday);
-    //console.log("YestaerdayEnd===>", endOfYesterday);
     const yesterdayLeads = await salesLead.find({
       closingDate: {
         $gte: startOfYesterday,
@@ -5009,7 +4601,6 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
       },
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
-
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
@@ -5019,9 +4610,6 @@ router.get('/getSalesFiveYesterdayWhatsAppWork/:name', async (req, res) => {
 
 // Firebase Push Notifications
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
 var acesToken = '';
 router.get('/getAccessToken', async (req, res) => {
   return new Promise(function (resolve, reject) {
@@ -5038,7 +4626,6 @@ router.get('/getAccessToken', async (req, res) => {
         reject(err);
         return;
       }
-      //console.log("tokens.access_token ==>",tokens.access_token);
       acesToken = tokens.access_token;
       resolve(tokens.access_token);
     });
@@ -5049,13 +4636,7 @@ router.put('/save-Token/:token1', checkAuth, async (req, res) => {
   try {
     const userId = req.userData.userId;
     const token1 = req.params.token1;
-    //console.log("SAVED USERID====>>", userId);
-    //console.log("SAVED TOKEN====>>", token1);
-    //acesToken = token1;
-    // Update the user document with the new token
-    //const updateData = { token: token };
     const updatedUser = await User.findByIdAndUpdate(userId);
-
     if (updatedUser) {
       updatedUser.accessToken = token1;
       await updatedUser.save();
@@ -5080,16 +4661,12 @@ router.post('/bell', async (req, res) => {
     let nameA = '';
     for (const item of data) {
       let existingItem = await User.findById(item._id);
-      //console.log("ExistingItem===>>",existingItem);
       if (existingItem) {
         token = existingItem.accessToken;
         nameA = existingItem.signupRole;
-        //console.log("ROLE====>>", existingItem.signupRole);
-        //console.log("Data FCm Token===>>>>", item.accessToken);
-        break; // Break the loop if a valid token is found
+        break;
       }
     }
-    //console.log("FCM Token===>>", token);
     if (!token || typeof token !== 'string') {
       throw new Error('Invalid FCM token provided');
     }
@@ -5129,15 +4706,12 @@ router.post('/bells', async (req, res) => {
       const saleItems = await Customer.findById(saleAc._id);
       if (saleItems) {
         saleItem = saleItems.salesPerson;
-        //console.log("TOKEN SALESPERSON===>", saleItem);
       }
     }
     const saleperson = await User.findOne({ signupUsername: saleItem });
-    //console.log("Saleperson Token===>", saleperson.accessToken);
     if (saleperson) {
       token2 = saleperson.accessToken;
     }
-
     for (const item of data) {
       let existingItem = await User.findById(item._id);
       if (existingItem) {
@@ -5155,12 +4729,9 @@ router.post('/bells', async (req, res) => {
         } else {
           console.log("SignupRole Error");
         }
-        //console.log("ROLE====>>", existingItem.signupRole);
-        //console.log("Data FCm Token===>>>>", item.accessToken);
-        break; // Break the loop if a valid token is found
+        break;
       }
     }
-    //console.log("FCM Token===>>", token1);
     if (!token1 || typeof token1 !== 'string') {
       throw new Error('Invalid FCM token provided');
     }
@@ -5168,14 +4739,11 @@ router.post('/bells', async (req, res) => {
       throw new Error('Invalid FCM token provided');
     }
     await sendNotif(token2, msgTitle, msgBody);
-
     if (token2) {
-      //console.log("Attempting to send notification to token2:", token2);
       await sendNotif(token1, msgTitle, msgBody);
     } else {
       console.log("No valid token for salesperson to send notification");
     }
-
     const notifi = new Notification({
       msgTitle: msgTitle,
       msgBody: msgBody,
@@ -5214,12 +4782,9 @@ router.post('/bellsAdmin', async (req, res) => {
     let token1 = '';
     let token2 = '';
     let nameA = '';
-    //let saleItem = '';
     const saleperson = await User.findOne({ signupUsername: sales });
-    //console.log("TOKEN SALESPERSON====>", saleperson);
     if (saleperson) {
       token2 = saleperson.accessToken;
-      //console.log("Saleperson Token====>>", token2);
     } else {
       console.log("SalesPerson Error");
     }
@@ -5232,17 +4797,14 @@ router.post('/bellsAdmin', async (req, res) => {
         console.log("ExistingItem Error");
       }
     }
-    //console.log("FCM Token1===>>", token1);
     if (!token1 || typeof token1 !== 'string') {
       throw new error("Invalid FCM token provided");
     }
-    //console.log("FCM Token2===>>", token2);
     if (!token2 || typeof token2 !== 'string') {
       throw new error("Invalid FCM token provided");
     }
     await sendNotif(token1, msgTitle, msgBody);
     await sendNotif(token2, msgTitle, msgBody);
-
     const notifi = new Notification({
       msgTitle: msgTitle,
       msgBody: msgBody,
@@ -5269,7 +4831,6 @@ router.post('/bellsAdmin', async (req, res) => {
 router.get('/getNotification', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   const role = req.userData.signupRole;
-  //console.log("Notification PErson1===>", person1);
   try {
     let query1 = {
       Status: { $regex: /^Unread$/i },
@@ -5349,7 +4910,6 @@ router.get('/topPerformer', async (req, res) => {
       }
     ]);
     if (results.length > 0) {
-      console.log('Top performer of the Month: ', results[0]);
       results.forEach(result => {
         console.log(`SalesPerson: ${result._id}, Total Closing Price: ${result.totalClosingPrice}`);
       });
@@ -5368,7 +4928,6 @@ router.get('/topPerformer', async (req, res) => {
 router.get('/monthlyPerformer', async (req, res) => {
   const startOfYear = moment().startOf('year').toDate();
   const endOfYear = moment().endOf('year').toDate();
-
   try {
     const results = await Customer.aggregate([
       {
@@ -5393,15 +4952,12 @@ router.get('/monthlyPerformer', async (req, res) => {
         $sort: { '_id.salesPerson': 1, '_id.month': 1 }
       }
     ]);
-
-    // Transform the data to be easier to work with on the frontend
     const transformedResults = results.reduce((acc, item) => {
       const { salesPerson, month } = item._id;
       if (!acc[salesPerson]) acc[salesPerson] = {};
       acc[salesPerson][month] = item.numberOfClosings;
       return acc;
     }, {});
-
     res.json(transformedResults);
   } catch (err) {
     res.status(500).json({ error: 'Error retrieving salespersons monthly performance.' });
@@ -5451,9 +5007,7 @@ router.get('/topProduct', async (req, res) => {
 router.get('/conversionRate', async (req, res) => {
   const startOfMonth = moment().startOf('month').toDate();
   const endOfMonth = moment().endOf('month').toDate();
-
   try {
-    // Aggregate total leads by salesPerson
     const totalLeads = await salesLead.aggregate([
       {
         $match: {
@@ -5470,8 +5024,6 @@ router.get('/conversionRate', async (req, res) => {
         }
       }
     ]);
-
-    // Aggregate total sales by salesPerson
     const totalSales = await Customer.aggregate([
       {
         $match: {
@@ -5488,15 +5040,12 @@ router.get('/conversionRate', async (req, res) => {
         }
       }
     ]);
-
-    // Merge totalLeads and totalSales to calculate conversion rate
     const conversionRates = totalLeads.map(lead => {
       const sales = totalSales.find(sale => sale._id.toString() === lead._id.toString());
       const totalNumberOfLeads = lead.totalNumberOfLeads;
       const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
       const totalSum = totalNumberOfLeads + totalNumberOfSales;
       const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
-
       return {
         salesPerson: lead._id,
         totalLeads: totalNumberOfLeads,
@@ -5505,23 +5054,18 @@ router.get('/conversionRate', async (req, res) => {
         conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
       };
     });
-
     if (conversionRates.length > 0) {
-      console.log('CONVERSION RATES====>', conversionRates);
       res.json({ status: 'success', data: conversionRates });
     } else {
-      console.log('NO LEADS OR SALES FOUND');
       res.json({ status: 'success', data: [], message: 'No leads or sales found for the current month' });
     }
   } catch (error) {
-    console.error('Error getting Conversion Rate', error.message);
     res.status(500).json({ status: 'fail', error: error.message });
   }
 });
 
 router.get('/conversionRateMonthly', async (req, res) => {
   try {
-    // Aggregate total leads by salesPerson and month
     const totalLeads = await salesLead.aggregate([
       {
         $group: {
@@ -5534,8 +5078,6 @@ router.get('/conversionRateMonthly', async (req, res) => {
         }
       }
     ]);
-
-    // Aggregate total sales by salesPerson and month
     const totalSales = await Customer.aggregate([
       {
         $group: {
@@ -5548,22 +5090,17 @@ router.get('/conversionRateMonthly', async (req, res) => {
         }
       }
     ]);
-
-    // Merge totalLeads and totalSales to calculate conversion rate
     const conversionRates = totalLeads.map(lead => {
-      // Find the matching sales entry for the current lead's salesPerson and month/year
       const sales = totalSales.find(sale =>
         sale._id.salesPerson &&
         sale._id.salesPerson === lead._id.salesPerson &&
         sale._id.month === lead._id.month &&
         sale._id.year === lead._id.year
       );
-
       const totalNumberOfLeads = lead.totalNumberOfLeads;
       const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
       const totalSum = totalNumberOfLeads + totalNumberOfSales;
       const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
-
       return {
         salesPerson: lead._id.salesPerson,
         month: lead._id.month,
@@ -5573,16 +5110,12 @@ router.get('/conversionRateMonthly', async (req, res) => {
         conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
       };
     });
-
     if (conversionRates.length > 0) {
-      console.log('CONVERSION RATES====>', conversionRates);
       res.json({ status: 'success', data: conversionRates });
     } else {
-      console.log('NO LEADS OR SALES FOUND');
       res.json({ status: 'success', data: [], message: 'No leads or sales found' });
     }
   } catch (error) {
-    console.error('Error getting Conversion Rate', error.message);
     res.status(500).json({ status: 'fail', error: error.message });
   }
 });
@@ -5591,16 +5124,13 @@ router.get('/conversionRateMonthly', async (req, res) => {
 
 router.get('/attendance1', (req, res) => {
   const { year, month } = req.query; // Expecting year and month in the query params
-
   // Validate the year and month
   if (!year || !month) {
     return res.status(400).json({ success: false, message: "Year and month are required." });
   }
-
   // Calculate the start and end dates for the month
-  const startDate = new Date(Date.UTC(year, month - 1, 1)); // Start of the specified month in UTC
-  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59)); // End of the specified month in UTC
-
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
   // Query to find all users with login times within the specified month
   User.find({
     "loginSessions.loginTime": {
@@ -5617,14 +5147,11 @@ router.get('/attendance1', (req, res) => {
         const attendance = Array.from({ length: daysInMonth }, (_, day) => {
           const currentDate = new Date(year, month - 1, day + 2);
           const formattedDate = currentDate.toISOString().slice(0, 10);
-
           // Filter the login sessions that occurred on this day
           const sessionsForDay = user.loginSessions.filter(session =>
             session.loginTime.toISOString().slice(0, 10) === formattedDate
           );
-
           let totalLoggedInTime = 0;
-
           // Calculate total logged-in time for the day
           sessionsForDay.forEach(session => {
             if (session.logoutTime) {
@@ -5633,12 +5160,10 @@ router.get('/attendance1', (req, res) => {
               totalLoggedInTime += (logoutTime - loginTime); // Time in milliseconds
             }
           });
-
           // Convert totalLoggedInTime from milliseconds to hours, minutes, and seconds
           const totalHours = Math.floor(totalLoggedInTime / (1000 * 60 * 60));
           const totalMinutes = Math.floor((totalLoggedInTime % (1000 * 60 * 60)) / (1000 * 60));
           const totalSeconds = Math.floor((totalLoggedInTime % (1000 * 60)) / 1000);
-
           return {
             date: formattedDate,
             status: sessionsForDay.length > 0 ? 'Present' : 'Absent',
@@ -5647,13 +5172,11 @@ router.get('/attendance1', (req, res) => {
               : 'N/A'
           };
         });
-
         return {
           username: user.signupUsername,
           attendance: attendance
         };
       });
-
       res.json({ success: true, data: attendanceData });
     })
     .catch(err => {
@@ -5662,50 +5185,18 @@ router.get('/attendance1', (req, res) => {
     });
 });
 
-// Route to add or update attendance manually
-// router.get('/attendance', (req, res) => {
-//   const { year, month } = req.query;
-
-//   if (!year || !month) {
-//     return res.status(400).json({ success: false, message: "Year and month are required." });
-//   }
-
-//   User.find({
-//     [`attendance.${year}.${month}`]: { $exists: true }
-//   })
-//     .exec()
-//     .then(users => {
-//       const attendanceData = users.map(user => {
-//         const attendance = user.attendance?.get(`${year}`)?.get(`${month}`);
-//         return {
-//           username: user.signupUsername,
-//           attendance: attendance || []
-//         };
-//       });
-
-//       res.json({ success: true, data: attendanceData });
-//     })
-//     .catch(err => {
-//       console.error("Error fetching attendance data:", err);
-//       res.status(500).json({ success: false, message: "Error fetching attendance data." });
-//     });
-// });
-
 // Save updated attendance
 router.post('/update-attendance', async (req, res) => {
   const { username, year, month, attendance } = req.body;
-
   if (!username || !year || !month || !attendance) {
     return res.status(400).json({ success: false, message: "Username, year, month, and attendance data are required." });
   }
-
   try {
     // Update the user's attendance in the database
     await User.updateOne(
       { signupUsername: username },
       { $set: { [`attendance.${year}.${month}`]: attendance } }
     );
-
     res.json({ success: true, message: "Attendance updated successfully." });
   } catch (err) {
     console.error("Error updating attendance:", err);
@@ -5713,23 +5204,16 @@ router.post('/update-attendance', async (req, res) => {
   }
 });
 
-
 router.get('/attendance', async (req, res) => {
   const { year, month } = req.query;
-
   if (!year || !month) {
     return res.status(400).json({ success: false, message: "Year and month are required." });
   }
-
   try {
     const users = await User.find({}).exec();
     const daysInMonth = new Date(year, month, 0).getDate();
-
     const attendancePromises = users.map(async user => {
-      //console.log("USER DATA====>>", user);  // Log user data to verify structure
-
       let currentAttendance;
-
       // If attendance is stored as a Map, use get() method to access it
       if (user.attendance instanceof Map) {
         const yearAttendance = user.attendance.get(year);  // Get the attendance for the year
@@ -5739,9 +5223,6 @@ router.get('/attendance', async (req, res) => {
       } else {
         currentAttendance = user.attendance?.[year]?.[month];  // Fallback to object access
       }
-
-      //console.log("CURRENT ATTENDANCE========>>", currentAttendance);  // Log current attendance
-
       if (!currentAttendance) {
         // Generate default attendance data if it doesn't exist
         const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
@@ -5753,13 +5234,11 @@ router.get('/attendance', async (req, res) => {
             reason: ''
           };
         });
-
         // Update user's attendance with default data
         await User.updateOne(
           { _id: user._id },
           { $set: { [`attendance.${year}.${month}`]: defaultAttendance } }
         );
-
         return {
           username: user.signupUsername,
           attendance: defaultAttendance,
@@ -5768,11 +5247,9 @@ router.get('/attendance', async (req, res) => {
           totalHalfDay: 0
         };
       }
-
       let totalPresent = 0;
       let totalAbsent = 0;
       let totalHalfDay = 0;
-
       currentAttendance.forEach(day => {
         if (day.status === 'Present') {
           totalPresent++;
@@ -5782,7 +5259,6 @@ router.get('/attendance', async (req, res) => {
           totalHalfDay++;
         }
       });
-
       // Return existing attendance if it exists
       return {
         username: user.signupUsername,
@@ -5792,7 +5268,6 @@ router.get('/attendance', async (req, res) => {
         totalHalfDay
       };
     });
-
     const attendanceData = await Promise.all(attendancePromises);
     res.json({ success: true, data: attendanceData });
   } catch (err) {
@@ -5805,22 +5280,16 @@ router.get('/attendance', async (req, res) => {
 
 router.get('/usersAttendance', async (req, res) => {
   const { year, month } = req.query;
-
   if (!year || !month) {
     return res.status(400).json({ success: false, message: "Year and month are required." });
   }
-
   try {
     const salesPerson = person;    
     const users = await User.find({signupUsername: salesPerson});
     console.log("Attendance Person===>>", users);
     const daysInMonth = new Date(year, month, 0).getDate();
-
     const attendancePromises = users.map(async user => {
-      //console.log("USER DATA====>>", user);  // Log user data to verify structure
-
       let currentAttendance;
-
       // If attendance is stored as a Map, use get() method to access it
       if (user.attendance instanceof Map) {
         const yearAttendance = user.attendance.get(year);  // Get the attendance for the year
@@ -5830,9 +5299,6 @@ router.get('/usersAttendance', async (req, res) => {
       } else {
         currentAttendance = user.attendance?.[year]?.[month];  // Fallback to object access
       }
-
-      //console.log("CURRENT ATTENDANCE========>>", currentAttendance);  // Log current attendance
-
       if (!currentAttendance) {
         // Generate default attendance data if it doesn't exist
         const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
@@ -5843,13 +5309,11 @@ router.get('/usersAttendance', async (req, res) => {
             status: 'Select'  // Default status
           };
         });
-
         // Update user's attendance with default data
         await User.updateOne(
           { _id: user._id },
           { $set: { [`attendance.${year}.${month}`]: defaultAttendance } }
         );
-
         return {
           username: user.signupUsername,
           attendance: defaultAttendance,
@@ -5858,11 +5322,9 @@ router.get('/usersAttendance', async (req, res) => {
           totalHalfDay: 0
         };
       }
-
       let totalPresent = 0;
       let totalAbsent = 0;
       let totalHalfDay = 0;
-
       currentAttendance.forEach(day => {
         if (day.status === 'Present') {
           totalPresent++;
@@ -5872,7 +5334,6 @@ router.get('/usersAttendance', async (req, res) => {
           totalHalfDay++;
         }
       });
-
       // Return existing attendance if it exists
       return {
         username: user.signupUsername,
@@ -5882,7 +5343,6 @@ router.get('/usersAttendance', async (req, res) => {
         totalHalfDay
       };
     });
-
     const attendanceData = await Promise.all(attendancePromises);
     res.json({ success: true, data: attendanceData });
   } catch (err) {
@@ -6198,7 +5658,6 @@ router.get('/changesGraphicProjects', async(req,res)=>{
       graphicDesigner: person,
       graphicStatus: { $eq: 'Graphic Designing Changes'}
     }).sort({ graphicPassDate: -1});
-    console.log('PROJECT======>>', changesProjects);
     return res.json(changesProjects)
   }catch (error) {
     console.error("Error Fetching Leads", error);
@@ -6218,7 +5677,6 @@ router.get('/todayEntriesGraphic', async (req, res) => {
       }
     };
     const totalDayEntry = await Customer.find(query);
-    //console.log("Total Entries===>>", totalDayEntry)
     res.json({ totalDayEntry });
   } catch (error) {
     console.log(error);
@@ -6227,7 +5685,6 @@ router.get('/todayEntriesGraphic', async (req, res) => {
 });
 
 router.get('/graphicActiveList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -6236,12 +5693,9 @@ router.get('/graphicActiveList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       graphicStatus: { $ne: 'Complete' }
     }).sort({ closingDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -6249,7 +5703,6 @@ router.get('/graphicActiveList', async (req, res) => {
 });
 
 router.get('/graphicCompleteList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -6258,12 +5711,9 @@ router.get('/graphicCompleteList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
-      //remainingAmount: { $gt: 0 },
       graphicStatus: { $regex: /^Complete$/i }
     }).sort({ graphicPassDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -6312,7 +5762,6 @@ router.get('/pendingAssignedTask', async(req,res)=>{
     res.status(500).json({error: 'Failed to fetch Leads'})
   }
 });
-
 //Tasks
 
 router.get('/taskDataLength', async(req,res)=>{
@@ -6336,27 +5785,21 @@ router.post('/addTask', async(req,res)=>{
     res.json({success: false, message: "Task Not Added!!"})
   })
 });
-
 //transfer leads to leads
 
 router.post('/transferNewLeads', async(req,res)=>{
   try{
     const {custId, salesTeam, closingDate, name} = req.body;
-
-    console.log("CUSTid=====>>", custId);
     if(!custId){
       return res.status(404).json({message: 'Customer Id is Required'});
     }
     const cust = await salesLead.findById(custId);
-
     if(!cust){
       return res.status(404).json({message: 'Customer Not Found'});
     }
-
       cust.transferBy= name;
       cust.newSalesTeam = salesTeam;
       await cust.save();
-
     const newSalesLead = new salesLead({
       custName: cust.custName,
       custNumb: cust.custNumb,
@@ -6370,7 +5813,6 @@ router.post('/transferNewLeads', async(req,res)=>{
       campaign_Name: 'Transfer By ' + cust.salesTeam
     })
     await newSalesLead.save();
-
     return res.status(200).json({ message: 'Customer transferred to salesLead Successfully'});
   }catch(error){
     return res.status(500).json({ message: 'Error transferring customer' });
@@ -6384,15 +5826,12 @@ router.post('/transferCustomerToSalesLead', async(req,res)=>{
       return res.status(404).json({message: 'Customer Id is Required'});
     }
     const cust = await Customer.findById(custId);
-
     if(!cust){
       return res.status(404).json({message: 'Customer Not Found'});
     }
-
     cust.transferBy = name;
     cust.newSalesTeam = salesTeam;
     await cust.save();
-
     const newSalesLead = new salesLead({
       custName: cust.custName,
       custNumb: cust.custNumb,
@@ -6406,13 +5845,11 @@ router.post('/transferCustomerToSalesLead', async(req,res)=>{
       campaign_Name: 'Transfer By ' + cust.salesTeam
     })
     await newSalesLead.save();
-
     return res.status(200).json({ message: 'Customer transferred to salesLead'});
   }catch(error){
     return res.status(500).json({ message: 'Error transferring customer'});
   }
 });
-
 //get Campaign NAmes for leads
 
 router.get('/getCampaignNames', async(req,res)=>{
@@ -6424,7 +5861,6 @@ router.get('/getCampaignNames', async(req,res)=>{
     res.status(500).json({error: 'Failed to fetch leads'});
   }
 });
-
 // get all Closing Names
 
 router.get('/getClosingNames', async(req,res)=>{
@@ -6436,7 +5872,6 @@ router.get('/getClosingNames', async(req,res)=>{
     res.status(500).json({error: 'Failed to fetch Closing'});
   }
 });
-
 // Data By Campaign
 
 router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
@@ -6458,7 +5893,6 @@ router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
     res.status(500).json({message: "Server Error"});
   }
 });
-
 //download Campaign Lead
 
 router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async(req,res)=>{
@@ -6491,7 +5925,6 @@ router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async(req,res)
     res.status(500).json({message: "Server Error"});
   }
 });
-
 // Data By Closing Campaign
 
 router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async(req,res)=>{
@@ -6513,7 +5946,6 @@ router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async(req,res)=>{
     res.status(500).json({message: "Server Error"});
   }
 });
-
 //download Category Campaign
 
 router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async(req,res)=>{
@@ -6546,7 +5978,6 @@ router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async(req,res)
     res.status(500).json({message:"Server Error"});
   }
 });
-
 // get Invoices
 
 router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
@@ -6567,7 +5998,6 @@ router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
     res.status(500).json({message: "Server Error"});
   }
 });
-
 //Incentives
 
 // PUT route for adding or updating incentive
@@ -6606,11 +6036,9 @@ router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
 router.put('/addIncentive', async (req, res) => {
   try {
     const { employeeName, incentives } = req.body;
-
     // Check if the incentive entry for the employee and category already exists
     let updatedIncentive;
     const existingIncentive = await incentive.findOne({ employeeName });
-
     if (existingIncentive) {
       // Update existing incentive
       updatedIncentive = await incentive.findOneAndUpdate(
@@ -6626,14 +6054,12 @@ router.put('/addIncentive', async (req, res) => {
       });
       updatedIncentive = await newIncentive.save();
     }
-
     res.json({ success: true, message: "Incentive Added or Updated Successfully!", data: updatedIncentive });
   } catch (err) {
     console.error("Error Adding/Updating Incentive:", err);
     res.status(500).json({ success: false, message: "Error Adding/Updating Incentive" });
   }
 });
-
 
 router.get('/allIncentive',async(req,res)=>{
   try{
@@ -6644,7 +6070,6 @@ router.get('/allIncentive',async(req,res)=>{
     res.status(500).json({error: 'Failed to fetch Incentive'})
   }
 });
-
 
 // GET route to calculate incentive based on sales
 // router.get('/categoryAmount', async (req, res) => {
@@ -6806,11 +6231,9 @@ router.get('/allIncentive',async(req,res)=>{
 
 router.get('/categoryAmount', async (req, res) => {
   const { year, month } = req.query;
-
   // Define the start and end of the current month
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
   try {
     // Step 1: Aggregate data for condition 1 (remainingAmount = 0 and restPaymentDate = null)
     const condition1Results = await Customer.aggregate([
@@ -6829,7 +6252,6 @@ router.get('/categoryAmount', async (req, res) => {
         }
       }
     ]);
-
     // Step 2: Aggregate data for condition 2 (remainingAmount = 0 and restPaymentDate in the current month)
     const condition2Results = await Customer.aggregate([
       {
@@ -6847,34 +6269,28 @@ router.get('/categoryAmount', async (req, res) => {
         }
       }
     ]);
-
     // Merge results from both conditions
     //const allResults = [...condition1Results, ...condition2Results];
     const allResults = [
       ...condition1Results.map(result => ({ ...result, incentiveSource: 'currentMonth' })),
       ...condition2Results.map(result => ({ ...result, incentiveSource: 'previousMonths' }))
     ]
-
     // Step 3: Calculate incentives for each sales person
     for (let result of allResults) {
       const { salesPerson } = result._id;
       const totalClosingPrice = result.totalClosingPrice;
-
       // Find matching incentive for the sales person
       const incentivess = await incentive.findOne({
         employeeName: salesPerson
       });
-
       if (incentivess && incentivess.incentives) {
         let calculatedIncentive = 0;
-
         // Loop through incentive thresholds to calculate the correct incentive
         for (let threshold of incentivess.incentives) {
           if (totalClosingPrice >= threshold.amount) {
             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
           }
         }
-
         // Add calculated incentive to the result
         result.calculatedIncentive = calculatedIncentive;
       } else {
@@ -6882,7 +6298,6 @@ router.get('/categoryAmount', async (req, res) => {
         result.calculatedIncentive = 0;
       }
     }
-
     // Step 4: Send the final response
     if (allResults.length > 0) {
       console.log('Results:', allResults);
@@ -6894,13 +6309,11 @@ router.get('/categoryAmount', async (req, res) => {
       console.log('No sales entries found for the current month');
       res.json({ message: 'No sales entries found for the current month' });
     }
-
   } catch (error) {
     console.error("Error retrieving amounts and incentives:", error.message);
     res.status(500).json({ status: "fail", error: error.message });
   }
 });
-
 
 // Sales Person Incentives
 
@@ -7060,11 +6473,9 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
   const { year, month } = req.query;
   const password = req.query.pass;
   const person1 = req.userData.name;
-
   // Define the date range for the current month
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
   try {
     // Step 1: Verify user's password
     const user = await User.findOne({ signupUsername: person1 });
@@ -7075,7 +6486,6 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
       return res.status(401).json({ message: 'Password not matched' });
     }
     console.log("Password verified");
-
     // Step 2: Aggregate data for condition 1 (remainingAmount = 0 and restPaymentDate = null)
     const condition1Results = await Customer.aggregate([
       {
@@ -7094,7 +6504,6 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
         }
       }
     ]);
-
     // Step 3: Aggregate data for condition 2 (remainingAmount = 0 and restPaymentDate in the current month)
     const condition2Results = await Customer.aggregate([
       {
@@ -7113,24 +6522,19 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
         }
       }
     ]);
-
     // Step 4: Merge results and calculate incentives for each result
     //const allResults = [...condition1Results, ...condition2Results];
-
     const allResults = [
       ...condition1Results.map(result => ({ ...result, incentiveSource: 'currentMonth' })),
       ...condition2Results.map(result => ({ ...result, incentiveSource: 'previousMonths' }))
     ]
-
     for (let result of allResults) {
       const { salesPerson } = result._id;
       const totalClosingPrice = result.totalClosingPrice;
-
       // Step 5: Fetch incentive thresholds for the salesperson
       const incentivess = await incentive.findOne({ employeeName: salesPerson });
       if (incentivess && incentivess.incentives) {
         let calculatedIncentive = 0;
-
         // Calculate incentive based on thresholds
         for (let threshold of incentivess.incentives) {
           if (totalClosingPrice >= threshold.amount) {
@@ -7142,7 +6546,6 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
         result.calculatedIncentive = 0;
       }
     }
-
     // Step 6: Send the final response
     if (allResults.length > 0) {
       console.log('Incentive Calculation Results:', allResults);
@@ -7150,17 +6553,12 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
     } else {
       res.json({ message: 'No sales entries found for the current month' });
     }
-
   } catch (error) {
     console.error("Error retrieving incentives:", error.message);
     res.status(500).json({ status: "fail", error: error.message });
   }
 });
-
-
-
-
-
+//Bundles
 
 router.get('/bundleActiveList', async(req,res)=>{
   const currentMonth = new Date().getMonth() + 1;
@@ -7181,7 +6579,6 @@ router.get('/bundleActiveList', async(req,res)=>{
 });
 
 router.get('/bundleCompleteList', async (req, res) => {
-  //console.log("person hjjj ==>", person);
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await Customer.find({
@@ -7190,12 +6587,9 @@ router.get('/bundleCompleteList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth)
       },
-      //remainingAmount: { $gt: 0 },
       bundleStatus: { $regex: /^Created$/i }
     }).sort({ bundlePassDate: -1 });
-
     res.json(products);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
