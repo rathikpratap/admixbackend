@@ -84,12 +84,12 @@ router.post('/login', (req, res) => {
         const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
 
         // Save the current login time
-        const currentTime = new Date();
+        //const currentTime = new Date();
 
         // Push the login time to the user's loginTimes array
         // user.loginTimes = user.loginTimes || []; // Initialize if not already an array
         // user.loginTimes.push(currentTime);
-        user.loginSessions.push({ loginTime: currentTime });
+        //user.loginSessions.push({ loginTime: currentTime });
 
         user.save()
           .then(() => {
@@ -173,7 +173,8 @@ router.get('/profile', checkAuth, async (req, res) => {
   const userId = await req.userData.userId;
   person = req.userData.name;
   personTeam = req.userData.Saleteam;
-  role = req.userData.signupRole;
+  // role = req.userData.signupRole;
+  role = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
 
   User.findById(userId).exec().then((result) => {
     return res.json({ success: true, data: result })
@@ -643,7 +644,8 @@ router.put('/update/:id', checkAuth, async (req, res) => {
           scriptDurationSeconds: req.body.scriptDurationSeconds,
           numberOfVideos: req.body.numberOfVideos,
           companyName: req.body.companyName,
-          scriptPassDate: req.body.scriptPassDate
+          scriptPassDate: req.body.scriptPassDate,
+          Qr: res.body.Qr
         });
         await newCustomer.save();
         await salesLead.findByIdAndDelete(req.params.id);
@@ -860,6 +862,97 @@ router.get('/totalEntries', async (req, res) => {
     const totalRecv = totalEntries.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
     const totalDue = totalEntries.reduce((sum, doc) => sum + doc.remainingAmount, 0);
     res.json({ totalEntries, totalAmount, totalRecv, totalDue });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// Today Received Amount
+
+router.get('/todayAmount', async(req,res)=>{
+  const currentDate = new Date();
+  try{
+    let query1 = {
+      closingDate: {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
+    let query2 = {
+      restPaymentDate: {
+        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+        $lte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
+      }
+    };
+    const advToday = await Customer.find(query1);
+    const advAmount = advToday.reduce((sum, doc) => sum + (doc.AdvPay || 0),0);
+    const restToday = await Customer.find(query2);
+    const restAmount = restToday.reduce((sum, doc) => sum + (doc.restAmount || 0),0);
+    const totalAmount = advAmount + restAmount;
+    res.json({totalAmount, advToday, restToday});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: 'Server Error'});
+  }
+});
+
+// Received QR
+
+router.get('/receivedQr', async (req, res) => {
+  const currentDate = new Date();
+
+  // Helper function to generate query objects
+  const generateQuery = (qrName, dateField) => ({
+    [dateField]: {
+      $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
+      $lte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1),
+    },
+    Qr: qrName,
+  });
+
+  // Helper function to calculate total amounts
+  const calculateTotalAmount = async (qrName) => {
+    const advQuery = generateQuery(qrName, 'closingDate');
+    const restQuery = generateQuery(qrName, 'restPaymentDate');
+
+    const advDocs = await Customer.find(advQuery);
+    const restDocs = await Customer.find(restQuery);
+
+    const advAmount = advDocs.reduce((sum, doc) => sum + (doc.AdvPay || 0), 0);
+    const restAmount = restDocs.reduce((sum, doc) => sum + (doc.restAmount || 0), 0);
+
+    return { advDocs, restDocs, totalAmount: advAmount + restAmount };
+  };
+
+  try {
+    // Calculate totals for each Qr name
+    const [admixMedia, shivaVarshney, swatiVarshney, umeshchandVarshney] = await Promise.all([
+      calculateTotalAmount('Admix Media'),
+      calculateTotalAmount('Shiva Varshney'),
+      calculateTotalAmount('Swati Varshney'),
+      calculateTotalAmount('Umeshchand Varshney'),
+    ]);
+
+    res.json({
+      totals: {
+        AdmixMedia: admixMedia.totalAmount,
+        ShivaVarshney: shivaVarshney.totalAmount,
+        SwatiVarshney: swatiVarshney.totalAmount,
+        UmeshchandVarshney: umeshchandVarshney.totalAmount,
+      },
+      details: {
+        admixMediaAdv: admixMedia.advDocs,
+        admixMediaRest: admixMedia.restDocs,
+        shivaVarshneyAdv: shivaVarshney.advDocs,
+        shivaVarshneyRest: shivaVarshney.restDocs,
+        swatiVarshneyAdv: swatiVarshney.advDocs,
+        swatiVarshneyRest: swatiVarshney.restDocs,
+        umeshchandVarshneyAdv: umeshchandVarshney.advDocs,
+        umeshchandVarshneyRest: umeshchandVarshney.restDocs,
+      }
+    });
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -1399,6 +1492,7 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
     const rangeTotalAmount = rangeTotalData.reduce((sum, doc) => sum + doc.closingPrice, 0);
     const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
     const rangeTotalDue = rangeTotalData.reduce((sum, doc) => sum + doc.remainingAmount, 0);
+    console.log("Range TOtal Amount===>>", rangeTotalAmount);
     res.json({
       rangeTotalData: rangeTotalData,
       rangeTotalAmount: rangeTotalAmount,
@@ -1889,7 +1983,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//040jWVZd35n1hCgYIARAAGAQSNwF-L9IrtpCo6T0OJA-WvUjBy4q5u37aDk6gQhk0INrHcggSx-F0kqTR92FQQbI_KolCvqzqiSQ';
+const REFERESH_TOKEN = '1//04gLAS88TDcqYCgYIARAAGAQSNwF-L9IrduYgqK0ax9Z2GiqDZcnJTzQ6VBNGBVRCBP-avEgHqeby1BB2yds2Cpi4xDc3fo5940c';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4442,14 +4536,16 @@ router.post('/estInvoice', async (req, res) => {
 // Estimate Invoice Count
 
 router.get('/estInvoiceCount', async (req, res) => {
-  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
+  // const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
+  const dataLength = await EstInvoice.countDocuments();
   return res.json(dataLength);
 });
 
 // Main Invoice Count
 
 router.get('/mainInvoiceCount', async (req, res) => {
-  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
+  // const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
+  const dataLength = await EstInvoice.countDocuments();
   return res.json(dataLength);
 });
 
@@ -6231,17 +6327,23 @@ router.get('/allIncentive',async(req,res)=>{
 
 router.get('/categoryAmount', async (req, res) => {
   const { year, month } = req.query;
+
   // Define the start and end of the current month
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
+
   try {
-    // Step 1: Aggregate data for condition 1 (remainingAmount = 0 and restPaymentDate = null)
+    // Step 1: Aggregate data for condition 1 (current month data)
     const condition1Results = await Customer.aggregate([
       {
         $match: {
           closingDate: { $gte: startMonth, $lte: endMonth },
           remainingAmount: 0,
-          restPaymentDate: null
+          $or: [
+            { restPaymentDate: null },
+            { restPaymentDate: { $gte: startMonth, $lte: endMonth } },
+            { restPaymentDate: { $lte: new Date(startMonth.getFullYear(), startMonth.getMonth() + 1, 10) } }
+          ]
         }
       },
       {
@@ -6252,13 +6354,17 @@ router.get('/categoryAmount', async (req, res) => {
         }
       }
     ]);
-    // Step 2: Aggregate data for condition 2 (remainingAmount = 0 and restPaymentDate in the current month)
+
+    // Step 2: Aggregate data for condition 2 (previous months data)
     const condition2Results = await Customer.aggregate([
       {
         $match: {
-          //closingDate: { $gte: startMonth, $lte: endMonth },
+          closingDate: { $not: { $gte: startMonth, $lte: endMonth } },
           remainingAmount: 0,
-          restPaymentDate: { $gte: startMonth, $lte: endMonth }
+          $and: [
+            { restPaymentDate: { $gte: startMonth, $lte: endMonth } },
+            { restPaymentDate: { $gt: new Date(startMonth.getFullYear(), startMonth.getMonth(), 10) } }
+          ]
         }
       },
       {
@@ -6269,49 +6375,69 @@ router.get('/categoryAmount', async (req, res) => {
         }
       }
     ]);
-    // Merge results from both conditions
-    //const allResults = [...condition1Results, ...condition2Results];
+
+    // Combine results from both conditions
     const allResults = [
       ...condition1Results.map(result => ({ ...result, incentiveSource: 'currentMonth' })),
       ...condition2Results.map(result => ({ ...result, incentiveSource: 'previousMonths' }))
-    ]
-    // Step 3: Calculate incentives for each sales person
-    for (let result of allResults) {
+    ];
+
+    // Step 3: Calculate totalClosingPrice sum and incentives for each salesperson
+    const summary = {};
+
+    // Sum up totalClosingPrice for each salesperson
+    allResults.forEach(result => {
       const { salesPerson } = result._id;
-      const totalClosingPrice = result.totalClosingPrice;
-      // Find matching incentive for the sales person
-      const incentivess = await incentive.findOne({
-        employeeName: salesPerson
-      });
+      if (!summary[salesPerson]) {
+        summary[salesPerson] = {
+          salesPerson,
+          totalClosingPrice: 0,
+          numberOfClosings: 0,
+        };
+      }
+      summary[salesPerson].totalClosingPrice += result.totalClosingPrice;
+      summary[salesPerson].numberOfClosings += result.numberOfClosings;
+    });
+
+    // Calculate incentives for each salesperson
+    for (const salesPerson in summary) {
+      const salespersonData = summary[salesPerson];
+      const totalSum = salespersonData.totalClosingPrice;
+
+      // Fetch incentives for the salesperson
+      const incentivess = await incentive.findOne({ employeeName: salesPerson });
+
       if (incentivess && incentivess.incentives) {
         let calculatedIncentive = 0;
+
         // Loop through incentive thresholds to calculate the correct incentive
         for (let threshold of incentivess.incentives) {
-          if (totalClosingPrice >= threshold.amount) {
-            calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
+          if (totalSum >= threshold.amount) {
+            calculatedIncentive = (totalSum - threshold.amount) * (threshold.increment / 100);
           }
         }
-        // Add calculated incentive to the result
-        result.calculatedIncentive = calculatedIncentive;
+
+        salespersonData.calculatedIncentive = calculatedIncentive;
       } else {
         // No matching incentive found, set incentive to 0
-        result.calculatedIncentive = 0;
+        salespersonData.calculatedIncentive = 0;
       }
     }
+
+    // Prepare the response
+    const response = Object.values(summary);
+
     // Step 4: Send the final response
-    if (allResults.length > 0) {
-      console.log('Results:', allResults);
-      allResults.forEach(result => {
-        console.log(`SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
-      });
-      res.json(allResults);
+    if (response.length > 0) {
+      console.log('Final Results:', response);
+      res.json(response);
     } else {
       console.log('No sales entries found for the current month');
       res.json({ message: 'No sales entries found for the current month' });
     }
   } catch (error) {
-    console.error("Error retrieving amounts and incentives:", error.message);
-    res.status(500).json({ status: "fail", error: error.message });
+    console.error('Error retrieving amounts and incentives:', error.message);
+    res.status(500).json({ status: 'fail', error: error.message });
   }
 });
 
@@ -6476,6 +6602,7 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
   // Define the date range for the current month
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
+  
   try {
     // Step 1: Verify user's password
     const user = await User.findOne({ signupUsername: person1 });
@@ -6493,7 +6620,15 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
           closingDate: { $gte: startMonth, $lte: endMonth },
           salesPerson: person1,
           remainingAmount: 0,
-          restPaymentDate: null
+          $or: [{
+            restPaymentDate: null  
+          },
+          {
+            restPaymentDate: { $gte: startMonth, $lte: endMonth }
+          },
+          {
+            restPaymentDate: {$lte: new Date(startMonth.getFullYear(), startMonth.getMonth()+1, 10)}
+          }] 
         }
       },
       {
@@ -6508,10 +6643,18 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
     const condition2Results = await Customer.aggregate([
       {
         $match: {
-          //closingDate: { $gte: startMonth, $lte: endMonth },
+          closingDate:{
+            $not: { $gte: startMonth, $lte: endMonth }
+          },
           salesPerson: person1,
           remainingAmount: 0,
-          restPaymentDate: { $gte: startMonth, $lte: endMonth }
+          $and: [{
+            restPaymentDate: { $gte: startMonth, $lte: endMonth }
+          },
+        {
+          restPaymentDate: {$gt: new Date(startMonth.getFullYear(), startMonth.getMonth(), 10)}
+        }]
+        //restPaymentDate: { $gte: startMonth, $lte: endMonth }
         }
       },
       {
@@ -6528,6 +6671,9 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
       ...condition1Results.map(result => ({ ...result, incentiveSource: 'currentMonth' })),
       ...condition2Results.map(result => ({ ...result, incentiveSource: 'previousMonths' }))
     ]
+    const totalSum = allResults.reduce((acc, result) => {
+      return acc + result.totalClosingPrice;
+    }, 0);
     for (let result of allResults) {
       const { salesPerson } = result._id;
       const totalClosingPrice = result.totalClosingPrice;
@@ -6538,7 +6684,7 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
         // Calculate incentive based on thresholds
         for (let threshold of incentivess.incentives) {
           if (totalClosingPrice >= threshold.amount) {
-            calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
+            calculatedIncentive = (totalSum - threshold.amount) * (threshold.increment / 100);
           }
         }
         result.calculatedIncentive = calculatedIncentive;
