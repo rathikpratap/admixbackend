@@ -890,7 +890,7 @@ router.get('/todayAmount', async(req,res)=>{
     const restToday = await Customer.find(query2);
     const restAmount = restToday.reduce((sum, doc) => sum + (doc.restAmount || 0),0);
     const totalAmount = advAmount + restAmount;
-    res.json({totalAmount, advToday, restToday});
+    res.json({totalAmount, advToday, restToday, advAmount, restAmount});
   }catch(error){
     console.log(error);
     res.status(500).json({message: 'Server Error'});
@@ -922,7 +922,7 @@ router.get('/receivedQr', async (req, res) => {
     const advAmount = advDocs.reduce((sum, doc) => sum + (doc.AdvPay || 0), 0);
     const restAmount = restDocs.reduce((sum, doc) => sum + (doc.restAmount || 0), 0);
 
-    return { advDocs, restDocs, totalAmount: advAmount + restAmount };
+    return { advDocs, restDocs, advAmount: advAmount, restAmount: restAmount , totalAmount: advAmount + restAmount };
   };
 
   try {
@@ -939,7 +939,19 @@ router.get('/receivedQr', async (req, res) => {
         AdmixMedia: admixMedia.totalAmount,
         ShivaVarshney: shivaVarshney.totalAmount,
         SwatiVarshney: swatiVarshney.totalAmount,
-        UmeshchandVarshney: umeshchandVarshney.totalAmount,
+        UmeshchandVarshney: umeshchandVarshney.totalAmount
+      },
+      advTotals: {
+        AdmixMedia: admixMedia.advAmount,
+        ShivaVarshney: shivaVarshney.advAmount,
+        SwatiVarshney: swatiVarshney.advAmount,
+        UmeshchandVarshney: umeshchandVarshney.advAmount
+      },
+      restTotals: {
+        AdmixMedia: admixMedia.restAmount,
+        ShivaVarshney: shivaVarshney.restAmount,
+        SwatiVarshney: swatiVarshney.restAmount,
+        UmeshchandVarshney: umeshchandVarshney.restAmount
       },
       details: {
         admixMediaAdv: admixMedia.advDocs,
@@ -958,6 +970,107 @@ router.get('/receivedQr', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
+// router.get('/receivedQr', async (req, res) => {
+//   const currentDate = new Date();
+
+//   // Helper function to generate query objects
+//   const generateQuery = (qrName, dateField, rangeType = 'current') => {
+//     const startOfDay = rangeType === 'previous'
+//       ? new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 1)
+//       : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+    
+//     const endOfDay = rangeType === 'previous'
+//       ? new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
+//       : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
+    
+//     return {
+//       [dateField]: {
+//         $gte: startOfDay,
+//         $lte: endOfDay,
+//       },
+//       Qr: qrName,
+//     };
+//   };
+
+//   // Helper function to calculate total amounts
+//   const calculateTotalAmount = async (qrName, rangeType) => {
+//     const advQuery = generateQuery(qrName, 'closingDate', rangeType);
+//     const restQuery = generateQuery(qrName, 'restPaymentDate', rangeType);
+
+//     const advDocs = await Customer.find(advQuery);
+//     const restDocs = await Customer.find(restQuery);
+
+//     const advAmount = advDocs.reduce((sum, doc) => sum + (doc.AdvPay || 0), 0);
+//     const restAmount = restDocs.reduce((sum, doc) => sum + (doc.restAmount || 0), 0);
+
+//     return { advDocs, restDocs, totalAmount: advAmount + restAmount };
+//   };
+
+//   try {
+//     // Calculate totals for each Qr name for both current and previous days
+//     const [admixMediaCurrent, admixMediaPrevious] = await Promise.all([
+//       calculateTotalAmount('Admix Media', 'current'),
+//       calculateTotalAmount('Admix Media', 'previous'),
+//     ]);
+//     const [shivaVarshneyCurrent, shivaVarshneyPrevious] = await Promise.all([
+//       calculateTotalAmount('Shiva Varshney', 'current'),
+//       calculateTotalAmount('Shiva Varshney', 'previous'),
+//     ]);
+//     const [swatiVarshneyCurrent, swatiVarshneyPrevious] = await Promise.all([
+//       calculateTotalAmount('Swati Varshney', 'current'),
+//       calculateTotalAmount('Swati Varshney', 'previous'),
+//     ]);
+//     const [umeshchandVarshneyCurrent, umeshchandVarshneyPrevious] = await Promise.all([
+//       calculateTotalAmount('Umeshchand Varshney', 'current'),
+//       calculateTotalAmount('Umeshchand Varshney', 'previous'),
+//     ]);
+
+//     res.json({
+//       totals: {
+//         currentDay: {
+//           AdmixMedia: admixMediaCurrent.totalAmount,
+//           ShivaVarshney: shivaVarshneyCurrent.totalAmount,
+//           SwatiVarshney: swatiVarshneyCurrent.totalAmount,
+//           UmeshchandVarshney: umeshchandVarshneyCurrent.totalAmount,
+//         },
+//         previousDay: {
+//           AdmixMedia: admixMediaPrevious.totalAmount,
+//           ShivaVarshney: shivaVarshneyPrevious.totalAmount,
+//           SwatiVarshney: swatiVarshneyPrevious.totalAmount,
+//           UmeshchandVarshney: umeshchandVarshneyPrevious.totalAmount,
+//         },
+//       },
+//       details: {
+//         currentDay: {
+//           admixMediaAdv: admixMediaCurrent.advDocs,
+//           admixMediaRest: admixMediaCurrent.restDocs,
+//           shivaVarshneyAdv: shivaVarshneyCurrent.advDocs,
+//           shivaVarshneyRest: shivaVarshneyCurrent.restDocs,
+//           swatiVarshneyAdv: swatiVarshneyCurrent.advDocs,
+//           swatiVarshneyRest: swatiVarshneyCurrent.restDocs,
+//           umeshchandVarshneyAdv: umeshchandVarshneyCurrent.advDocs,
+//           umeshchandVarshneyRest: umeshchandVarshneyCurrent.restDocs,
+//         },
+//         previousDay: {
+//           admixMediaAdv: admixMediaPrevious.advDocs,
+//           admixMediaRest: admixMediaPrevious.restDocs,
+//           shivaVarshneyAdv: shivaVarshneyPrevious.advDocs,
+//           shivaVarshneyRest: shivaVarshneyPrevious.restDocs,
+//           swatiVarshneyAdv: swatiVarshneyPrevious.advDocs,
+//           swatiVarshneyRest: swatiVarshneyPrevious.restDocs,
+//           umeshchandVarshneyAdv: umeshchandVarshneyPrevious.advDocs,
+//           umeshchandVarshneyRest: umeshchandVarshneyPrevious.restDocs,
+//         },
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
 
 // total Month rest Amount Received
 
