@@ -645,7 +645,7 @@ router.put('/update/:id', checkAuth, async (req, res) => {
           numberOfVideos: req.body.numberOfVideos,
           companyName: req.body.companyName,
           scriptPassDate: req.body.scriptPassDate,
-          Qr: res.body.Qr
+          Qr: req.body.Qr
         });
         await newCustomer.save();
         await salesLead.findByIdAndDelete(req.params.id);
