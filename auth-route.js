@@ -2087,16 +2087,16 @@ router.get('/facebook-leads', async (req, res) => {
 // sales automatic facebook leads
 
 //itwebdeveloper
-// const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
-// const CLIENT_SECRET = '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';
-// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04WyOuVf_8cWECgYIARAAGAQSNwF-L9IrHUOLzq0KqC9RMDS7QwUOhlbM3YYr25Vnk19WA8IZoA7R34yHIxmFEME5uk_7GPpsj6E';
+const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+const REFERESH_TOKEN = '1//04Ol5jkN71hg9CgYIARAAGAQSNwF-L9IrqBSeYzeD8zwnWyjlxIm9TlRpJf4lkMcO5Np6HhzE9bsC8LSuVbVJWZm-AVvpdZ8tmEY';
 
 // AdmixmediaIndia
-const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04gLAS88TDcqYCgYIARAAGAQSNwF-L9IrduYgqK0ax9Z2GiqDZcnJTzQ6VBNGBVRCBP-avEgHqeby1BB2yds2Cpi4xDc3fo5940c';
+// const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
+// const CLIENT_SECRET = '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';
+// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+// const REFERESH_TOKEN = '1//04gLAS88TDcqYCgYIARAAGAQSNwF-L9IrduYgqK0ax9Z2GiqDZcnJTzQ6VBNGBVRCBP-avEgHqeby1BB2yds2Cpi4xDc3fo5940c';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4598,6 +4598,54 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
+// router.post('/estInvoice', async (req, res) => {
+//   try {
+//     const {
+//       custGST,
+//       custAddLine1,
+//       custAddLine2,
+//       custAddLine3,
+//       billNumber,
+//       billType,
+//       custName,
+//       custNumb,
+//       invoiceCateg,
+//       customCateg,
+//       rows, // Array of row data
+//       invoiceDate,
+//       GSTAmount,
+//       totalAmount,
+//       billFormat
+//     } = req.body;
+
+//     // Create a new invoice document
+//     const estInvoice = new EstInvoice({
+//       custGST,
+//       custAddLine1,
+//       custAddLine2,
+//       custAddLine3,
+//       billNumber,
+//       billType,
+//       custName,
+//       custNumb,
+//       invoiceCateg,
+//       customCateg,
+//       rows,
+//       date: invoiceDate,
+//       GSTAmount,
+//       totalAmount,
+//       billFormat
+//     });
+
+//     // Save the invoice to the database
+//     await estInvoice.save();
+//     res.json({ success: true, message: 'Estimate Invoice Added Successfully' });
+//   } catch (err) {
+//     console.error("Error adding Estimate Invoice Details", err);
+//     res.json({ success: false, message: "Error Adding Estimate Invoice" });
+//   }
+// });
+
 router.post('/estInvoice', async (req, res) => {
   try {
     const {
@@ -4615,10 +4663,39 @@ router.post('/estInvoice', async (req, res) => {
       invoiceDate,
       GSTAmount,
       totalAmount,
-      billFormat
+      billFormat,
+      allowDuplicate // Added to handle duplicate logic
     } = req.body;
 
-    // Create a new invoice document
+    // Parse the invoiceDate to check for the current month and year
+    const currentMonth = new Date(invoiceDate).getMonth();
+    const currentYear = new Date(invoiceDate).getFullYear();
+
+    if (!allowDuplicate) {
+      // Check if an invoice exists for the current month
+      const existingInvoice = await EstInvoice.findOne({
+        custName,
+        custNumb,
+        billFormat,
+        $expr: {
+          $and: [
+            { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
+            { $eq: [{ $year: "$date" }, currentYear] }
+          ]
+        }
+      });
+
+      if (existingInvoice) {
+        // Send a response indicating data already exists
+        return res.json({
+          success: false,
+          message: "Invoice of the User is already exists in this Month. Do you want to save this as a new entry?",
+          dataExists: true
+        });
+      }
+    }
+
+    // Save the new invoice
     const estInvoice = new EstInvoice({
       custGST,
       custAddLine1,
@@ -4637,7 +4714,6 @@ router.post('/estInvoice', async (req, res) => {
       billFormat
     });
 
-    // Save the invoice to the database
     await estInvoice.save();
     res.json({ success: true, message: 'Estimate Invoice Added Successfully' });
   } catch (err) {
@@ -4646,19 +4722,21 @@ router.post('/estInvoice', async (req, res) => {
   }
 });
 
+
+
 // Estimate Invoice Count
 
 router.get('/estInvoiceCount', async (req, res) => {
-  // const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
-  const dataLength = await EstInvoice.countDocuments();
+   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
+  //const dataLength = await EstInvoice.countDocuments();
   return res.json(dataLength);
 });
 
 // Main Invoice Count
 
 router.get('/mainInvoiceCount', async (req, res) => {
-  // const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
-  const dataLength = await EstInvoice.countDocuments();
+   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
+  //const dataLength = await EstInvoice.countDocuments();
   return res.json(dataLength);
 });
 
@@ -6915,5 +6993,19 @@ router.get('/bundleTwoPreviousProjects', async (req, res) => {
   }
 });
 
+// Edit Invoice
+
+router.get('/read-inv/:id', async(req,res)=>{
+  try{
+    const invDetails = await EstInvoice.findById(req.params.id);
+    if(invDetails){
+      return res.json(invDetails);
+    }else{
+      return res.json({ result: "No Invoice Found"});
+    }
+  }catch(error){
+    return res.status(500).json({error: error.message});
+  }
+});
 
 module.exports = router
