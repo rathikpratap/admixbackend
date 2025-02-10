@@ -185,11 +185,12 @@ router.get('/profile', checkAuth, async (req, res) => {
 
 // Monthwise Ongoing Projects
 
-router.get('/list', async (req, res) => {
+router.get('/list',checkAuth, async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
+    const person1 = req.userData?.name;
     const products = await Customer.find({
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
@@ -210,10 +211,11 @@ router.get('/list', async (req, res) => {
 
 //All ongoing Projects Sales
 
-router.get('/allList', async (req, res) => {
+router.get('/allList',checkAuth, async (req, res) => {
   try {
+    const person1 = req.userData?.name;
     const products = await Customer.find({
-      salesPerson: person,
+      salesPerson: person1,
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -1093,12 +1095,13 @@ router.get('/totalRecvAmount', async (req, res) => {
   }
 });
 
-router.get('/totalEntriesEmp', async (req, res) => {
+router.get('/totalEntriesEmp',checkAuth, async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
+    const person1 = req.userData?.name;
     let query;
     query = {
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
@@ -1560,12 +1563,13 @@ router.get('/allActiveProjectsDownloadAdmin', async (req, res) => {
   }
 });
 
-router.get('/todayEntriesEmp', async (req, res) => {
+router.get('/todayEntriesEmp',checkAuth, async (req, res) => {
   const currentDate = new Date();
   try {
+    const person1 = req.userData?.name;
     let query;
     query = {
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
         $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
@@ -1581,13 +1585,15 @@ router.get('/todayEntriesEmp', async (req, res) => {
 
 //Data By Date Range
 
-router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
+router.get('/dataByRange/:startDate/:endDate',checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
   try {
+    const person1 = req.userData?.name;
+    const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
     let query;
-    if (role === 'Admin' || role === 'Manager') {
+    if (role1 === 'Admin' || role1 === 'Manager') {
       query = {
         closingDate: {
           $gte: startDate, $lte: endDate
@@ -1595,7 +1601,7 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
       };
     } else {
       query = {
-        salesPerson: person,
+        salesPerson: person1,
         closingDate: {
           $gte: startDate, $lte: endDate
         }
@@ -1615,6 +1621,90 @@ router.get('/dataByRange/:startDate/:endDate', async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.get('/onGoingRange/:startDate/:endDate', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query;
+    if(role === 'Admin' || role === 'Manager'){
+      query = {
+        closingDate: {
+          $gte: startDate, $lte: endDate
+        },
+        projectStatus: {$ne: 'Completed'}
+      };
+    } else {
+      query ={
+        salesPerson: person,
+        closingDate: {
+          $gte: startDate, $lte: endDate
+        },
+        projectStatus: { $ne: 'Completed'}
+      };
+    }
+    const totalData = await Customer.find(query);
+    res.json(totalData);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Server Error"});
+  }
+});
+
+router.get('/rangeTopPerformer/:startDate/:endDate',async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    const query= await Customer.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startDate, $lte: endDate
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$salesPerson',
+          totalClosingPrice: { $sum: '$closingPrice'}
+        }
+      },
+      {
+        $sort: {totalClosingPrice: -1}
+      }
+    ]);
+    if(query.length > 0){
+      query.forEach(result => {
+        console.log(`SalesPerson: ${query._id}, Total CLosing Price: ${result.totalClosingPrice}`);
+      });
+      res.json(query);
+    }else{
+      console.log('No sales Entries Found')
+    }
+  }catch(error){
+    console.log("Error getting Top Performer", error.message);
+    res.status(500).json({json: "Fail", error: error.message});
+  }
+});
+
+router.get('/rangeTotalRecvAmount/:startDate/:endDate', async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query = {
+      restPaymentDate: { $gte: startDate, $lte: endDate}
+    };
+    const totalEntries = await Customer.find(query);
+    const totalMonthRecv = totalEntries.reduce((sum, doc) => sum + doc.restAmount, 0);
+    res.json(totalMonthRecv);
+  }catch(error){
+    console.log("Error getting Total Received Amount", error.message);
+    res.status(500).json({json: "Failed", error: error.message});
   }
 });
 
@@ -2090,13 +2180,13 @@ router.get('/facebook-leads', async (req, res) => {
 // const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
 // const CLIENT_SECRET = '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';
 // const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04Ol5jkN71hg9CgYIARAAGAQSNwF-L9IrqBSeYzeD8zwnWyjlxIm9TlRpJf4lkMcO5Np6HhzE9bsC8LSuVbVJWZm-AVvpdZ8tmEY';
+// const REFERESH_TOKEN = '1//05Ol5jkN71hg9CgYIARAAGAQSNwF-L9IrqBSeYzeD8zwnWyjlxIm9TlRpJf4lkMcO5Np6HhzE9bsC8LSuVbVJWZm-AVvpdZ8tmEY';
 
 // AdmixmediaIndia
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04Ol5jkN71hg9CgYIARAAGAQSNwF-L9IrqBSeYzeD8zwnWyjlxIm9TlRpJf4lkMcO5Np6HhzE9bsC8LSuVbVJWZm-AVvpdZ8tmEY';
+const REFERESH_TOKEN = '1//04zQHjQ5C8cAFCgYIARAAGAQSNwF-L9IrA-WruxQjiSDQLAovy5Qwjvv_yjQb0MSVzBkP2STwvNWY9GSTqR4fFTlwexzCUGNi-zI';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
