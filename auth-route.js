@@ -2210,7 +2210,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     //Real
     const accessToken1 = await FbAccessToken.findOne();
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
+    const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email = '';
 
@@ -2338,7 +2338,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     //Real
     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
-    const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken2}`);
+    const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken2}`);
     const leadsData = response.data.adaccounts.data;
     let cust_name, company_name, phone, state, email = '';
     for (const leadData of leadsData) {
