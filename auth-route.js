@@ -1593,7 +1593,7 @@ router.get('/dataByRange/:startDate/:endDate',checkAuth, async (req, res) => {
     const person1 = req.userData?.name;
     const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
     let query;
-    if (role1 === 'Admin' || role1 === 'Manager') {
+    if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
         closingDate: {
           $gte: startDate, $lte: endDate
@@ -1726,11 +1726,13 @@ router.post('/uploadFile', upload.single('file'), async (req, res) => {
 
 //donwload Excel
 
-router.get('/downloadFile', async (req, res) => {
+router.get('/downloadFile',checkAuth, async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
+    const person1 = req.userData?.name;
+    const role1 = Array.isArray(req.userData.signupRole)?req.userData.signupRole[0] : req.userData.signupRole;
     let query;
-    if (role === 'Admin' || role === 'Manager') {
+    if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
         closingDate: {
           $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
@@ -1739,7 +1741,7 @@ router.get('/downloadFile', async (req, res) => {
       };
     } else {
       query = {
-        salesPerson: person,
+        salesPerson: person1,
         closingDate: {
           $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
           $lte: new Date(new Date().getFullYear(), currentMonth, 0)
@@ -1779,13 +1781,15 @@ router.get('/downloadFile', async (req, res) => {
   }
 });
 
-router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
+router.get('/downloadRangeFile/:startDate/:endDate', checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
   try {
+    const person1 = req.userData?.name;
+    const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
     let query;
-    if (role === 'Admin' || role === 'Manager') {
+    if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
         closingDate: {
           $gte: startDate, $lte: endDate
@@ -1793,7 +1797,7 @@ router.get('/downloadRangeFile/:startDate/:endDate', async (req, res) => {
       };
     } else {
       query = {
-        salesPerson: person,
+        salesPerson: person1,
         closingDate: {
           $gte: startDate, $lte: endDate
         }
