@@ -6452,6 +6452,18 @@ router.get('/getClosingNames', async(req,res)=>{
     res.status(500).json({error: 'Failed to fetch Closing'});
   }
 });
+
+// all Closing
+
+router.get('/allClosing', async(req,res)=>{
+  try{
+    const closing = await ClosingCategory.find();
+    return res.json(closing)
+  }catch(error){
+    console.error("Error Fetching Closing: ", error);
+    res.status(500).json({error: 'Failed to fetch Closing'});
+  }
+});
 // Data By Campaign
 
 router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
@@ -7298,6 +7310,80 @@ router.get('/read-inv/:id', async(req,res)=>{
     }
   }catch(error){
     return res.status(500).json({error: error.message});
+  }
+});
+
+// Team Leader
+
+router.get('/empAllProjects/:name', async(req,res)=>{
+  const name = req.params.name;
+  try{
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const fetchLeads = await Customer.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfMonth,
+        $lte: endOfToday
+      }
+    }).sort({ closingDate: -1});
+    return res.json(fetchLeads);
+  }catch(error){
+    console.error("Error Fetching Closings", error);
+    res.status(500).json({ error: 'Failed to Fetch Leads'});
+  }
+});
+
+router.get('/empAllPrevProjects/:name', async(req,res)=>{
+  const name = req.params.name;
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const previousMonthData = await Customer.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth -1, 1)
+      }
+    }).sort({closingDate: -1});
+    return res.json(previousMonthData);
+  }catch(error){
+    console.error("Error Fetching Closings", error);
+    res.status(500).json({error: 'Failed to Fetch Closing'})
+  }
+});
+
+router.get('/empAllTwoPrevProjects/:name', async(req,res)=>{
+  const name = req.params.name;
+  try{
+    const currentMonth = new Date().getMonth() + 1;
+    const previousTwoMonthData = await Customer.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth -3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth -2, 2)
+      }
+    }).sort({closingDate: -1});
+    return res.json(previousTwoMonthData);
+  }catch(error){
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({error: 'Failed to fetch Closing'})
+  }
+});
+
+router.get('/allCategProjects/:name', async(req,res)=>{
+  const name = req.params.name;
+  try{
+    const projects = await Customer.find({ projectStatus: { $ne: 'Completed'}});
+    if(projects.length > 0){
+      res.json(projects);
+    }else{
+      res.json({result: "No Data Found"});
+    }
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Server Error'});
   }
 });
 
