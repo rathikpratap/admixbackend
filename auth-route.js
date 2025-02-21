@@ -728,7 +728,8 @@ router.get('/searchCustomer/:mobile', async (req, res) => {
     let searchCriteria = {
       "$or": [
         { custName: { $regex: mobile, $options: 'i' }},
-        {  projectStatus: {$regex: mobile, $options: 'i'} } // Always search by custName using regex
+        {  projectStatus: {$regex: mobile, $options: 'i'} },
+        { custBussiness: {$regex: mobile, $options: 'i'}} // Always search by custName using regex
       ]
     };
     // If mobile is a valid number, add custNumb search
@@ -2190,7 +2191,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04gc5kn69YoJFCgYIARAAGAQSNwF-L9Ir_5vzrxXvUSqbGmKq8n4wfzw4Hrq1745yDfi0D67EHngugbZ6_JP_P17MjhC3f8o8tRI';
+const REFERESH_TOKEN = '1//04ujQtdEM-GlwCgYIARAAGAQSNwF-L9IryA8l2YiQfkP1iL3kgvQZ47Ltj3vvAqasLk8s8Fh5nihHvl3Q19eTFH0H65t-jz1o_Iw';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -7336,6 +7337,67 @@ router.get('/empAllProjects/:name', async(req,res)=>{
   }
 });
 
+router.get('/empProjects/:name', async(req,res)=>{
+  const name = req.params.name;
+  try{
+    const fetchedClosing = await Customer.find({
+      salesPerson: name,
+      projectStatus: { $ne: 'Completed'}
+    })
+    return res.json(fetchedClosing);
+  }catch(error){
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({ error: 'Failed to Fetch Closing'});
+  }
+});
+
+router.get('/sales_closing/:closing/:name', async(req,res)=>{
+  const closing = req.params.closing;
+  const name = req.params.name;
+  try{
+    const fetchedClosing = await Customer.find({
+      salesPerson: name,
+      closingCateg: closing,
+      projectStatus: { $ne: 'Completed'}
+    })
+    return res.json(fetchedClosing);
+  }catch(error){
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({ error: 'Failed to Fetch Closing'});
+  }
+});
+
+router.get('/sales_statusClosing/:closing/:name/:status', async(req,res)=>{
+  const closing = req.params.closing;
+  const name = req.params.name;
+  const status = req.params.status;
+  try{
+    const fetching = await Customer.find({
+      salesPerson: name,
+      closingCateg: closing,
+      projectStatus: status
+    })
+    console.log("ALL SET----->>", fetching);
+    return res.json(fetching);
+  }catch(error){
+    console.error("Error fetching Closing", error);
+    res.status(500).json({error: 'Failed to Fetch Closing'});
+  }
+});
+
+router.get('/empStatus/:status', async(req,res)=>{
+  const status = req.params.status;
+  try{
+    const fetch = await Customer.find({
+      projectStatus: status
+    })
+    return res.json(fetch);
+  }catch(error){
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({error: 'Failed to fetch Closing'});
+  }
+});
+
 router.get('/empAllPrevProjects/:name', async(req,res)=>{
   const name = req.params.name;
   try{
@@ -7375,7 +7437,10 @@ router.get('/empAllTwoPrevProjects/:name', async(req,res)=>{
 router.get('/allCategProjects/:name', async(req,res)=>{
   const name = req.params.name;
   try{
-    const projects = await Customer.find({ projectStatus: { $ne: 'Completed'}});
+    const projects = await Customer.find({
+      closingCateg: name,
+      projectStatus: { $ne: 'Completed'}
+    });
     if(projects.length > 0){
       res.json(projects);
     }else{
