@@ -413,7 +413,7 @@ router.get('/allOngoingProjects', async (req, res) => {
   try {
     const products = await Customer.find({
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       projectStatus: { $ne: 'Completed' }
@@ -7367,6 +7367,38 @@ router.get('/sales_closing/:closing/:name', async(req,res)=>{
   }
 });
 
+router.get('/closing_status/:closing/:status', async(req,res)=>{
+  const closing = req.params.closing;
+  const status = req.params.status;
+  try{
+    const fetching = await Customer.find({
+      closingCateg: closing,
+      projectStatus: status
+    })
+    return res.json(fetching);
+  }catch(error){
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({error: 'Failed to Fetch Closing'});
+  }
+});
+
+router.get('/sales_status/:person/:status', async(req,res)=>{
+  const person = req.params.person;
+  const status = req.params.status;
+  console.log("PERSON STATUS=====>>", person, status);
+  try{
+    const fetching = await Customer.find({
+      salesPerson: person,
+      projectStatus: status
+    })
+    console.log("DATA DATATATATATATA==================>>", fetching);
+    return res.json(fetching);
+  }catch(error){
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({error: 'Failed to fetch Closing'});
+  }
+});
+
 router.get('/sales_statusClosing/:closing/:name/:status', async(req,res)=>{
   const closing = req.params.closing;
   const name = req.params.name;
@@ -7449,6 +7481,23 @@ router.get('/allCategProjects/:name', async(req,res)=>{
   }catch(error){
     console.error(error);
     res.status(500).json({message: 'Server Error'});
+  }
+});
+
+router.post('/update-projectStatusTeam', async (req, res) => {
+  try {
+    const items = req.body.items;
+    for (const item of items) {
+      let existingItem = await Customer.findById(item._id);
+      if (existingItem) {
+        existingItem.projectStatus = item.projectStatus;
+        existingItem.remark = item.remark;
+        await existingItem.save();
+      }
+    }
+    return res.json(items);
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
   }
 });
 
