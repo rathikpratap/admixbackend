@@ -590,6 +590,7 @@ router.put('/update/:id', checkAuth, async (req, res) => {
           custCode: req.body.custCode,
           custName: leadDet.custName,
           custNumb: leadDet.custNumb,
+          custNumb2: req.body.custNumb2,
           custEmail: leadDet.custEmail,
           custBussiness: leadDet.custBussiness,
           closingDate: req.body.closingDate,
@@ -790,6 +791,7 @@ router.post('/customer', async (req, res) => {
     custCode: req.body.custCode,
     custName: req.body.custName,
     custNumb: req.body.custNumb,
+    custNumb2: req.body.custNumb2,
     custBussiness: req.body.custBussiness,
     closingDate: req.body.closingDate,
     closingPrice: req.body.closingPrice,
@@ -5916,7 +5918,8 @@ router.get('/usersAttendance', async (req, res) => {
     return res.status(400).json({ success: false, message: "Year and month are required." });
   }
   try {
-    const salesPerson = person;    
+    const salesPerson = person;
+    console.log("ATTENDANCE SALES===========>>", salesPerson);
     const users = await User.find({signupUsername: salesPerson});
     console.log("Attendance Person===>>", users);
     const daysInMonth = new Date(year, month, 0).getDate();
