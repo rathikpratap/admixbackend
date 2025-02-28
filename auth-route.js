@@ -437,9 +437,10 @@ router.get('/allCompleteProjects', async (req, res) => {
   try {
     const completeProducts = await Customer.find({
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
+      remainingAmount: {$eq: 0},
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
 
@@ -7705,6 +7706,24 @@ router.get('/getEmpSalesFiveYesterdayTeamWork/:name', async (req, res) => {
   } catch (error) {
     console.error('Error fetching leads:', error);
     res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/remainingAmountProjects', async (req, res) => {
+  try {
+    const completeProducts = await Customer.find({
+      remainingAmount: {$ne: 0},
+      projectStatus: { $regex: /^Completed$/i }
+    }).sort({ closingDate: -1 });
+
+    if (completeProducts.length > 0) {
+      res.json(completeProducts);
+    } else {
+      res.json({ result: "No Data Found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
