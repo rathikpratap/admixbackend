@@ -83,7 +83,8 @@ const customerSchema = new mongoose.Schema({
     bundleHandler: {type:String},
     bundleStatus: {type:String},
     bundlePassDate: {type:Date},
-    Qr: {type:String}
+    Qr: {type:String},
+    isHighlighted: { type: Boolean, default: false }
 });
 
 //customerSchema.pre('save', function(next) {

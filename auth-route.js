@@ -2191,7 +2191,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04ujQtdEM-GlwCgYIARAAGAQSNwF-L9IryA8l2YiQfkP1iL3kgvQZ47Ltj3vvAqasLk8s8Fh5nihHvl3Q19eTFH0H65t-jz1o_Iw';
+const REFERESH_TOKEN = '1//04RcuqFof2oi3CgYIARAAGAQSNwF-L9Irzk_cenJf94RzNiN80ixF9uL0NNeewUc8yq-E59ACW011hQP6wFGlTfvdKM_aL05JiQE';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3854,14 +3854,15 @@ router.get('/b2bDataLength', async (req, res) => {
 });
 
 router.get('/totalEntriesB2b', async (req, res) => {
-  const currentMonth = new Date().getMonth() + 1;
   try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     let query;
     query = {
-      salesPerson: person,
       b2bProjectDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $gte: startOfMonth,
+        $lte: endOfToday
       }
     };
     const totalEntries = await B2bCustomer.find(query);
@@ -3878,11 +3879,11 @@ router.get('/totalEntriesB2b', async (req, res) => {
 
 router.get('/allTotalEntriesB2b', async (req, res) => {
   try {
-    let query;
-    query = {
-      salesPerson: person,
-    };
-    const totalEntries = await B2bCustomer.find(query);
+    // let query;
+    // query = {
+    //   salesPerson: person,
+    // };
+    const totalEntries = await B2bCustomer.find();
     const totalAmount = totalEntries.reduce((sum, doc) => sum + doc.b2bProjectPrice, 0);
     // const totalRecv = totalEntries.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
     // const totalDue = totalEntries.reduce((sum, doc) => sum + doc.remainingAmount, 0);
@@ -3898,7 +3899,6 @@ router.get('/listB2b', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await B2bCustomer.find({
-      salesPerson: person,
       b2bProjectDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
@@ -3919,7 +3919,6 @@ router.get('/listB2b', async (req, res) => {
 router.get('/allListB2b', async (req, res) => {
   try {
     const products = await B2bCustomer.find({
-      salesPerson: person,
       projectStatus: { $ne: 'Completed' }
     }).sort({ b2bProjectDate: -1 });
     if (products.length > 0) {
@@ -3937,7 +3936,6 @@ router.get('/completeProjectB2b', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
     const completeProducts = await B2bCustomer.find({
-      salesPerson: person,
       b2bProjectDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
@@ -3958,7 +3956,6 @@ router.get('/completeProjectB2b', async (req, res) => {
 router.get('/allCompleteProjectB2b', async (req, res) => {
   try {
     const completeProducts = await B2bCustomer.find({
-      salesPerson: person,
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ b2bProjectDate: -1 });
     if (completeProducts.length > 0) {
@@ -3977,7 +3974,6 @@ router.get('/totalPreviousEntriesB2b', async (req, res) => {
   try {
     let query;
     query = {
-      salesPerson: person,
       b2bProjectDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
@@ -3996,7 +3992,6 @@ router.get('/totalTwoPreviousEntriesB2b', async (req, res) => {
   try {
     let query;
     query = {
-      salesPerson: person,
       b2bProjectDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 1)
@@ -5645,6 +5640,62 @@ router.get('/conversionRate', async (req, res) => {
   }
 });
 
+// router.get('/conversionRateMonthly', async (req, res) => {
+//   try {
+//     const totalLeads = await salesLead.aggregate([
+//       {
+//         $group: {
+//           _id: {
+//             salesPerson: '$salesPerson',
+//             month: { $month: '$closingDate' },
+//             year: { $year: '$closingDate' }
+//           },
+//           totalNumberOfLeads: { $sum: 1 }
+//         }
+//       }
+//     ]);
+//     const totalSales = await Customer.aggregate([
+//       {
+//         $group: {
+//           _id: {
+//             salesPerson: '$salesPerson',
+//             month: { $month: '$closingDate' },
+//             year: { $year: '$closingDate' }
+//           },
+//           totalNumberOfSales: { $sum: 1 }
+//         }
+//       }
+//     ]);
+//     const conversionRates = totalLeads.map(lead => {
+//       const sales = totalSales.find(sale =>
+//         sale._id.salesPerson &&
+//         sale._id.salesPerson === lead._id.salesPerson &&
+//         sale._id.month === lead._id.month &&
+//         sale._id.year === lead._id.year
+//       );
+//       const totalNumberOfLeads = lead.totalNumberOfLeads;
+//       const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
+//       const totalSum = totalNumberOfLeads + totalNumberOfSales;
+//       const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
+//       return {
+//         salesPerson: lead._id.salesPerson,
+//         month: lead._id.month,
+//         year: lead._id.year,
+//         totalLeads: totalNumberOfLeads,
+//         totalSales: totalNumberOfSales,
+//         conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
+//       };
+//     });
+//     if (conversionRates.length > 0) {
+//       res.json({ status: 'success', data: conversionRates });
+//     } else {
+//       res.json({ status: 'success', data: [], message: 'No leads or sales found' });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ status: 'fail', error: error.message });
+//   }
+// });
+
 router.get('/conversionRateMonthly', async (req, res) => {
   try {
     const totalLeads = await salesLead.aggregate([
@@ -5659,6 +5710,7 @@ router.get('/conversionRateMonthly', async (req, res) => {
         }
       }
     ]);
+
     const totalSales = await Customer.aggregate([
       {
         $group: {
@@ -5671,35 +5723,34 @@ router.get('/conversionRateMonthly', async (req, res) => {
         }
       }
     ]);
+
+    // Calculate conversion rates
     const conversionRates = totalLeads.map(lead => {
       const sales = totalSales.find(sale =>
-        sale._id.salesPerson &&
         sale._id.salesPerson === lead._id.salesPerson &&
         sale._id.month === lead._id.month &&
         sale._id.year === lead._id.year
       );
       const totalNumberOfLeads = lead.totalNumberOfLeads;
       const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
-      const totalSum = totalNumberOfLeads + totalNumberOfSales;
-      const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
+      const conversionRate = totalNumberOfLeads
+        ? ((totalNumberOfSales / totalNumberOfLeads) * 100).toFixed(2)
+        : 0;
+
       return {
         salesPerson: lead._id.salesPerson,
         month: lead._id.month,
         year: lead._id.year,
-        totalLeads: totalNumberOfLeads,
-        totalSales: totalNumberOfSales,
-        conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
+        conversionRate
       };
     });
-    if (conversionRates.length > 0) {
-      res.json({ status: 'success', data: conversionRates });
-    } else {
-      res.json({ status: 'success', data: [], message: 'No leads or sales found' });
-    }
+
+    res.json({ status: 'success', data: conversionRates });
   } catch (error) {
     res.status(500).json({ status: 'fail', error: error.message });
   }
 });
+
 
 //Attendance & totalLoggedInTime
 
@@ -7492,12 +7543,165 @@ router.post('/update-projectStatusTeam', async (req, res) => {
       if (existingItem) {
         existingItem.projectStatus = item.projectStatus;
         existingItem.remark = item.remark;
+        existingItem.isHighlighted = item.isHighlighted;
         await existingItem.save();
       }
     }
     return res.json(items);
   } catch (error) {
     return res.status(500).json({ error: error.message })
+  }
+});
+
+router.get('/getEmpSalesTeamWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const todayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfToday,
+        $lt: endOfToday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(todayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getEmpSalesYesterdayTeamWork/:name', async (req, res) => {
+  const name= req.params.name;
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getEmpSalesOneYesterdayTeamWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 2);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getEmpSalesTwoYesterdayTeamWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 3);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getEmpSalesThreeYesterdayTeamWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 4);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getEmpSalesFourYesterdayTeamWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 5);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getEmpSalesFiveYesterdayTeamWork/:name', async (req, res) => {
+  const name = req.params.name;
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 6);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterdayLeads = await salesLead.find({
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      },
+      salesPerson: name
+    }).sort({ closingDate: -1 });
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
 
