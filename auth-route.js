@@ -1766,6 +1766,7 @@ router.get('/downloadFile',checkAuth, async (req, res) => {
       'remainingAmount': customer.remainingAmount,
       'restAmount': customer.restAmount,
       'restPaymentDate': customer.restPaymentDate,
+      'Qr': customer.Qr,
       'custCountry': customer.custCountry,
       'custCity': customer.custCity,
       'custState': customer.custState,
@@ -1821,6 +1822,7 @@ router.get('/downloadRangeFile/:startDate/:endDate', checkAuth, async (req, res)
       'remainingAmount': customer.remainingAmount,
       'restAmount': customer.restAmount,
       'restPaymentDate': customer.restPaymentDate,
+      'Qr': customer.Qr,
       'custCountry': customer.custCountry,
       'custCity': customer.custCity,
       'custState': customer.custState,
@@ -1879,13 +1881,15 @@ router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
 
 // Download Due Data
 
-router.get('/downloadDueFile/:startDate/:endDate', async (req, res) => {
+router.get('/downloadDueFile/:startDate/:endDate',checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
   try {
+    const person1 = req.userData?.name;
+    const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
     let query;
-    if (role === 'Admin' || role === 'Manager') {
+    if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
         closingDate: {
           $gte: startDate, $lte: endDate
@@ -1894,7 +1898,7 @@ router.get('/downloadDueFile/:startDate/:endDate', async (req, res) => {
       };
     } else {
       query = {
-        salesPerson: person,
+        salesPerson: person1,
         closingDate: {
           $gte: startDate, $lte: endDate
         },
@@ -1915,6 +1919,7 @@ router.get('/downloadDueFile/:startDate/:endDate', async (req, res) => {
       'remainingAmount': customer.remainingAmount,
       'restAmount': customer.restAmount,
       'restPaymentDate': customer.restPaymentDate,
+      'Qr': customer.Qr,
       'custCountry': customer.custCountry,
       'custCity': customer.custCity,
       'custState': customer.custState,
@@ -2194,7 +2199,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04RcuqFof2oi3CgYIARAAGAQSNwF-L9Irzk_cenJf94RzNiN80ixF9uL0NNeewUc8yq-E59ACW011hQP6wFGlTfvdKM_aL05JiQE';
+const REFERESH_TOKEN = '1//04yZbQ0ZhldwACgYIARAAGAQSNwF-L9IrHBOFsNdx_6CA0wVMr2_x2LZq4xTX-epO3Ft4KkVUhDAUTXt8eqrZr8PVRpdumarO40U';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4052,7 +4057,6 @@ router.get('/downloadFileB2b', async (req, res) => {
   try {
     let query;
     query = {
-      salesPerson: person,
       b2bProjectDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
@@ -4095,7 +4099,6 @@ router.get('/downloadRangeFileB2b/:startDate/:endDate', async (req, res) => {
   try {
     let query;
     query = {
-      salesPerson: person,
       b2bProjectDate: {
         $gte: startDate, $lte: endDate
       }
