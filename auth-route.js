@@ -7730,4 +7730,43 @@ router.get('/remainingAmountProjects', async (req, res) => {
   }
 });
 
+// month wise comparision chart
+
+router.get('/sales-data', async (req, res) => {
+  try {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;  // JavaScript months are 0-based
+      const currentYear = now.getFullYear();
+      
+      const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+      const salesData = await Customer.aggregate([
+          {
+              $match: {
+                  $or: [
+                      { $expr: { $and: [{ $eq: [{ $month: "$closingDate" }, currentMonth] }, { $eq: [{ $year: "$closingDate" }, currentYear] }] } },
+                      { $expr: { $and: [{ $eq: [{ $month: "$closingDate" }, lastMonth] }, { $eq: [{ $year: "$closingDate" }, lastMonthYear] }] } }
+                  ]
+              }
+          },
+          {
+              $group: {
+                  _id: {
+                      month: { $month: "$closingDate" },
+                      year: { $year: "$closingDate" },
+                      salesPerson: "$salesPerson"
+                  },
+                  totalSales: { $sum: "$closingPrice" }
+              }
+          },
+          { $sort: { "_id.year": 1, "_id.month": 1 } }
+      ]);
+
+      res.json(salesData);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router
