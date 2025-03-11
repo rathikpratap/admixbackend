@@ -794,176 +794,148 @@ router.get('/customerProjectName/:projectName', async (req, res) => {
 // const REFERESH_TOKEN = '1//04ANDRa4SHFL5CgYIARAAGAQSNwF-L9IrzxdIssH80Mi5GzXAVd6OehkqSoOA2AzT51o_1gbJ-Sg2Uh-rOQRBddxdKEopI2x5Da4';
 
 // AdmixmediaIndia
-const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04oYPmVXDFST4CgYIARAAGAQSNwF-L9Ir2W_zkoh2yTnn6LhQuwLwcfgWN8dOF7vhEvxfmE6G7FJv4G4xpTeJAJw22L9treLFQLM';
+// const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
+// const CLIENT_SECRET = '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';
+// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+// const REFERESH_TOKEN = '1//04oYPmVXDFST4CgYIARAAGAQSNwF-L9Ir2W_zkoh2yTnn6LhQuwLwcfgWN8dOF7vhEvxfmE6G7FJv4G4xpTeJAJw22L9treLFQLM';
 
-const oauth2Client = new google.auth.OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET,
-  REDIRECT_URI
-);
+// const oauth2Client = new google.auth.OAuth2(
+//   CLIENT_ID,
+//   CLIENT_SECRET,
+//   REDIRECT_URI
+// );
 
-oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
-// const drive = google.drive({
-//   version: 'v3',
+// oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
+// // const drive = google.drive({
+// //   version: 'v3',
+// //   auth: oauth2Client
+// // });
+// const people = google.people({
+//   version: 'v1',
 //   auth: oauth2Client
-// });
-const people = google.people({
-  version: 'v1',
-  auth: oauth2Client
-});
-
-// router.post('/customer', async (req, res) => {
-//   const tempLeadsData = [];
-//   const customer = new Customer({
-//     custCode: req.body.custCode,
-//     custName: req.body.custName,
-//     custNumb: req.body.custNumb,
-//     custNumb2: req.body.custNumb2,
-//     custBussiness: req.body.custBussiness,
-//     closingDate: req.body.closingDate,
-//     closingPrice: req.body.closingPrice,
-//     closingCateg: req.body.closingCateg,
-//     billType: req.body.billType,
-//     AdvPay: req.body.AdvPay,
-//     remainingAmount: req.body.remainingAmount,
-//     restAmount: req.body.restAmount,
-//     custCountry: req.body.custCountry,
-//     custCity: req.body.custCity,
-//     custState: req.body.custState,
-//     projectStatus: req.body.projectStatus,
-//     salesPerson: req.body.salesPerson,
-//     youtubeLink: req.body.youtubeLink,
-//     remark: req.body.remark,
-//     editor: req.body.editor,
-//     scriptWriter: req.body.scriptWriter,
-//     voiceOver: req.body.voiceOver,
-//     salesTeam: req.body.salesTeam,
-//     companyName: req.body.companyName,
-//     scriptPassDate: req.body.scriptPassDate,
-//     graphicDesigner: req.body.graphicDesigner,
-//     graphicPassDate: req.body.graphicPassDate,
-//     Qr: req.body.Qr
-//   });
-//   tempLeadsData.push({ custName: `${formatDate(req.body.closingDate)} ${req.body.custName}`, custNumb: req.body.custNumb });
-//                   function formatDate(timestamp) {
-//                     const date = new Date(timestamp);
-//                     const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
-//                     const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
-//                     const year = String(date.getFullYear()).slice(-2);
-//                     return `${day}${month}${year}`;
-//                   }
-  
-//                   tempLeadsData.forEach(async (lead) => {
-//                     const contact = {
-//                       names: [{
-//                         givenName: lead.custName
-//                       }],
-//                       phoneNumbers: [{
-//                         value: String(req.body.custNumb)
-//                       }]
-//                     };
-//                     try {
-//                       const res = await people.people.createContact({
-//                         requestBody: contact
-//                       });
-//                     } catch (error) {
-//                       console.error("Error Creating Contact", error);
-//                     }
-//                   })
-//   await customer.save()
-//     .then((_) => {
-//       res.json({ success: true, message: "User Added!!" })
-//     })
-//     .catch((err) => {
-//       res.json({ success: false, message: "User Not Added!!" })
-//     })
 // });
 
 router.post('/customer', async (req, res) => {
-  try {
-    const tempLeadsData = [];
-
-    // Creating a new customer instance
-    const customer = new Customer({
-      custCode: req.body.custCode,
-      custName: req.body.custName,
-      custNumb: req.body.custNumb,
-      custNumb2: req.body.custNumb2,
-      custBussiness: req.body.custBussiness,
-      closingDate: req.body.closingDate,
-      closingPrice: req.body.closingPrice,
-      closingCateg: req.body.closingCateg,
-      billType: req.body.billType,
-      AdvPay: req.body.AdvPay,
-      remainingAmount: req.body.remainingAmount,
-      restAmount: req.body.restAmount,
-      custCountry: req.body.custCountry,
-      custCity: req.body.custCity,
-      custState: req.body.custState,
-      projectStatus: req.body.projectStatus,
-      salesPerson: req.body.salesPerson,
-      youtubeLink: req.body.youtubeLink,
-      remark: req.body.remark,
-      editor: req.body.editor,
-      scriptWriter: req.body.scriptWriter,
-      voiceOver: req.body.voiceOver,
-      salesTeam: req.body.salesTeam,
-      companyName: req.body.companyName,
-      scriptPassDate: req.body.scriptPassDate,
-      graphicDesigner: req.body.graphicDesigner,
-      graphicPassDate: req.body.graphicPassDate,
-      Qr: req.body.Qr
-    });
-
-    // Formatting the closing date
-    function formatDate(timestamp) {
-      const date = new Date(timestamp);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = String(date.getFullYear()).slice(-2);
-      return `${day}${month}${year}`;
-    }
-
-    // Creating lead data with formatted name
-    const formattedName = `${formatDate(req.body.closingDate)} ${req.body.custName}`;
-    tempLeadsData.push({ custName: formattedName, custNumb: req.body.custNumb });
-
-    let contactSaved = false; // Track if contact is saved
-
-    for (const lead of tempLeadsData) {
-      const contact = {
-        names: [{ givenName: lead.custName }],
-        phoneNumbers: [{ value: String(req.body.custNumb) }]
-      };
-
-      try {
-        const response = await people.people.createContact({ requestBody: contact });
-        if (response.status === 200) {
-          contactSaved = true;
-        }
-      } catch (error) {
-        console.error("Error Creating Contact:", error);
-      }
-    }
-
-    // Save the customer to the database
-    await customer.save();
-
-    // Response message based on contact saving status
-    res.json({
-      success: true,
-      message: contactSaved ? "User Added!!" : "User Added, but Contact Not Saved!"
-    });
-  } catch (err) {
-    console.error("Error Adding Customer:", err);
-    res.json({ success: false, message: "Error Adding Customer!" });
-  }
+  //const tempLeadsData = [];
+  const customer = new Customer({
+    custCode: req.body.custCode,
+    custName: req.body.custName,
+    custNumb: req.body.custNumb,
+    custNumb2: req.body.custNumb2,
+    custBussiness: req.body.custBussiness,
+    closingDate: req.body.closingDate,
+    closingPrice: req.body.closingPrice,
+    closingCateg: req.body.closingCateg,
+    billType: req.body.billType,
+    AdvPay: req.body.AdvPay,
+    remainingAmount: req.body.remainingAmount,
+    restAmount: req.body.restAmount,
+    custCountry: req.body.custCountry,
+    custCity: req.body.custCity,
+    custState: req.body.custState,
+    projectStatus: req.body.projectStatus,
+    salesPerson: req.body.salesPerson,
+    youtubeLink: req.body.youtubeLink,
+    remark: req.body.remark,
+    editor: req.body.editor,
+    scriptWriter: req.body.scriptWriter,
+    voiceOver: req.body.voiceOver,
+    salesTeam: req.body.salesTeam,
+    companyName: req.body.companyName,
+    scriptPassDate: req.body.scriptPassDate,
+    graphicDesigner: req.body.graphicDesigner,
+    graphicPassDate: req.body.graphicPassDate,
+    Qr: req.body.Qr
+  });
+  await customer.save()
+    .then((_) => {
+      res.json({ success: true, message: "User Added!!" })
+    })
+    .catch((err) => {
+      res.json({ success: false, message: "User Not Added!!" })
+    })
 });
 
+// router.post('/customer', async (req, res) => {
+//   try {
+//     const tempLeadsData = [];
 
+//     // Creating a new customer instance
+//     const customer = new Customer({
+//       custCode: req.body.custCode,
+//       custName: req.body.custName,
+//       custNumb: req.body.custNumb,
+//       custNumb2: req.body.custNumb2,
+//       custBussiness: req.body.custBussiness,
+//       closingDate: req.body.closingDate,
+//       closingPrice: req.body.closingPrice,
+//       closingCateg: req.body.closingCateg,
+//       billType: req.body.billType,
+//       AdvPay: req.body.AdvPay,
+//       remainingAmount: req.body.remainingAmount,
+//       restAmount: req.body.restAmount,
+//       custCountry: req.body.custCountry,
+//       custCity: req.body.custCity,
+//       custState: req.body.custState,
+//       projectStatus: req.body.projectStatus,
+//       salesPerson: req.body.salesPerson,
+//       youtubeLink: req.body.youtubeLink,
+//       remark: req.body.remark,
+//       editor: req.body.editor,
+//       scriptWriter: req.body.scriptWriter,
+//       voiceOver: req.body.voiceOver,
+//       salesTeam: req.body.salesTeam,
+//       companyName: req.body.companyName,
+//       scriptPassDate: req.body.scriptPassDate,
+//       graphicDesigner: req.body.graphicDesigner,
+//       graphicPassDate: req.body.graphicPassDate,
+//       Qr: req.body.Qr
+//     });
+
+//     // Formatting the closing date
+//     function formatDate(timestamp) {
+//       const date = new Date(timestamp);
+//       const day = String(date.getDate()).padStart(2, '0');
+//       const month = String(date.getMonth() + 1).padStart(2, '0');
+//       const year = String(date.getFullYear()).slice(-2);
+//       return `${day}${month}${year}`;
+//     }
+
+//     // Creating lead data with formatted name
+//     const formattedName = `${formatDate(req.body.closingDate)} ${req.body.custName}`;
+//     tempLeadsData.push({ custName: formattedName, custNumb: req.body.custNumb });
+
+//     let contactSaved = false; // Track if contact is saved
+
+//     for (const lead of tempLeadsData) {
+//       const contact = {
+//         names: [{ givenName: lead.custName }],
+//         phoneNumbers: [{ value: String(req.body.custNumb) }]
+//       };
+
+//       try {
+//         const response = await people.people.createContact({ requestBody: contact });
+//         if (response.status === 200) {
+//           contactSaved = true;
+//         }
+//       } catch (error) {
+//         console.error("Error Creating Contact:", error);
+//       }
+//     }
+
+//     // Save the customer to the database
+//     await customer.save();
+
+//     // Response message based on contact saving status
+//     res.json({
+//       success: true,
+//       message: contactSaved ? "User Added!!" : "User Added, but Contact Not Saved!"
+//     });
+//   } catch (err) {
+//     console.error("Error Adding Customer:", err);
+//     res.json({ success: false, message: "Error Adding Customer!" });
+//   }
+// });
 
 // Country State City
 
@@ -2333,27 +2305,27 @@ router.get('/facebook-leads', async (req, res) => {
 // const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
 // const REFERESH_TOKEN = '1//04ANDRa4SHFL5CgYIARAAGAQSNwF-L9IrzxdIssH80Mi5GzXAVd6OehkqSoOA2AzT51o_1gbJ-Sg2Uh-rOQRBddxdKEopI2x5Da4';
 
-// // AdmixmediaIndia
-// // const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
-// // const CLIENT_SECRET = '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';
-// // const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// // const REFERESH_TOKEN = '1//04yZbQ0ZhldwACgYIARAAGAQSNwF-L9IrHBOFsNdx_6CA0wVMr2_x2LZq4xTX-epO3Ft4KkVUhDAUTXt8eqrZr8PVRpdumarO40U';
+// AdmixmediaIndia
+const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+const REFERESH_TOKEN = '1//04oYPmVXDFST4CgYIARAAGAQSNwF-L9Ir2W_zkoh2yTnn6LhQuwLwcfgWN8dOF7vhEvxfmE6G7FJv4G4xpTeJAJw22L9treLFQLM';
 
-// const oauth2Client = new google.auth.OAuth2(
-//   CLIENT_ID,
-//   CLIENT_SECRET,
-//   REDIRECT_URI
-// );
+const oauth2Client = new google.auth.OAuth2(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  REDIRECT_URI
+);
 
-// oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
-// // const drive = google.drive({
-// //   version: 'v3',
-// //   auth: oauth2Client
-// // });
-// const people = google.people({
-//   version: 'v1',
+oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
+// const drive = google.drive({
+//   version: 'v3',
 //   auth: oauth2Client
 // });
+const people = google.people({
+  version: 'v1',
+  auth: oauth2Client
+});
 
 // router.get('/salesFacebook-leads', async (req, res) => {
 //   try {
@@ -2512,14 +2484,14 @@ router.get('/salesFacebook-leads', async (req, res) => {
                     subsidiaryName: 'AdmixMedia'
                   });
                   await newLead.save();
-                  // tempLeadsData.push({ custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone });
-                  // function formatDate(timestamp) {
-                  //   const date = new Date(timestamp);
-                  //   const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
-                  //   const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
-                  //   const year = String(date.getFullYear()).slice(-2);
-                  //   return `${day}${month}${year}`;
-                  // }
+                  tempLeadsData.push({ custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone });
+                  function formatDate(timestamp) {
+                    const date = new Date(timestamp);
+                    const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
+                    const year = String(date.getFullYear()).slice(-2);
+                    return `${day}${month}${year}`;
+                  }
                 } else {
                   console.log("All leads Stored");
                 }
@@ -2550,23 +2522,23 @@ router.get('/salesFacebook-leads', async (req, res) => {
       //     body: fs.createReadStream(tempFilePath)
       //   }
       // });
-      // tempLeadsData.forEach(async (lead) => {
-      //   const contact = {
-      //     names: [{
-      //       givenName: lead.custName
-      //     }],
-      //     phoneNumbers: [{
-      //       value: lead.custNumb
-      //     }]
-      //   };
-      //   try {
-      //     const res = await people.people.createContact({
-      //       requestBody: contact
-      //     });
-      //   } catch (error) {
-      //     console.error("Error Creating Contact", error);
-      //   }
-      // })
+      tempLeadsData.forEach(async (lead) => {
+        const contact = {
+          names: [{
+            givenName: lead.custName
+          }],
+          phoneNumbers: [{
+            value: lead.custNumb
+          }]
+        };
+        try {
+          const res = await people.people.createContact({
+            requestBody: contact
+          });
+        } catch (error) {
+          console.error("Error Creating Contact", error);
+        }
+      })
     }
     //res.json({ success: true, fileId: driveResponse.data.id }); 
     res.json({ success: true });
@@ -2640,14 +2612,14 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
                     subsidiaryName: 'AdmixMedia'
                   });
                   await newLead.save();
-                  // tempLeadsData.push({ custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone });
-                  // function formatDate(timestamp) {
-                  //   const date = new Date(timestamp);
-                  //   const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
-                  //   const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
-                  //   const year = String(date.getFullYear()).slice(-2);
-                  //   return `${day}${month}${year}`;
-                  // }
+                  tempLeadsData.push({ custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone });
+                  function formatDate(timestamp) {
+                    const date = new Date(timestamp);
+                    const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
+                    const year = String(date.getFullYear()).slice(-2);
+                    return `${day}${month}${year}`;
+                  }
                 } else {
                   console.log("All leads Stored");
                 }
@@ -2678,23 +2650,23 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
       //     body: fs.createReadStream(tempFilePath)
       //   }
       // });
-      // tempLeadsData.forEach(async (lead) => {
-      //   const contact = {
-      //     names: [{
-      //       givenName: lead.custName
-      //     }],
-      //     phoneNumbers: [{
-      //       value: lead.custNumb
-      //     }]
-      //   };
-      //   try {
-      //     const res = await people.people.createContact({
-      //       requestBody: contact
-      //     });
-      //   } catch (error) {
-      //     console.error("Error Creating Contact", error);
-      //   }
-      // })
+      tempLeadsData.forEach(async (lead) => {
+        const contact = {
+          names: [{
+            givenName: lead.custName
+          }],
+          phoneNumbers: [{
+            value: lead.custNumb
+          }]
+        };
+        try {
+          const res = await people.people.createContact({
+            requestBody: contact
+          });
+        } catch (error) {
+          console.error("Error Creating Contact", error);
+        }
+      })
     }
     //res.json({ success: true, fileId: driveResponse.data.id }); 
     res.json({ success: true });
@@ -4309,55 +4281,6 @@ router.put('/updateB2bEditor/:id', async (req, res) => {
 
 // New Custom Sales LEad
 
-// router.post('/customLead', async (req, res) => {
-//   try {
-//     const customer = new salesLead({
-//       campaign_Name: req.body.campaign_Name,
-//       closingDate: req.body.closingDate,
-//       custName: req.body.custName,
-//       custEmail: req.body.custEmail,
-//       custBussiness: req.body.custBussiness,
-//       custNumb: req.body.custNumb,
-//       state: req.body.state,
-//       salesTeam: req.body.salesTeam,
-//       salesPerson: req.body.salesPerson,
-//       leadsCreatedDate: req.body.leadsCreatedDate,
-//       companyName: req.body.companyName,
-//       projectStatus: req.body.projectStatus,
-//       remark: req.body.remark
-//     })
-//     await customer.save();
-//     // function formatDate(timestamp) {
-//     //   const date = new Date(timestamp);
-//     //   const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
-//     //   const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
-//     //   const year = String(date.getFullYear()).slice(-2);
-//     //   return `${day}${month}${year}`;
-//     // }
-//     // const contact = {
-//     //   names: [{ givenName: `${formatDate(req.body.closingDate)} ${req.body.custName}` }],
-//     //   emailAddresses: [{ value: req.body.custEmail }],
-//     //   phoneNumbers: [{ value: req.body.custNumb.toString() }],
-//     //   organizations: [{
-//     //     name: req.body.companyName,
-//     //     title: req.body.custBussiness
-//     //   }]
-//     // };
-//     // const response = await people.people.createContact({
-//     //   requestBody: contact
-//     // });
-//     if (response.status === 200) {
-//       res.json({ success: true, message: "New Lead & Contact Added!!" })
-//     } else {
-//       console.error("Error creating contact:", response.statusText);
-//       res.json({ success: false, message: "New Lead Added, but Contact Not Created!" });
-//     }
-//   } catch (err) {
-//     console.error("Error adding lead and contact:", err);
-//     res.json({ success: false, message: "Error Adding Lead and Contact!" })
-//   }
-// });
-
 router.post('/customLead', async (req, res) => {
   try {
     const customer = new salesLead({
@@ -4374,16 +4297,65 @@ router.post('/customLead', async (req, res) => {
       companyName: req.body.companyName,
       projectStatus: req.body.projectStatus,
       remark: req.body.remark
-    });
-
+    })
     await customer.save();
-
-    res.json({ success: true, message: "New Lead Added!" });
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
+      const year = String(date.getFullYear()).slice(-2);
+      return `${day}${month}${year}`;
+    }
+    const contact = {
+      names: [{ givenName: `${formatDate(req.body.closingDate)} ${req.body.custName}` }],
+      emailAddresses: [{ value: req.body.custEmail }],
+      phoneNumbers: [{ value: req.body.custNumb.toString() }],
+      organizations: [{
+        name: req.body.companyName,
+        title: req.body.custBussiness
+      }]
+    };
+    const response = await people.people.createContact({
+      requestBody: contact
+    });
+    if (response.status === 200) {
+      res.json({ success: true, message: "New Lead & Contact Added!!" })
+    } else {
+      console.error("Error creating contact:", response.statusText);
+      res.json({ success: false, message: "New Lead Added, but Contact Not Created!" });
+    }
   } catch (err) {
-    console.error("Error adding lead:", err);
-    res.json({ success: false, message: "Error Adding Lead!" });
+    console.error("Error adding lead and contact:", err);
+    res.json({ success: false, message: "Error Adding Lead and Contact!" })
   }
 });
+
+// router.post('/customLead', async (req, res) => {
+//   try {
+//     const customer = new salesLead({
+//       campaign_Name: req.body.campaign_Name,
+//       closingDate: req.body.closingDate,
+//       custName: req.body.custName,
+//       custEmail: req.body.custEmail,
+//       custBussiness: req.body.custBussiness,
+//       custNumb: req.body.custNumb,
+//       state: req.body.state,
+//       salesTeam: req.body.salesTeam,
+//       salesPerson: req.body.salesPerson,
+//       leadsCreatedDate: req.body.leadsCreatedDate,
+//       companyName: req.body.companyName,
+//       projectStatus: req.body.projectStatus,
+//       remark: req.body.remark
+//     });
+
+//     await customer.save();
+
+//     res.json({ success: true, message: "New Lead Added!" });
+//   } catch (err) {
+//     console.error("Error adding lead:", err);
+//     res.json({ success: false, message: "Error Adding Lead!" });
+//   }
+// });
 
 
 //update SalesTeam of Leads
