@@ -2309,7 +2309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04oYPmVXDFST4CgYIARAAGAQSNwF-L9Ir2W_zkoh2yTnn6LhQuwLwcfgWN8dOF7vhEvxfmE6G7FJv4G4xpTeJAJw22L9treLFQLM';
+const REFERESH_TOKEN = '1//04kCAAwftZqF9CgYIARAAGAQSNwF-L9Irk_ltiRhZrrJecFlZagT6795z8V6gmmETcjG1tIFI9VisRONWDuAGVpjvDVYNFVZ0xM4';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2424,16 +2424,12 @@ router.get('/salesFacebook-leads', async (req, res) => {
     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
     //Real
     const accessToken1 = await FbAccessToken.findOne();
-    console.log("ACCESS TOKEN=====>>", accessToken1);
     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
     const leadsData = response.data.adaccounts.data;
-    console.log("LEADS DATA============>>>>", leadsData);
     let cust_name, company_name, phone, state, email = '';
 
     for (const leadData of leadsData) {
-      console.log('LEADSDATA=================>>>>>>', leadData);
       const campaigns = leadData.campaigns.data;
-      console.log('CAMPAIGNS=================>>>>>>', campaigns);
       const tempLeadsData = [];
 
       for (const campaign of campaigns) {
@@ -2558,12 +2554,9 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken2}`);
     const leadsData = response.data.adaccounts.data;
-    console.log("LEADS DATA============>>>>", leadsData);
     let cust_name, company_name, phone, state, email = '';
     for (const leadData of leadsData) {
-      console.log('LEADSDATA=================>>>>>>', leadData);
       const campaigns = leadData.campaigns.data;
-      console.log('CAMPAIGNS=================>>>>>>', campaigns);
       const tempLeadsData = [];
       for (const campaign of campaigns) {
         const { id: campId, name: campName, ads } = campaign;
