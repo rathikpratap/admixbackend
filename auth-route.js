@@ -185,7 +185,7 @@ router.get('/profile', checkAuth, async (req, res) => {
 
 // Monthwise Ongoing Projects
 
-router.get('/list',checkAuth, async (req, res) => {
+router.get('/list', checkAuth, async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
     const person1 = req.userData?.name;
@@ -211,7 +211,7 @@ router.get('/list',checkAuth, async (req, res) => {
 
 //All ongoing Projects Sales
 
-router.get('/allList',checkAuth, async (req, res) => {
+router.get('/allList', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData?.name;
     const products = await Customer.find({
@@ -440,7 +440,7 @@ router.get('/allCompleteProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      remainingAmount: {$eq: 0},
+      remainingAmount: { $eq: 0 },
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
 
@@ -729,9 +729,9 @@ router.get('/searchCustomer/:mobile', async (req, res) => {
     const isNumeric = !isNaN(mobile);
     let searchCriteria = {
       "$or": [
-        { custName: { $regex: mobile, $options: 'i' }},
-        {  projectStatus: {$regex: mobile, $options: 'i'} },
-        { custBussiness: {$regex: mobile, $options: 'i'}} // Always search by custName using regex
+        { custName: { $regex: mobile, $options: 'i' } },
+        { projectStatus: { $regex: mobile, $options: 'i' } },
+        { custBussiness: { $regex: mobile, $options: 'i' } } // Always search by custName using regex
       ]
     };
     // If mobile is a valid number, add custNumb search
@@ -753,8 +753,8 @@ router.get('/searchLeads/:mobile', async (req, res) => {
     const isNumeric = !isNaN(mobile);
     let searchCriteria = {
       "$or": [
-        { custName: { $regex: mobile, $options: 'i' }},
-        {  projectStatus: {$regex: mobile, $options: 'i'} } // Always search by custName using regex
+        { custName: { $regex: mobile, $options: 'i' } },
+        { projectStatus: { $regex: mobile, $options: 'i' } } // Always search by custName using regex
       ]
     };
     // If mobile is a valid number, add custNumb search
@@ -772,7 +772,7 @@ router.get('/searchLeads/:mobile', async (req, res) => {
 router.get('/customerProject/:projectStatus', async (req, res) => {
   let data = await salesLead.find(
     {
-        projectStatus: { $regex: req.params.projectStatus }   
+      projectStatus: { $regex: req.params.projectStatus }
     }
   )
   res.send(data);
@@ -813,6 +813,56 @@ router.get('/customerProjectName/:projectName', async (req, res) => {
 // const people = google.people({
 //   version: 'v1',
 //   auth: oauth2Client
+// });
+
+// Google Sheet automation
+
+// const auth = new google.auth.GoogleAuth({
+//   keyFile: "linen-server-454711-n0-68215f82d26a.json",
+//   scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+// });
+// const sheets = google.sheets({ version: "v4", auth});
+
+// const sheet_id = "1dSocR_Folw5nYP-Y9FftBouBP2BadOx8gxcK-CeGckM";
+
+// const appendToGoogleSheet = (customer) => {
+//   const values = [
+//     [
+//       customer.custCode,
+//       customer.custName,
+//       customer.custNumb,
+//       customer.custBussiness,
+//       customer.closingDate ? customer.closingDate.toISOString() : "",
+//     ],
+//   ];
+
+//   return sheets.spreadsheets.values
+//     .append({
+//       spreadsheetId: sheet_id,
+//       range: "Sheet1!A:Z",
+//       valueInputOption: "USER_ENTERED",
+//       resource: { values },
+//     })
+//     .then((response) => {
+//       console.log("✅ Data Added to Google Sheet!", response.data);
+//       return response.data;
+//     })
+//     .catch((error) => {
+//       console.error("❌ Error adding data to Google Sheet:", error);
+//       throw error;
+//     });
+// };
+
+// router.post('/customer', async(req,res)=>{
+//   try{
+//     const customer = new Customer(req.body);
+//     await customer.save();
+
+//     await appendToGoogleSheet(customer);
+//     res.json({ success: true, message: "Customer Added and Google Sheet Updated"});
+//   }catch(error){
+//     res.status(500).json({ success: false, message: "Error adding Customer", error: error.message});
+//   }
 // });
 
 router.post('/customer', async (req, res) => {
@@ -986,9 +1036,9 @@ router.get('/totalEntries', async (req, res) => {
 
 // Today Received Amount
 
-router.get('/todayAmount', async(req,res)=>{
+router.get('/todayAmount', async (req, res) => {
   const currentDate = new Date();
-  try{
+  try {
     let query1 = {
       closingDate: {
         $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
@@ -1002,14 +1052,14 @@ router.get('/todayAmount', async(req,res)=>{
       }
     };
     const advToday = await Customer.find(query1);
-    const advAmount = advToday.reduce((sum, doc) => sum + (doc.AdvPay || 0),0);
+    const advAmount = advToday.reduce((sum, doc) => sum + (doc.AdvPay || 0), 0);
     const restToday = await Customer.find(query2);
-    const restAmount = restToday.reduce((sum, doc) => sum + (doc.restAmount || 0),0);
+    const restAmount = restToday.reduce((sum, doc) => sum + (doc.restAmount || 0), 0);
     const totalAmount = advAmount + restAmount;
-    res.json({totalAmount, advToday, restToday, advAmount, restAmount});
-  }catch(error){
+    res.json({ totalAmount, advToday, restToday, advAmount, restAmount });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -1038,7 +1088,7 @@ router.get('/receivedQr', async (req, res) => {
     const advAmount = advDocs.reduce((sum, doc) => sum + (doc.AdvPay || 0), 0);
     const restAmount = restDocs.reduce((sum, doc) => sum + (doc.restAmount || 0), 0);
 
-    return { advDocs, restDocs, advAmount: advAmount, restAmount: restAmount , totalAmount: advAmount + restAmount };
+    return { advDocs, restDocs, advAmount: advAmount, restAmount: restAmount, totalAmount: advAmount + restAmount };
   };
 
   try {
@@ -1080,7 +1130,7 @@ router.get('/receivedQr', async (req, res) => {
         umeshchandVarshneyRest: umeshchandVarshney.restDocs,
       }
     });
-    
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -1095,11 +1145,11 @@ router.get('/receivedQr', async (req, res) => {
 //     const startOfDay = rangeType === 'previous'
 //       ? new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 1)
 //       : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-    
+
 //     const endOfDay = rangeType === 'previous'
 //       ? new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
 //       : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
-    
+
 //     return {
 //       [dateField]: {
 //         $gte: startOfDay,
@@ -1209,7 +1259,7 @@ router.get('/totalRecvAmount', async (req, res) => {
   }
 });
 
-router.get('/totalEntriesEmp',checkAuth, async (req, res) => {
+router.get('/totalEntriesEmp', checkAuth, async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
     const person1 = req.userData?.name;
@@ -1677,7 +1727,7 @@ router.get('/allActiveProjectsDownloadAdmin', async (req, res) => {
   }
 });
 
-router.get('/todayEntriesEmp',checkAuth, async (req, res) => {
+router.get('/todayEntriesEmp', checkAuth, async (req, res) => {
   const currentDate = new Date();
   try {
     const person1 = req.userData?.name;
@@ -1699,7 +1749,7 @@ router.get('/todayEntriesEmp',checkAuth, async (req, res) => {
 
 //Data By Date Range
 
-router.get('/dataByRange/:startDate/:endDate',checkAuth, async (req, res) => {
+router.get('/dataByRange/:startDate/:endDate', checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
@@ -1738,42 +1788,42 @@ router.get('/dataByRange/:startDate/:endDate',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/onGoingRange/:startDate/:endDate', async(req,res)=>{
+router.get('/onGoingRange/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query;
-    if(role === 'Admin' || role === 'Manager'){
+    if (role === 'Admin' || role === 'Manager') {
       query = {
         closingDate: {
           $gte: startDate, $lte: endDate
         },
-        projectStatus: {$ne: 'Completed'}
+        projectStatus: { $ne: 'Completed' }
       };
     } else {
-      query ={
+      query = {
         salesPerson: person,
         closingDate: {
           $gte: startDate, $lte: endDate
         },
-        projectStatus: { $ne: 'Completed'}
+        projectStatus: { $ne: 'Completed' }
       };
     }
     const totalData = await Customer.find(query);
     res.json(totalData);
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-router.get('/rangeTopPerformer/:startDate/:endDate',async(req,res)=>{
+router.get('/rangeTopPerformer/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  try{
-    const query= await Customer.aggregate([
+  try {
+    const query = await Customer.aggregate([
       {
         $match: {
           closingDate: {
@@ -1784,41 +1834,41 @@ router.get('/rangeTopPerformer/:startDate/:endDate',async(req,res)=>{
       {
         $group: {
           _id: '$salesPerson',
-          totalClosingPrice: { $sum: '$closingPrice'}
+          totalClosingPrice: { $sum: '$closingPrice' }
         }
       },
       {
-        $sort: {totalClosingPrice: -1}
+        $sort: { totalClosingPrice: -1 }
       }
     ]);
-    if(query.length > 0){
+    if (query.length > 0) {
       query.forEach(result => {
         console.log(`SalesPerson: ${query._id}, Total CLosing Price: ${result.totalClosingPrice}`);
       });
       res.json(query);
-    }else{
+    } else {
       console.log('No sales Entries Found')
     }
-  }catch(error){
+  } catch (error) {
     console.log("Error getting Top Performer", error.message);
-    res.status(500).json({json: "Fail", error: error.message});
+    res.status(500).json({ json: "Fail", error: error.message });
   }
 });
 
-router.get('/rangeTotalRecvAmount/:startDate/:endDate', async(req,res)=>{
+router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
-      restPaymentDate: { $gte: startDate, $lte: endDate}
+      restPaymentDate: { $gte: startDate, $lte: endDate }
     };
     const totalEntries = await Customer.find(query);
     const totalMonthRecv = totalEntries.reduce((sum, doc) => sum + doc.restAmount, 0);
     res.json(totalMonthRecv);
-  }catch(error){
+  } catch (error) {
     console.log("Error getting Total Received Amount", error.message);
-    res.status(500).json({json: "Failed", error: error.message});
+    res.status(500).json({ json: "Failed", error: error.message });
   }
 });
 
@@ -1840,11 +1890,11 @@ router.post('/uploadFile', upload.single('file'), async (req, res) => {
 
 //donwload Excel
 
-router.get('/downloadFile',checkAuth, async (req, res) => {
+router.get('/downloadFile', checkAuth, async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
     const person1 = req.userData?.name;
-    const role1 = Array.isArray(req.userData.signupRole)?req.userData.signupRole[0] : req.userData.signupRole;
+    const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
     let query;
     if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
@@ -1991,7 +2041,7 @@ router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
 
 // Download Due Data
 
-router.get('/downloadDueFile/:startDate/:endDate',checkAuth, async (req, res) => {
+router.get('/downloadDueFile/:startDate/:endDate', checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
@@ -2309,7 +2359,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04kCAAwftZqF9CgYIARAAGAQSNwF-L9Irk_ltiRhZrrJecFlZagT6795z8V6gmmETcjG1tIFI9VisRONWDuAGVpjvDVYNFVZ0xM4';
+const REFERESH_TOKEN = '1//04XkJMGuYgnZGCgYIARAAGAQSNwF-L9IrPa6USEqKqqTZsu6aieKy3BiODJqoNAo5kWXs2rbn_-gjxJDOiO4334aQynEk4I1kDVk';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2339,7 +2389,7 @@ const people = google.people({
 
 //     // Fetch leads data from Facebook Graph API
 //     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
-    
+
 //     const leadsData = response.data.adaccounts?.data || [];
 //     console.log("LEADS DATA============>>>>", leadsData);
 
@@ -2676,16 +2726,16 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
 //     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
 //       return res.status(400).json({ error: 'Access token is missing or invalid' });
 //     }
-    
+
 //     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
 //     console.log("Using Access Token:", accessToken2);
 
 //     // Fetch leads from Facebook Graph API
 //     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
 //     const leadsData = response.data.adaccounts?.data || [];
-    
+
 //     console.log("Fetched Leads Data:", leadsData);
-    
+
 //     let allLeads = []; // Store all leads here
 
 //     for (const leadData of leadsData) {
@@ -2868,7 +2918,7 @@ router.get('/getTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()); 
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const todayLeads = await salesLead.find({
       salesTeam: personTeam,
@@ -5153,7 +5203,7 @@ router.post('/estInvoice', async (req, res) => {
 // Estimate Invoice Count
 
 router.get('/estInvoiceCount', async (req, res) => {
-   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
+  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Estimate' });
   //const dataLength = await EstInvoice.countDocuments();
   return res.json(dataLength);
 });
@@ -5161,7 +5211,7 @@ router.get('/estInvoiceCount', async (req, res) => {
 // Main Invoice Count
 
 router.get('/mainInvoiceCount', async (req, res) => {
-   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
+  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
   //const dataLength = await EstInvoice.countDocuments();
   return res.json(dataLength);
 });
@@ -6055,7 +6105,7 @@ router.get('/usersAttendance', async (req, res) => {
   try {
     const salesPerson = person;
     console.log("ATTENDANCE SALES===========>>", salesPerson);
-    const users = await User.find({signupUsername: salesPerson});
+    const users = await User.find({ signupUsername: salesPerson });
     console.log("Attendance Person===>>", users);
     const daysInMonth = new Date(year, month, 0).getDate();
     const attendancePromises = users.map(async user => {
@@ -6192,220 +6242,220 @@ router.get('/getSubsidiary', async (req, res) => {
 
 // Urgent Script Projects
 
-router.get('/urgentScriptProjects', async(req,res)=>{
-  try{
+router.get('/urgentScriptProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       scriptWriter: person,
       scriptPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Urgent',
-      scriptStatus: { $ne: 'Complete'}
-    }).sort({ scriptPassDate: -1});
+      scriptStatus: { $ne: 'Complete' }
+    }).sort({ scriptPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/highScriptProjects', async(req,res)=>{
-  try{
+router.get('/highScriptProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       scriptWriter: person,
       scriptPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'High',
-      scriptStatus: { $ne: 'Complete'}
-    }).sort({ scriptPassDate: -1});
+      scriptStatus: { $ne: 'Complete' }
+    }).sort({ scriptPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/mediumScriptProjects', async(req,res)=>{
-  try{
+router.get('/mediumScriptProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       scriptWriter: person,
       scriptPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Medium',
-      scriptStatus: { $ne: 'Complete'}
-    }).sort({ scriptPassDate: -1});
+      scriptStatus: { $ne: 'Complete' }
+    }).sort({ scriptPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
 // Urgent Editor Projects
 
-router.get('/urgentEditorProjects', async(req,res)=>{
-  try{
+router.get('/urgentEditorProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       editor: person,
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Urgent',
-      editorStatus: { $ne: 'Completed'}
-    }).sort({ editorPassDate: -1});
+      editorStatus: { $ne: 'Completed' }
+    }).sort({ editorPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/highEditorProjects', async(req,res)=>{
-  try{
+router.get('/highEditorProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       editor: person,
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'High',
-      editorStatus: { $ne: 'Completed'}
-    }).sort({ editorPassDate: -1});
+      editorStatus: { $ne: 'Completed' }
+    }).sort({ editorPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/mediumEditorProjects', async(req,res)=>{
-  try{
+router.get('/mediumEditorProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       editor: person,
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Medium',
-      editorStatus: { $ne: 'Completed'}
-    }).sort({ editorPassDate: -1});
+      editorStatus: { $ne: 'Completed' }
+    }).sort({ editorPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
 // Urgent Vo Projects
 
-router.get('/urgentVoProjects', async(req,res)=>{
-  try{
+router.get('/urgentVoProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       voiceOver: person,
       voicePassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Urgent',
-      voiceOverStatus: { $ne: 'Complete'}
-    }).sort({ voicePassDate: -1});
+      voiceOverStatus: { $ne: 'Complete' }
+    }).sort({ voicePassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/highVoProjects', async(req,res)=>{
-  try{
+router.get('/highVoProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       voiceOver: person,
       voicePassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'High',
-      voiceOverStatus: { $ne: 'Complete'}
-    }).sort({ voicePassDate: -1});
+      voiceOverStatus: { $ne: 'Complete' }
+    }).sort({ voicePassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/mediumVoProjects', async(req,res)=>{
-  try{
+router.get('/mediumVoProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       voiceOver: person,
       voicePassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Medium',
-      voiceOverStatus: { $ne: 'Complete'}
-    }).sort({ voicePassDate: -1});
+      voiceOverStatus: { $ne: 'Complete' }
+    }).sort({ voicePassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
 // Urgent Graphic Projects
 
-router.get('/urgentGraphicProjects', async(req,res)=>{
-  try{
+router.get('/urgentGraphicProjects', async (req, res) => {
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const urgentProjects = await Customer.find({
       graphicDesigner: person,
       graphicPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -1, 1),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
       },
       priority: 'Urgent',
-      graphicStatus: { $ne: 'Complete'}
-    }).sort({ graphicPassDate: -1});
+      graphicStatus: { $ne: 'Complete' }
+    }).sort({ graphicPassDate: -1 });
     return res.json(urgentProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/pendingGraphicProjects', async(req,res)=>{
-  try{
+router.get('/pendingGraphicProjects', async (req, res) => {
+  try {
     const startOfDay = new Date();
-    startOfDay.setHours(0,0,0,0);
+    startOfDay.setHours(0, 0, 0, 0);
     const pendingProjects = await Customer.find({
       graphicDesigner: person,
-      graphicPassDate: {$lt: startOfDay},
-      graphicStatus: { $ne: 'Complete'}
-    }).sort({ graphicPassDate: -1});
+      graphicPassDate: { $lt: startOfDay },
+      graphicStatus: { $ne: 'Complete' }
+    }).sort({ graphicPassDate: -1 });
     return res.json(pendingProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/todayGraphicProjects', async(req,res)=>{
-  try{
+router.get('/todayGraphicProjects', async (req, res) => {
+  try {
     const today = new Date();
     const todayProjects = await Customer.find({
       graphicDesigner: person,
@@ -6413,25 +6463,25 @@ router.get('/todayGraphicProjects', async(req,res)=>{
         $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
         $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
       },
-      graphicStatus: { $ne: 'Complete'}
-    }).sort({ graphicPassDate: -1});
+      graphicStatus: { $ne: 'Complete' }
+    }).sort({ graphicPassDate: -1 });
     return res.json(todayProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/changesGraphicProjects', async(req,res)=>{
-  try{
+router.get('/changesGraphicProjects', async (req, res) => {
+  try {
     const changesProjects = await Customer.find({
       graphicDesigner: person,
-      graphicStatus: { $eq: 'Graphic Designing Changes'}
-    }).sort({ graphicPassDate: -1});
+      graphicStatus: { $eq: 'Graphic Designing Changes' }
+    }).sort({ graphicPassDate: -1 });
     return res.json(changesProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
@@ -6499,8 +6549,8 @@ router.get('/allGraphicProjects', async (req, res) => {
   }
 });
 
-router.get('/todayAssignedTask', async(req,res)=>{
-  try{
+router.get('/todayAssignedTask', async (req, res) => {
+  try {
     const today = new Date();
     const todayProjects = await Task.find({
       graphicDesigner: person,
@@ -6508,38 +6558,38 @@ router.get('/todayAssignedTask', async(req,res)=>{
         $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
         $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
       },
-      graphicStatus: { $ne: 'Complete'}
-    }).sort({ assignedDate: -1});
+      graphicStatus: { $ne: 'Complete' }
+    }).sort({ assignedDate: -1 });
     return res.json(todayProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
-router.get('/pendingAssignedTask', async(req,res)=>{
-  try{
+router.get('/pendingAssignedTask', async (req, res) => {
+  try {
     const startOfDay = new Date();
-    startOfDay.setHours(0,0,0,0);
+    startOfDay.setHours(0, 0, 0, 0);
     const pendingProjects = await Task.find({
       graphicDesigner: person,
-      assignedDate: {$lt: startOfDay},
-      graphicStatus: { $ne: 'Complete'}
-    }).sort({ assignedDate: -1});
+      assignedDate: { $lt: startOfDay },
+      graphicStatus: { $ne: 'Complete' }
+    }).sort({ assignedDate: -1 });
     return res.json(pendingProjects)
-  }catch (error) {
+  } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 //Tasks
 
-router.get('/taskDataLength', async(req,res)=>{
+router.get('/taskDataLength', async (req, res) => {
   const taskLength = await Task.countDocuments();
   return res.json(taskLength);
 });
 
-router.post('/addTask', async(req,res)=>{
+router.post('/addTask', async (req, res) => {
   const task = new Task({
     SrNo: req.body.SrNo,
     taskName: req.body.taskName,
@@ -6549,55 +6599,23 @@ router.post('/addTask', async(req,res)=>{
     graphicStatus: req.body.graphicStatus,
     assignedBy: req.body.assignedBy
   })
-  await task.save().then((_)=>{
-    res.json({ success: true, message: "Task Added!!"})
-  }).catch((err)=>{
-    res.json({success: false, message: "Task Not Added!!"})
+  await task.save().then((_) => {
+    res.json({ success: true, message: "Task Added!!" })
+  }).catch((err) => {
+    res.json({ success: false, message: "Task Not Added!!" })
   })
 });
 //transfer leads to leads
 
-router.post('/transferNewLeads', async(req,res)=>{
-  try{
-    const {custId, salesTeam, closingDate, name} = req.body;
-    if(!custId){
-      return res.status(404).json({message: 'Customer Id is Required'});
+router.post('/transferNewLeads', async (req, res) => {
+  try {
+    const { custId, salesTeam, closingDate, name } = req.body;
+    if (!custId) {
+      return res.status(404).json({ message: 'Customer Id is Required' });
     }
     const cust = await salesLead.findById(custId);
-    if(!cust){
-      return res.status(404).json({message: 'Customer Not Found'});
-    }
-      cust.transferBy= name;
-      cust.newSalesTeam = salesTeam;
-      await cust.save();
-    const newSalesLead = new salesLead({
-      custName: cust.custName,
-      custNumb: cust.custNumb,
-      custBussiness: cust.custBussiness,
-      companyName: cust.companyName,
-      salesTeam: salesTeam,
-      remark: cust.remark,
-      closingDate: closingDate,
-      leadsCreatedDate: closingDate,
-      transferBy: name,
-      campaign_Name: 'Transfer By ' + cust.salesTeam
-    })
-    await newSalesLead.save();
-    return res.status(200).json({ message: 'Customer transferred to salesLead Successfully'});
-  }catch(error){
-    return res.status(500).json({ message: 'Error transferring customer' });
-  }
-});
-
-router.post('/transferCustomerToSalesLead', async(req,res)=>{
-  try{
-    const {custId, salesTeam, closingDate, name} = req.body;
-    if(!custId){
-      return res.status(404).json({message: 'Customer Id is Required'});
-    }
-    const cust = await Customer.findById(custId);
-    if(!cust){
-      return res.status(404).json({message: 'Customer Not Found'});
+    if (!cust) {
+      return res.status(404).json({ message: 'Customer Not Found' });
     }
     cust.transferBy = name;
     cust.newSalesTeam = salesTeam;
@@ -6615,53 +6633,85 @@ router.post('/transferCustomerToSalesLead', async(req,res)=>{
       campaign_Name: 'Transfer By ' + cust.salesTeam
     })
     await newSalesLead.save();
-    return res.status(200).json({ message: 'Customer transferred to salesLead'});
-  }catch(error){
-    return res.status(500).json({ message: 'Error transferring customer'});
+    return res.status(200).json({ message: 'Customer transferred to salesLead Successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error transferring customer' });
+  }
+});
+
+router.post('/transferCustomerToSalesLead', async (req, res) => {
+  try {
+    const { custId, salesTeam, closingDate, name } = req.body;
+    if (!custId) {
+      return res.status(404).json({ message: 'Customer Id is Required' });
+    }
+    const cust = await Customer.findById(custId);
+    if (!cust) {
+      return res.status(404).json({ message: 'Customer Not Found' });
+    }
+    cust.transferBy = name;
+    cust.newSalesTeam = salesTeam;
+    await cust.save();
+    const newSalesLead = new salesLead({
+      custName: cust.custName,
+      custNumb: cust.custNumb,
+      custBussiness: cust.custBussiness,
+      companyName: cust.companyName,
+      salesTeam: salesTeam,
+      remark: cust.remark,
+      closingDate: closingDate,
+      leadsCreatedDate: closingDate,
+      transferBy: name,
+      campaign_Name: 'Transfer By ' + cust.salesTeam
+    })
+    await newSalesLead.save();
+    return res.status(200).json({ message: 'Customer transferred to salesLead' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error transferring customer' });
   }
 });
 //get Campaign NAmes for leads
 
-router.get('/getCampaignNames', async(req,res)=>{
-  try{
+router.get('/getCampaignNames', async (req, res) => {
+  try {
     const allLeads = await salesLead.find();
     return res.json(allLeads)
-  }catch(error){
+  } catch (error) {
     console.error('Error Fetching Leads:', error);
-    res.status(500).json({error: 'Failed to fetch leads'});
+    res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
 // get all Closing Names
 
-router.get('/getClosingNames', async(req,res)=>{
-  try{
+router.get('/getClosingNames', async (req, res) => {
+  try {
     const allClosing = await Customer.find();
     return res.json(allClosing)
-  }catch(error){
+  } catch (error) {
     console.log("Error Fetching Closing:", error);
-    res.status(500).json({error: 'Failed to fetch Closing'});
+    res.status(500).json({ error: 'Failed to fetch Closing' });
   }
 });
 
 // all Closing
 
-router.get('/allClosing', async(req,res)=>{
-  try{
+router.get('/allClosing', async (req, res) => {
+  try {
     const closing = await ClosingCategory.find();
     return res.json(closing)
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing: ", error);
-    res.status(500).json({error: 'Failed to fetch Closing'});
+    res.status(500).json({ error: 'Failed to fetch Closing' });
   }
 });
 // Data By Campaign
 
-router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
+router.get('/dataByCampaign/:startDate/:endDate/:campaign', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
-  const campaign =  req.params.campaign;
+  const campaign = req.params.campaign;
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
       closingDate: {
         $gte: startDate, $lte: endDate
@@ -6670,19 +6720,19 @@ router.get('/dataByCampaign/:startDate/:endDate/:campaign', async(req,res)=>{
     };
     const campaignData = await salesLead.find(query);
     res.json(campaignData);
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 //download Campaign Lead
 
-router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async(req,res)=>{
+router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const campaign = req.params.campaign;
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
       closingDate: {
         $gte: startDate, $lte: endDate
@@ -6699,22 +6749,22 @@ router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async(req,res)
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'LeadsData');
+    XLSX.utils.book_append_sheet(wb, ws, 'LeadsData');
     XLSX.writeFile(wb, 'LeadsData.xlsx');
     res.download('LeadsData.xlsx');
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 // Data By Closing Campaign
 
-router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async(req,res)=>{
+router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const campaign = req.params.campaign;
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
       closingDate: {
         $gte: startDate, $lte: endDate
@@ -6723,19 +6773,19 @@ router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async(req,res)=>{
     };
     const campaignData = await Customer.find(query);
     res.json(campaignData);
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 //download Category Campaign
 
-router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async(req,res)=>{
+router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const campaign = req.params.campaign;
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
       closingDate: {
         $gte: startDate, $lte: endDate
@@ -6752,32 +6802,32 @@ router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async(req,res)
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'ClosingData');
+    XLSX.utils.book_append_sheet(wb, ws, 'ClosingData');
     XLSX.writeFile(wb, 'ClosingData.xlsx');
     res.download('ClosingData.xlsx');
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message:"Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 // get Invoices
 
-router.get('/getInvoice/:startDate/:endDate', async(req,res)=>{
+router.get('/getInvoice/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query = {
-      date:{
+      date: {
         $gte: startDate, $lte: endDate
       },
-      custGST: {$ne: ''}
+      custGST: { $ne: '' }
     };
     const invoiceData = await EstInvoice.find(query);
     res.json(invoiceData);
-  }catch(error){
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Server Error"});
+    res.status(500).json({ message: "Server Error" });
   }
 });
 //Incentives
@@ -6843,13 +6893,13 @@ router.put('/addIncentive', async (req, res) => {
   }
 });
 
-router.get('/allIncentive',async(req,res)=>{
-  try{
+router.get('/allIncentive', async (req, res) => {
+  try {
     const allIncentive = await incentive.find();
     return res.json(allIncentive)
-  }catch(error){
+  } catch (error) {
     console.log("Error Fetching Incentive:", error);
-    res.status(500).json({error: 'Failed to fetch Incentive'})
+    res.status(500).json({ error: 'Failed to fetch Incentive' })
   }
 });
 
@@ -7288,7 +7338,7 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
   // Define the date range for the current month
   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-  
+
   try {
     // Step 1: Verify user's password
     const user = await User.findOne({ signupUsername: person1 });
@@ -7307,14 +7357,14 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
           salesPerson: person1,
           remainingAmount: 0,
           $or: [{
-            restPaymentDate: null  
+            restPaymentDate: null
           },
           {
             restPaymentDate: { $gte: startMonth, $lte: endMonth }
           },
           {
-            restPaymentDate: {$lte: new Date(startMonth.getFullYear(), startMonth.getMonth()+1, 10)}
-          }] 
+            restPaymentDate: { $lte: new Date(startMonth.getFullYear(), startMonth.getMonth() + 1, 10) }
+          }]
         }
       },
       {
@@ -7329,7 +7379,7 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
     const condition2Results = await Customer.aggregate([
       {
         $match: {
-          closingDate:{
+          closingDate: {
             $not: { $gte: startMonth, $lte: endMonth }
           },
           salesPerson: person1,
@@ -7337,10 +7387,10 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
           $and: [{
             restPaymentDate: { $gte: startMonth, $lte: endMonth }
           },
-        {
-          restPaymentDate: {$gt: new Date(startMonth.getFullYear(), startMonth.getMonth(), 10)}
-        }]
-        //restPaymentDate: { $gte: startMonth, $lte: endMonth }
+          {
+            restPaymentDate: { $gt: new Date(startMonth.getFullYear(), startMonth.getMonth(), 10) }
+          }]
+          //restPaymentDate: { $gte: startMonth, $lte: endMonth }
         }
       },
       {
@@ -7392,21 +7442,21 @@ router.get('/salesIncentive', checkAuth, async (req, res) => {
 });
 //Bundles
 
-router.get('/bundleActiveList', async(req,res)=>{
+router.get('/bundleActiveList', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     const bundles = await Customer.find({
       bundleHandler: person,
       bundlePassDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth)
       },
-      bundleStatus: { $ne: 'Created'}
-    }).sort({bundlePassDate: -1});
+      bundleStatus: { $ne: 'Created' }
+    }).sort({ bundlePassDate: -1 });
     res.json(bundles);
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -7428,12 +7478,12 @@ router.get('/bundleCompleteList', async (req, res) => {
   }
 });
 
-router.get('/allBundleProjects', async(req,res)=>{
-  const allProjects = await Customer.find({bundleHandler: person}).sort({bundlePassDate: -1});
-  if(allProjects){
+router.get('/allBundleProjects', async (req, res) => {
+  const allProjects = await Customer.find({ bundleHandler: person }).sort({ bundlePassDate: -1 });
+  if (allProjects) {
     return res.json(allProjects)
-  }else{
-    res.send({result: "No Data Found"})
+  } else {
+    res.send({ result: "No Data Found" })
   }
 });
 
@@ -7490,24 +7540,24 @@ router.get('/bundleTwoPreviousProjects', async (req, res) => {
 
 // Edit Invoice
 
-router.get('/read-inv/:id', async(req,res)=>{
-  try{
+router.get('/read-inv/:id', async (req, res) => {
+  try {
     const invDetails = await EstInvoice.findById(req.params.id);
-    if(invDetails){
+    if (invDetails) {
       return res.json(invDetails);
-    }else{
-      return res.json({ result: "No Invoice Found"});
+    } else {
+      return res.json({ result: "No Invoice Found" });
     }
-  }catch(error){
-    return res.status(500).json({error: error.message});
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // Team Leader
 
-router.get('/empAllProjects/:name', async(req,res)=>{
+router.get('/empAllProjects/:name', async (req, res) => {
   const name = req.params.name;
-  try{
+  try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
@@ -7518,81 +7568,81 @@ router.get('/empAllProjects/:name', async(req,res)=>{
         $gte: startOfMonth,
         $lte: endOfToday
       }
-    }).sort({ closingDate: -1});
+    }).sort({ closingDate: -1 });
     return res.json(fetchLeads);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closings", error);
-    res.status(500).json({ error: 'Failed to Fetch Leads'});
+    res.status(500).json({ error: 'Failed to Fetch Leads' });
   }
 });
 
-router.get('/empProjects/:name', async(req,res)=>{
+router.get('/empProjects/:name', async (req, res) => {
   const name = req.params.name;
-  try{
+  try {
     const fetchedClosing = await Customer.find({
       salesPerson: name,
-      projectStatus: { $ne: 'Completed'}
+      projectStatus: { $ne: 'Completed' }
     })
     return res.json(fetchedClosing);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing", error);
-    res.status(500).json({ error: 'Failed to Fetch Closing'});
+    res.status(500).json({ error: 'Failed to Fetch Closing' });
   }
 });
 
-router.get('/sales_closing/:closing/:name', async(req,res)=>{
+router.get('/sales_closing/:closing/:name', async (req, res) => {
   const closing = req.params.closing;
   const name = req.params.name;
-  try{
+  try {
     const fetchedClosing = await Customer.find({
       salesPerson: name,
       closingCateg: closing,
-      projectStatus: { $ne: 'Completed'}
+      projectStatus: { $ne: 'Completed' }
     })
     return res.json(fetchedClosing);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing", error);
-    res.status(500).json({ error: 'Failed to Fetch Closing'});
+    res.status(500).json({ error: 'Failed to Fetch Closing' });
   }
 });
 
-router.get('/closing_status/:closing/:status', async(req,res)=>{
+router.get('/closing_status/:closing/:status', async (req, res) => {
   const closing = req.params.closing;
   const status = req.params.status;
-  try{
+  try {
     const fetching = await Customer.find({
       closingCateg: closing,
       projectStatus: status
     })
     return res.json(fetching);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing", error);
-    res.status(500).json({error: 'Failed to Fetch Closing'});
+    res.status(500).json({ error: 'Failed to Fetch Closing' });
   }
 });
 
-router.get('/sales_status/:person/:status', async(req,res)=>{
+router.get('/sales_status/:person/:status', async (req, res) => {
   const person = req.params.person;
   const status = req.params.status;
   console.log("PERSON STATUS=====>>", person, status);
-  try{
+  try {
     const fetching = await Customer.find({
       salesPerson: person,
       projectStatus: status
     })
     console.log("DATA DATATATATATATA==================>>", fetching);
     return res.json(fetching);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing", error);
-    res.status(500).json({error: 'Failed to fetch Closing'});
+    res.status(500).json({ error: 'Failed to fetch Closing' });
   }
 });
 
-router.get('/sales_statusClosing/:closing/:name/:status', async(req,res)=>{
+router.get('/sales_statusClosing/:closing/:name/:status', async (req, res) => {
   const closing = req.params.closing;
   const name = req.params.name;
   const status = req.params.status;
-  try{
+  try {
     const fetching = await Customer.find({
       salesPerson: name,
       closingCateg: closing,
@@ -7600,76 +7650,76 @@ router.get('/sales_statusClosing/:closing/:name/:status', async(req,res)=>{
     })
     console.log("ALL SET----->>", fetching);
     return res.json(fetching);
-  }catch(error){
+  } catch (error) {
     console.error("Error fetching Closing", error);
-    res.status(500).json({error: 'Failed to Fetch Closing'});
+    res.status(500).json({ error: 'Failed to Fetch Closing' });
   }
 });
 
-router.get('/empStatus/:status', async(req,res)=>{
+router.get('/empStatus/:status', async (req, res) => {
   const status = req.params.status;
-  try{
+  try {
     const fetch = await Customer.find({
       projectStatus: status
     })
     return res.json(fetch);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing", error);
-    res.status(500).json({error: 'Failed to fetch Closing'});
+    res.status(500).json({ error: 'Failed to fetch Closing' });
   }
 });
 
-router.get('/empAllPrevProjects/:name', async(req,res)=>{
+router.get('/empAllPrevProjects/:name', async (req, res) => {
   const name = req.params.name;
-  try{
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const previousMonthData = await Customer.find({
       salesPerson: name,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth -1, 1)
+        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
-    }).sort({closingDate: -1});
+    }).sort({ closingDate: -1 });
     return res.json(previousMonthData);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closings", error);
-    res.status(500).json({error: 'Failed to Fetch Closing'})
+    res.status(500).json({ error: 'Failed to Fetch Closing' })
   }
 });
 
-router.get('/empAllTwoPrevProjects/:name', async(req,res)=>{
+router.get('/empAllTwoPrevProjects/:name', async (req, res) => {
   const name = req.params.name;
-  try{
+  try {
     const currentMonth = new Date().getMonth() + 1;
     const previousTwoMonthData = await Customer.find({
       salesPerson: name,
       closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth -3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth -2, 2)
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
-    }).sort({closingDate: -1});
+    }).sort({ closingDate: -1 });
     return res.json(previousTwoMonthData);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching Closing", error);
-    res.status(500).json({error: 'Failed to fetch Closing'})
+    res.status(500).json({ error: 'Failed to fetch Closing' })
   }
 });
 
-router.get('/allCategProjects/:name', async(req,res)=>{
+router.get('/allCategProjects/:name', async (req, res) => {
   const name = req.params.name;
-  try{
+  try {
     const projects = await Customer.find({
       closingCateg: name,
-      projectStatus: { $ne: 'Completed'}
+      projectStatus: { $ne: 'Completed' }
     });
-    if(projects.length > 0){
+    if (projects.length > 0) {
       res.json(projects);
-    }else{
-      res.json({result: "No Data Found"});
+    } else {
+      res.json({ result: "No Data Found" });
     }
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -7712,7 +7762,7 @@ router.get('/getEmpSalesTeamWork/:name', async (req, res) => {
 });
 
 router.get('/getEmpSalesYesterdayTeamWork/:name', async (req, res) => {
-  const name= req.params.name;
+  const name = req.params.name;
   try {
     const today = new Date();
     const yesterday = new Date(today);
@@ -7846,7 +7896,7 @@ router.get('/getEmpSalesFiveYesterdayTeamWork/:name', async (req, res) => {
 router.get('/remainingAmountProjects', async (req, res) => {
   try {
     const completeProducts = await Customer.find({
-      remainingAmount: {$ne: 0},
+      remainingAmount: { $ne: 0 },
       projectStatus: { $regex: /^Completed$/i }
     }).sort({ closingDate: -1 });
 
@@ -7865,38 +7915,38 @@ router.get('/remainingAmountProjects', async (req, res) => {
 
 router.get('/sales-data', async (req, res) => {
   try {
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;  // JavaScript months are 0-based
-      const currentYear = now.getFullYear();
-      
-      const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-      const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;  // JavaScript months are 0-based
+    const currentYear = now.getFullYear();
 
-      const salesData = await Customer.aggregate([
-          {
-              $match: {
-                  $or: [
-                      { $expr: { $and: [{ $eq: [{ $month: "$closingDate" }, currentMonth] }, { $eq: [{ $year: "$closingDate" }, currentYear] }] } },
-                      { $expr: { $and: [{ $eq: [{ $month: "$closingDate" }, lastMonth] }, { $eq: [{ $year: "$closingDate" }, lastMonthYear] }] } }
-                  ]
-              }
-          },
-          {
-              $group: {
-                  _id: {
-                      month: { $month: "$closingDate" },
-                      year: { $year: "$closingDate" },
-                      salesPerson: "$salesPerson"
-                  },
-                  totalSales: { $sum: "$closingPrice" }
-              }
-          },
-          { $sort: { "_id.year": 1, "_id.month": 1 } }
-      ]);
+    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-      res.json(salesData);
+    const salesData = await Customer.aggregate([
+      {
+        $match: {
+          $or: [
+            { $expr: { $and: [{ $eq: [{ $month: "$closingDate" }, currentMonth] }, { $eq: [{ $year: "$closingDate" }, currentYear] }] } },
+            { $expr: { $and: [{ $eq: [{ $month: "$closingDate" }, lastMonth] }, { $eq: [{ $year: "$closingDate" }, lastMonthYear] }] } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$closingDate" },
+            year: { $year: "$closingDate" },
+            salesPerson: "$salesPerson"
+          },
+          totalSales: { $sum: "$closingPrice" }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    res.json(salesData);
   } catch (err) {
-      res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
