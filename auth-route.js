@@ -3334,7 +3334,7 @@ router.get('/getTeams-leads/:name', async (req, res) => {
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const todayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfToday,
         $lt: endOfToday
@@ -3377,7 +3377,7 @@ router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3420,7 +3420,7 @@ router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3463,7 +3463,7 @@ router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3506,7 +3506,7 @@ router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3549,7 +3549,7 @@ router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3592,7 +3592,7 @@ router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
     const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
     const yesterdayLeads = await salesLead.find({
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
