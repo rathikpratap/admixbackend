@@ -2489,7 +2489,7 @@ router.get('/facebook-leads', async (req, res) => {
 // const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
 // const CLIENT_SECRET = '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';
 // const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04ANDRa4SHFL5CgYIARAAGAQSNwF-L9IrzxdIssH80Mi5GzXAVd6OehkqSoOA2AzT51o_1gbJ-Sg2Uh-rOQRBddxdKEopI2x5Da4';
+// const REFERESH_TOKEN = '1//04J-54Tc_hFJjCgYIARAAGAQSNwF-L9IrwFsX-TSceUYTJHQB3VyzUBEJ-c9ykK04N98Zz6i4fP8GCDKe8kyNng75C7H338T5t_M';
 
 // AdmixmediaIndia
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
@@ -2634,6 +2634,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
 
           for (const lead of ad.leads.data) {
             const { created_time: createdTime, field_data } = lead;
+            const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
 
             // Extract lead details dynamically
             let leadObj = {
@@ -2659,6 +2660,9 @@ router.get('/salesFacebook-leads', async (req, res) => {
               }
             }
 
+            // ✅ Ensure additionalFields always exists
+            //leadObj.additionalFields = leadObj.additionalFields || {};
+
             // Check if the lead already exists
             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
 
@@ -2681,9 +2685,20 @@ router.get('/salesFacebook-leads', async (req, res) => {
               });
 
               await newLead.save();
-              console.log(`New lead saved: ${leadObj.custName}`);
+              console.log(`New lead saved First: ${leadObj.custName}`);
+              
+              await people.people.createContact({
+                requestBody: {
+                  names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
+                  emailAddresses: [{ value: leadObj.custEmail }],
+                  phoneNumbers: [{ value: leadObj.custNumb }],
+                  organizations: [{ name: leadObj.custBussiness }],
+                  addresses: [{ region: leadObj.state }]
+                }
+              });
+              console.log(`Lead saved to Google Contacts First: ${formattedDate} ${leadObj.custName}`);
             } else {
-              console.log(`Lead already exists: ${leadObj.custName}`);
+              console.log(`Lead already exists First: ${leadObj.custName}`);
 
               // Check for new fields and update only if necessary
               let updateFields = {};
@@ -2692,10 +2707,11 @@ router.get('/salesFacebook-leads', async (req, res) => {
                   updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
                 }
               }
+              
 
               if (Object.keys(updateFields).length > 0) {
                 await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
-                console.log(`Lead updated with new fields: ${JSON.stringify(updateFields)}`);
+                console.log(`Lead updated with new fields First: ${JSON.stringify(updateFields)}`);
               }
             }
 
@@ -2719,7 +2735,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
     res.json({ success: true, message: 'All leads fetched and saved to MongoDB.', leads: allLeads });
 
   } catch (error) {
-    console.error('Error fetching and saving Facebook leads:', error);
+    console.error('Error fetching and saving Facebook leads First:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -2976,24 +2992,157 @@ router.get('/salesFacebook-leads', async (req, res) => {
 //   }
 // });
 
+// // // router.get('/salesSecondFacebook-leads', async (req, res) => {
+// // //   try {
+// // //     // Retrieve Facebook access token
+// // //     const accessTokenRecord = await FbAccessToken.findOne();
+// // //     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
+// // //       return res.status(400).json({ error: 'Access token is missing or invalid' });
+// // //     }
+
+// // //     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
+// // //     console.log("Using Access Token:", accessToken2);
+
+// // //     // Fetch leads from Facebook Graph API
+// // //     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
+// // //     const leadsData = response.data.adaccounts?.data || [];
+
+// // //     //console.log("Fetched Leads Data:", leadsData);
+
+// // //     let allLeads = []; // Store all leads here
+
+// // //     for (const leadData of leadsData) {
+// // //       if (!leadData.campaigns || !leadData.campaigns.data) continue;
+
+// // //       for (const campaign of leadData.campaigns.data) {
+// // //         if (!campaign.ads || !campaign.ads.data) continue;
+
+// // //         for (const ad of campaign.ads.data) {
+// // //           if (!ad.leads || !ad.leads.data) continue;
+
+// // //           for (const lead of ad.leads.data) {
+// // //             const { created_time: createdTime, field_data } = lead;
+// // //             //console.log("NEW DATA=========>>", JSON.stringify(lead, null, 2)); // Pretty print JSON
+
+// // //             let leadObj = {
+// // //               custName: '',
+// // //               custEmail: '',
+// // //               custBussiness: '',
+// // //               custNumb: '',
+// // //               state: '',
+// // //               additionalFields: {} // Store any new fields here
+// // //             };
+
+// // //             // Process fields dynamically
+// // //             for (const field of field_data) {
+// // //               const fieldName = field.name.toLowerCase().replace('_', ' '); // Normalize field name
+// // //               const value = field.values[0] || ''; // Ensure value exists
+
+// // //               //console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`);
+
+// // //               if (fieldName === 'full name') leadObj.custName = value;
+// // //               else if (fieldName === 'email') leadObj.custEmail = value;
+// // //               else if (fieldName === 'company name') leadObj.custBussiness = value;
+// // //               else if (fieldName === 'phone number') leadObj.custNumb = value;
+// // //               else if (fieldName === 'state') leadObj.state = value;
+// // //               else {
+// // //                 // Store unknown fields in additionalFields
+// // //                 leadObj.additionalFields[fieldName] = value;
+// // //               }
+// // //             }
+
+// // //             // ✅ Ensure additionalFields always exists
+// // //             //leadObj.additionalFields = leadObj.additionalFields || {};
+
+// // //             // Check if lead already exists in MongoDB
+// // //             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
+
+// // //             if (!existingLead) {
+// // //               // Save new lead in MongoDB with additional fields
+// // //               const newLead = new salesLead({
+// // //                 id: leadData.id,
+// // //                 closingDate: createdTime,
+// // //                 campaign_Name: campaign.name,
+// // //                 ad_Name: ad.name,
+// // //                 custName: leadObj.custName,
+// // //                 custEmail: leadObj.custEmail,
+// // //                 custBussiness: leadObj.custBussiness,
+// // //                 custNumb: leadObj.custNumb,
+// // //                 state: leadObj.state,
+// // //                 salesTeam: personTeam, // Adjust as needed
+// // //                 leadsCreatedDate: new Date(createdTime),
+// // //                 additionalFields: leadObj.additionalFields
+// // //               });
+
+// // //               await newLead.save();
+// // //               console.log(`New lead saved Second: ${leadObj.custName}`);
+// // //             } else {
+// // //               console.log(`Lead already exists Second: ${leadObj.custName}`);
+
+// // //               // Check for new fields that aren't in the existing lead and update
+// // //               let updateFields = {};
+
+// // //               // **Check if custName is missing and update it**
+// // //               if (!existingLead.custName && leadObj.custName) {
+// // //                 updateFields.custName = leadObj.custName;
+// // //                 console.log(`Updating missing custName for lead Second: ${leadObj.custEmail}`);
+// // //               }
+              
+// // //               // Check if Bussiness is missing and update it
+// // //               if(!existingLead.custBussiness && leadObj.custBussiness){
+// // //                 updateFields.custBussiness = leadObj.custBussiness;
+// // //               }
+
+// // //               for (const key in leadObj.additionalFields) {
+// // //                 if (!existingLead.additionalFields || !(key in existingLead.additionalFields)) {
+// // //                   updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
+// // //                 }
+// // //               }
+
+// // //               if (Object.keys(updateFields).length > 0) {
+// // //                 await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
+// // //                 console.log(`Lead updated with new fields Second: ${JSON.stringify(updateFields)}`);
+// // //               }
+// // //             }
+
+// // //             allLeads.push({
+// // //               id: leadData.id,
+// // //               campaign_Name: campaign.name,
+// // //               ad_Name: ad.name,
+// // //               custName: leadObj.custName,
+// // //               custEmail: leadObj.custEmail,
+// // //               custBussiness: leadObj.custBussiness,
+// // //               custNumb: leadObj.custNumb,
+// // //               state: leadObj.state,
+// // //               leadsCreatedDate: createdTime,
+// // //               additionalFields: leadObj.additionalFields
+// // //             });
+// // //           }
+// // //         }
+// // //       }
+// // //     }
+
+// // //     res.json({ success: true, leads: allLeads }); // Return saved leads
+// // //   } catch (error) {
+// // //     console.error('Error fetching Facebook leads Second:', error);
+// // //     res.status(500).json({ error: 'Internal server error' });
+// // //   }
+// // // });
+
 router.get('/salesSecondFacebook-leads', async (req, res) => {
   try {
-    // Retrieve Facebook access token
     const accessTokenRecord = await FbAccessToken.findOne();
     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
       return res.status(400).json({ error: 'Access token is missing or invalid' });
     }
 
     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
-    console.log("Using Access Token:", accessToken2);
+    console.log('Using Access Token:', accessToken2);
 
-    // Fetch leads from Facebook Graph API
     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
     const leadsData = response.data.adaccounts?.data || [];
 
-    //console.log("Fetched Leads Data:", leadsData);
-
-    let allLeads = []; // Store all leads here
+    let allLeads = [];
 
     for (const leadData of leadsData) {
       if (!leadData.campaigns || !leadData.campaigns.data) continue;
@@ -3006,7 +3155,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
 
           for (const lead of ad.leads.data) {
             const { created_time: createdTime, field_data } = lead;
-            //console.log("NEW DATA=========>>", JSON.stringify(lead, null, 2)); // Pretty print JSON
+            const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
 
             let leadObj = {
               custName: '',
@@ -3014,32 +3163,24 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
               custBussiness: '',
               custNumb: '',
               state: '',
-              additionalFields: {} // Store any new fields here
+              additionalFields: {}
             };
 
-            // Process fields dynamically
             for (const field of field_data) {
-              const fieldName = field.name.toLowerCase().replace('_', ' '); // Normalize field name
-              const value = field.values[0] || ''; // Ensure value exists
-
-              //console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`);
+              const fieldName = field.name.toLowerCase().replace('_', ' ');
+              const value = field.values[0] || '';
 
               if (fieldName === 'full name') leadObj.custName = value;
               else if (fieldName === 'email') leadObj.custEmail = value;
               else if (fieldName === 'company name') leadObj.custBussiness = value;
               else if (fieldName === 'phone number') leadObj.custNumb = value;
               else if (fieldName === 'state') leadObj.state = value;
-              else {
-                // Store unknown fields in additionalFields
-                leadObj.additionalFields[fieldName] = value;
-              }
+              else leadObj.additionalFields[fieldName] = value;
             }
 
-            // Check if lead already exists in MongoDB
             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
 
             if (!existingLead) {
-              // Save new lead in MongoDB with additional fields
               const newLead = new salesLead({
                 id: leadData.id,
                 closingDate: createdTime,
@@ -3050,65 +3191,40 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
                 custBussiness: leadObj.custBussiness,
                 custNumb: leadObj.custNumb,
                 state: leadObj.state,
-                salesTeam: personTeam, // Adjust as needed
+                salesTeam: personTeam,
                 leadsCreatedDate: new Date(createdTime),
                 additionalFields: leadObj.additionalFields
               });
 
               await newLead.save();
-              console.log(`New lead saved: ${leadObj.custName}`);
-            } else {
-              console.log(`Lead already exists: ${leadObj.custName}`);
-
-              // Check for new fields that aren't in the existing lead and update
-              let updateFields = {};
-
-              // **Check if custName is missing and update it**
-              if (!existingLead.custName && leadObj.custName) {
-                updateFields.custName = leadObj.custName;
-                console.log(`Updating missing custName for lead: ${leadObj.custEmail}`);
-              }
+              console.log(`New lead saved Second: ${leadObj.custName}`);
               
-              // Check if Bussiness is missing and update it
-              if(!existingLead.custBussiness && leadObj.custBussiness){
-                updateFields.custBussiness = leadObj.custBussiness;
-              }
-
-              for (const key in leadObj.additionalFields) {
-                if (!existingLead.additionalFields || !(key in existingLead.additionalFields)) {
-                  updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
+              // Save to Google Contacts with formatted name
+              await people.people.createContact({
+                requestBody: {
+                  names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
+                  emailAddresses: [{ value: leadObj.custEmail }],
+                  phoneNumbers: [{ value: leadObj.custNumb }],
+                  organizations: [{ name: leadObj.custBussiness }],
+                  addresses: [{ region: leadObj.state }]
                 }
-              }
-
-              if (Object.keys(updateFields).length > 0) {
-                await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
-                console.log(`Lead updated with new fields: ${JSON.stringify(updateFields)}`);
-              }
+              });
+              console.log(`Lead saved to Google Contacts Second: ${formattedDate} ${leadObj.custName}`);
             }
 
-            allLeads.push({
-              id: leadData.id,
-              campaign_Name: campaign.name,
-              ad_Name: ad.name,
-              custName: leadObj.custName,
-              custEmail: leadObj.custEmail,
-              custBussiness: leadObj.custBussiness,
-              custNumb: leadObj.custNumb,
-              state: leadObj.state,
-              leadsCreatedDate: createdTime,
-              additionalFields: leadObj.additionalFields
-            });
+            allLeads.push(leadObj);
           }
         }
       }
     }
 
-    res.json({ success: true, leads: allLeads }); // Return saved leads
+    res.json({ success: true, leads: allLeads });
   } catch (error) {
     console.error('Error fetching Facebook leads:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // // router.get('/salesSecondFacebook-leads', async (req, res) => {
 // //   try {
@@ -7082,33 +7198,33 @@ router.post('/transferCustomerToSalesLead', async (req, res) => {
 });
 //get Campaign NAmes for leads
 
-router.get('/getCampaignNames', async (req, res) => {
-  try {
-    const allLeads = await salesLead.find();
-    return res.json(allLeads)
-  } catch (error) {
-    console.error('Error Fetching Leads:', error);
-    res.status(500).json({ error: 'Failed to fetch leads' });
-  }
-});
-
 // router.get('/getCampaignNames', async (req, res) => {
 //   try {
-//     const sevenDaysAgo = moment().subtract(7, 'days').toDate();
-
-//     // Fetch leads from the last 7 days based on leadsCreatedDate
-//     const recentLeads = await salesLead.find({ leadsCreatedDate: { $gte: sevenDaysAgo } });
-
-//     // Extract unique campaign names
-//     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
-
-//     console.log("CAMPAIGN NAMES===========>>", campaignNames);
-//     return res.json(campaignNames);
+//     const allLeads = await salesLead.find();
+//     return res.json(allLeads)
 //   } catch (error) {
-//     console.error('Error Fetching Recent Campaign Leads:', error);
-//     res.status(500).json({ error: 'Failed to fetch recent campaign leads' });
+//     console.error('Error Fetching Leads:', error);
+//     res.status(500).json({ error: 'Failed to fetch leads' });
 //   }
 // });
+
+router.get('/getCampaignNames', async (req, res) => {
+  try {
+    const oneMonthAgo = moment().subtract(30, 'days').toDate();
+
+    // Fetch leads from the last 7 days based on leadsCreatedDate
+    const recentLeads = await salesLead.find({ leadsCreatedDate: { $gte: oneMonthAgo } });
+
+    // Extract unique campaign names
+    const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
+
+    console.log("CAMPAIGN NAMES===========>>", campaignNames);
+    return res.json(campaignNames);
+  } catch (error) {
+    console.error('Error Fetching Recent Campaign Leads:', error);
+    res.status(500).json({ error: 'Failed to fetch recent campaign leads' });
+  }
+});
 
 // get all Closing Names
 
