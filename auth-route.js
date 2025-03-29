@@ -2613,13 +2613,13 @@ router.get('/salesFacebook-leads', async (req, res) => {
     }
 
     const accessToken = accessTokenRecord.newAccessToken;
-    console.log("ACCESS TOKEN=====>>", accessToken);
+    //console.log("ACCESS TOKEN=====>>", accessToken);
 
     // Fetch leads data from Facebook Graph API
     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken}`);
     const leadsData = response.data.adaccounts?.data || [];
 
-    console.log("Fetched Leads Data:", JSON.stringify(leadsData, null, 2));
+    //console.log("Fetched Leads Data:", JSON.stringify(leadsData, null, 2));
 
     let allLeads = [];
 
@@ -2991,7 +2991,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
     const leadsData = response.data.adaccounts?.data || [];
 
-    console.log("Fetched Leads Data:", leadsData);
+    //console.log("Fetched Leads Data:", leadsData);
 
     let allLeads = []; // Store all leads here
 
@@ -3006,7 +3006,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
 
           for (const lead of ad.leads.data) {
             const { created_time: createdTime, field_data } = lead;
-            console.log("NEW DATA=========>>", JSON.stringify(lead, null, 2)); // Pretty print JSON
+            //console.log("NEW DATA=========>>", JSON.stringify(lead, null, 2)); // Pretty print JSON
 
             let leadObj = {
               custName: '',
@@ -3022,7 +3022,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
               const fieldName = field.name.toLowerCase().replace('_', ' '); // Normalize field name
               const value = field.values[0] || ''; // Ensure value exists
 
-              console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`);
+              //console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`);
 
               if (fieldName === 'full name') leadObj.custName = value;
               else if (fieldName === 'email') leadObj.custEmail = value;
@@ -3109,9 +3109,6 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
-
 
 // // router.get('/salesSecondFacebook-leads', async (req, res) => {
 // //   try {
@@ -7094,6 +7091,25 @@ router.get('/getCampaignNames', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
+
+// router.get('/getCampaignNames', async (req, res) => {
+//   try {
+//     const sevenDaysAgo = moment().subtract(7, 'days').toDate();
+
+//     // Fetch leads from the last 7 days based on leadsCreatedDate
+//     const recentLeads = await salesLead.find({ leadsCreatedDate: { $gte: sevenDaysAgo } });
+
+//     // Extract unique campaign names
+//     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
+
+//     console.log("CAMPAIGN NAMES===========>>", campaignNames);
+//     return res.json(campaignNames);
+//   } catch (error) {
+//     console.error('Error Fetching Recent Campaign Leads:', error);
+//     res.status(500).json({ error: 'Failed to fetch recent campaign leads' });
+//   }
+// });
+
 // get all Closing Names
 
 router.get('/getClosingNames', async (req, res) => {
