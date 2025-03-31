@@ -2495,7 +2495,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04XkJMGuYgnZGCgYIARAAGAQSNwF-L9IrPa6USEqKqqTZsu6aieKy3BiODJqoNAo5kWXs2rbn_-gjxJDOiO4334aQynEk4I1kDVk';
+const REFERESH_TOKEN = '1//04YPJgVm2wz2WCgYIARAAGAQSNwF-L9IrPty3WKtVUE87VPD9Q6cdH_Jm87Yl9sD2WPkRwz_6G_fFjuiTq1dwRp2Ujn2CZOtRj_g';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6649,7 +6649,8 @@ router.get('/usersAttendance', async (req, res) => {
         // Generate default attendance data if it doesn't exist
         const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
           // const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
-          const currentDate = new Date(year, month - 1, day + 1);
+          //const currentDate = new Date(year, month - 1, day + 1);
+          const currentDate = new Date(year, month -1, day);
           return {
             date: currentDate.toISOString().slice(0, 10),
             status: 'Select'  // Default status
@@ -7198,15 +7199,15 @@ router.post('/transferCustomerToSalesLead', async (req, res) => {
 });
 //get Campaign NAmes for leads
 
-// router.get('/getCampaignNames', async (req, res) => {
-//   try {
-//     const allLeads = await salesLead.find();
-//     return res.json(allLeads)
-//   } catch (error) {
-//     console.error('Error Fetching Leads:', error);
-//     res.status(500).json({ error: 'Failed to fetch leads' });
-//   }
-// });
+router.get('/getAllCampaignNames', async (req, res) => {
+  try {
+    const allLeads = await salesLead.find();
+    return res.json(allLeads)
+  } catch (error) {
+    console.error('Error Fetching Leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
 
 router.get('/getCampaignNames', async (req, res) => {
   try {
