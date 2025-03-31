@@ -6573,8 +6573,10 @@ router.get('/attendance', async (req, res) => {
         const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
           // const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
           const currentDate = new Date(year, month - 1, day + 1);
+          //const currentDate = new Date(year, month - 1, day);
           return {
-            date: currentDate.toISOString().slice(0, 10),
+            // date: currentDate.toISOString().slice(0, 10),
+            date: currentDate.toISOString().split("T")[0],
             status: 'Select', // Default status
             reason: ''
           };
@@ -6649,10 +6651,10 @@ router.get('/usersAttendance', async (req, res) => {
         // Generate default attendance data if it doesn't exist
         const defaultAttendance = Array.from({ length: daysInMonth }, (_, day) => {
           // const currentDate = new Date(year, month - 1, day + 2);  // Adjusted day calculation
-          //const currentDate = new Date(year, month - 1, day + 1);
-          const currentDate = new Date(year, month -1, day);
+          const currentDate = new Date(year, month - 1, day + 1);
+          //const currentDate = new Date(year, month -1, day);
           return {
-            date: currentDate.toISOString().slice(0, 10),
+            date: currentDate.toISOString().split("T")[0],
             status: 'Select'  // Default status
           };
         });
@@ -8268,6 +8270,38 @@ router.get('/allCategProjects/:name', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
+router.get('/searchCategProjects/:name/:mobile', async (req, res) => {
+  const name = req.params.name;
+  const mobile = req.params.mobile;
+
+  try {
+    const isNumeric = !isNaN(mobile);
+
+    let searchCriteria = {
+      "$or": [
+        { custName: { $regex: mobile, $options: 'i' } },  // Fixed 'options' typo
+        { custBussiness: { $regex: mobile, $options: 'i' } }
+      ]
+    };
+
+    if (isNumeric) {
+      searchCriteria["$or"].push({ custNumb: Number(mobile) });
+    }
+
+    let query = {
+      closingCateg: name,
+      ...searchCriteria // Merge search criteria
+    };
+
+    let data = await Customer.find(query);
+    res.send(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error searching for customer");
+  }
+});
+
 
 router.post('/update-projectStatusTeam', async (req, res) => {
   try {
