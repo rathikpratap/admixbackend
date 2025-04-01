@@ -586,18 +586,102 @@ router.delete('/delete-emp/:id', async (req, res) => {
 
 // Delete Customers
 
+// router.delete('/delete-cust/:id', async (req, res) => {
+//   try {
+//     const deleteCust = await Customer.findByIdAndDelete(req.params.id);
+//     if (deleteCust) {
+//       return res.json(deleteCust);
+//     } else {
+//       return res.json({ result: "No Data Deleted" });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// });
+
 router.delete('/delete-cust/:id', async (req, res) => {
   try {
-    const deleteCust = await Customer.findByIdAndDelete(req.params.id);
-    if (deleteCust) {
-      return res.json(deleteCust);
-    } else {
+    const customer = await Customer.findByIdAndDelete(req.params.id);
+    
+    if (!customer) {
       return res.json({ result: "No Data Deleted" });
     }
+
+    // Generate sheet name from closingDate
+    const closingDate = customer.closingDate ? new Date(customer.closingDate) : null;
+    if (!closingDate) return res.json({ message: "Customer deleted from DB, but no closing date found" });
+
+    const sheetName = `${closingDate.toLocaleString('en-US', { month: 'long' })} ${closingDate.getFullYear()}`;
+
+    // Delete from Google Sheets
+    const success = await deleteCustomerFromGoogleSheet(sheetName, customer.custCode);
+
+    if (success) {
+      return res.json({ message: "Customer deleted from database and Google Sheets", customer });
+    } else {
+      return res.json({ message: "Customer deleted from database, but not found in Google Sheets", customer });
+    }
+
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
+
+const deleteCustomerFromGoogleSheet = async (sheetName, custCode) => {
+  try {
+    // Fetch data from the correct sheet
+    const sheetData = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheet_id,
+      range: `${sheetName}!A:Z` // Fetch all rows
+    });
+
+    let rows = sheetData.data.values;
+    if (!rows || rows.length === 0) return false;
+
+    // Find the row index where custCode matches
+    let rowIndex = rows.findIndex(row => row[0] === custCode);
+    if (rowIndex === -1) return false;
+
+    // Google Sheets API uses 1-based index (1st row is index 1)
+    rowIndex += 1;
+
+    // Delete the row using batchUpdate
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: sheet_id,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: await getSheetId(sheetName), // Get dynamic sheet ID
+              dimension: "ROWS",
+              startIndex: rowIndex - 1,
+              endIndex: rowIndex
+            }
+          }
+        }]
+      }
+    });
+
+    console.log(`Customer with Code ${custCode} deleted from Google Sheet: ${sheetName}`);
+    return true;
+  } catch (error) {
+    console.error("Error deleting from Google Sheets:", error);
+    return false;
+  }
+};
+
+const getSheetId = async (sheetName) => {
+  try {
+    const response = await sheets.spreadsheets.get({ spreadsheetId: sheet_id });
+
+    const sheet = response.data.sheets.find(sheet => sheet.properties.title === sheetName);
+    return sheet ? sheet.properties.sheetId : null;
+  } catch (error) {
+    console.error("Error retrieving sheet ID:", error);
+    return null;
+  }
+};
+
 
 // delete SalesLead
 
@@ -629,24 +713,123 @@ router.put('/updateEditor/:id', async (req, res) => {
 
 // Edit Customer Details
 
+// router.put('/update/:id', checkAuth, async (req, res) => {
+//   try {
+//     const person1 = req.userData.name;
+//     const personTeam1 = req.userData.Saleteam;
+//     let custDet = await Customer.findById(req.params.id);
+//     let leadDet = await salesLead.findById(req.params.id);
+//     if (custDet) {
+//       custDet = await Customer.findByIdAndUpdate(req.params.id, {
+//         $set: req.body
+//       })
+//       return res.json(custDet)
+//     } else if (leadDet) {
+//       if (req.body.projectStatus === 'Not Interested') {
+//         leadDet = await salesLead.findByIdAndUpdate(req.params.id, {
+//           $set: req.body
+//         })
+//         return res.json(leadDet)
+//       } else {
+//         const newCustomer = new Customer({
+//           _id: leadDet._id,
+//           custCode: req.body.custCode,
+//           custName: leadDet.custName,
+//           custNumb: leadDet.custNumb,
+//           custNumb2: req.body.custNumb2,
+//           custEmail: leadDet.custEmail,
+//           custBussiness: leadDet.custBussiness,
+//           closingDate: req.body.closingDate,
+//           leadsCreatedDate: leadDet.closingDate,
+//           closingPrice: req.body.closingPrice,
+//           closingCateg: req.body.closingCateg,
+//           billType: req.body.billType,
+//           AdvPay: req.body.AdvPay,
+//           remainingAmount: req.body.remainingAmount,
+//           custCountry: req.body.custCountry,
+//           custCity: req.body.custCity,
+//           custState: req.body.custState,
+//           projectStatus: req.body.projectStatus,
+//           youtubeLink: req.body.youtubeLink,
+//           restAmount: req.body.restAmount,
+//           restPaymentDate: req.body.restPaymentDate,
+//           remark: req.body.remark,
+//           salesPerson: person1,
+//           salesTeam: personTeam1,
+//           graphicDesigner: req.body.graphicDesigner,
+//           editor: req.body.editor,
+//           scriptWriter: req.body.scriptWriter,
+//           voiceOver: req.body.voiceOver,
+//           wordsCount: req.body.wordsCount,
+//           scriptDuration: req.body.scriptDuration,
+//           script: req.body.script,
+//           scriptDeliveryDate: req.body.scriptDeliveryDate,
+//           scriptStatus: req.body.scriptStatus,
+//           scriptPayment: req.body.scriptPayment,
+//           scriptOtherChanges: req.body.scriptOtherChanges,
+//           scriptChangesPayment: req.body.scriptChangesPayment,
+//           videoDuration: req.body.videoDuration,
+//           videoDeliveryDate: req.body.videoDeliveryDate,
+//           videoType: req.body.videoType,
+//           editorStatus: req.body.editorStatus,
+//           editorPayment: req.body.editorPayment,
+//           editorOtherChanges: req.body.editorOtherChanges,
+//           editorChangesPayment: req.body.editorChangesPayment,
+//           voiceDuration: req.body.voiceDuration,
+//           voiceDeliveryDate: req.body.voiceDeliveryDate,
+//           voiceOverType: req.body.voiceOverType,
+//           voiceOverStatus: req.body.voiceOverStatus,
+//           voicePayment: req.body.voicePayment,
+//           voiceOtherChanges: req.body.voiceOtherChanges,
+//           voiceChangesPayment: req.body.voiceChangesPayment,
+//           totalEditorPayment: req.body.totalEditorPayment,
+//           totalScriptPayment: req.body.totalScriptPayment,
+//           totalVoicePayment: req.body.totalVoicePayment,
+//           videoDurationMinutes: req.body.videoDurationMinutes,
+//           videoDurationSeconds: req.body.videoDurationSeconds,
+//           voiceDurationMinutes: req.body.voiceDurationMinutes,
+//           voiceDurationSeconds: req.body.voiceDurationSeconds,
+//           scriptDurationMinutes: req.body.scriptDurationMinutes,
+//           scriptDurationSeconds: req.body.scriptDurationSeconds,
+//           numberOfVideos: req.body.numberOfVideos,
+//           companyName: req.body.companyName,
+//           scriptPassDate: req.body.scriptPassDate,
+//           Qr: req.body.Qr
+//         });
+//         await newCustomer.save();
+//         await salesLead.findByIdAndDelete(req.params.id);
+//         return res.json(newCustomer);
+//       }
+//     } else {
+//       return res.json({ result: "No Data" });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// });
+
 router.put('/update/:id', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData.name;
     const personTeam1 = req.userData.Saleteam;
+
     let custDet = await Customer.findById(req.params.id);
     let leadDet = await salesLead.findById(req.params.id);
+
     if (custDet) {
-      custDet = await Customer.findByIdAndUpdate(req.params.id, {
-        $set: req.body
-      })
-      return res.json(custDet)
-    } else if (leadDet) {
+      custDet = await Customer.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+
+      // Update in Google Sheets
+      const sheetUpdated = await updateCustomerInGoogleSheet(custDet);
+      
+      return res.json({ custDet, sheetUpdated });
+    } 
+    else if (leadDet) {
       if (req.body.projectStatus === 'Not Interested') {
-        leadDet = await salesLead.findByIdAndUpdate(req.params.id, {
-          $set: req.body
-        })
-        return res.json(leadDet)
+        leadDet = await salesLead.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+        return res.json(leadDet);
       } else {
+        // Convert lead to customer
         const newCustomer = new Customer({
           _id: leadDet._id,
           custCode: req.body.custCode,
@@ -712,9 +895,14 @@ router.put('/update/:id', checkAuth, async (req, res) => {
           scriptPassDate: req.body.scriptPassDate,
           Qr: req.body.Qr
         });
+
         await newCustomer.save();
         await salesLead.findByIdAndDelete(req.params.id);
-        return res.json(newCustomer);
+
+        // Add new customer to Google Sheets
+        const sheetUpdated = await updateCustomerInGoogleSheet(newCustomer);
+
+        return res.json({ newCustomer, sheetUpdated });
       }
     } else {
       return res.json({ result: "No Data" });
@@ -723,6 +911,158 @@ router.put('/update/:id', checkAuth, async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
+
+const updateCustomerInGoogleSheet = async (customer) => {
+  try {
+    if (!customer.closingDate) return false;
+
+    // Determine Sheet Tab Name
+    const closingDate = new Date(customer.closingDate);
+    const sheetName = `${closingDate.toLocaleString('en-US', { month: 'long' })} ${closingDate.getFullYear()}`;
+
+    // Get all sheet names
+    const sheetMetadata = await sheets.spreadsheets.get({
+      spreadsheetId: sheet_id
+    });
+
+    const sheetTitles = sheetMetadata.data.sheets.map(sheet => sheet.properties.title);
+    
+    // If the sheet doesn't exist, create it
+    if (!sheetTitles.includes(sheetName)) {
+      await createNewSheetWithHeaders(sheetName);
+    }
+
+    // Fetch existing data from the correct sheet tab
+    const sheetData = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheet_id,
+      range: `${sheetName}!A:Z`
+    });
+
+    let rows = sheetData.data.values;
+    if (!rows || rows.length === 0) return false;
+
+    // Find the row index where custCode matches
+    let rowIndex = rows.findIndex(row => row[0] === customer.custCode);
+    if (rowIndex === -1) {
+      // If customer is not found, add a new row
+      return await appendToGoogleSheet2(customer, sheetName);
+    } else {
+      rowIndex += 1; // Convert to 1-based index
+    }
+
+    // New updated values
+    const values = [[
+      customer.custCode,
+      customer.custName,
+      customer.custNumb,
+      customer.custNumb2 || "",
+      customer.custBussiness,
+      customer.closingDate ? customer.closingDate.toISOString() : "",
+      customer.closingPrice || "",
+      customer.closingCateg || "",
+      customer.billType || "",
+      customer.Qr || "",
+      customer.AdvPay || "",
+      customer.remainingAmount || "",
+      customer.restAmount || "",
+      customer.restPaymentDate ? customer.restPaymentDate.toISOString() : "",
+      customer.custCountry || "",
+      customer.custState || "",
+      customer.custCity || "",
+      customer.projectStatus || "",
+      customer.salesPerson || "",
+      customer.remark || ""
+    ]];
+
+    // Update row in Google Sheets
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheet_id,
+      range: `${sheetName}!A${rowIndex}:Z${rowIndex}`,
+      valueInputOption: "USER_ENTERED",
+      resource: { values }
+    });
+
+    console.log(`Customer ${customer.custCode} updated in ${sheetName}`);
+    return true;
+  } catch (error) {
+    console.error("Error updating customer in Google Sheets:", error);
+    return false;
+  }
+};
+const createNewSheetWithHeaders = async (sheetName) => {
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: sheet_id,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: sheetName }
+          }
+        }]
+      }
+    });
+
+    // Add headers to the new sheet
+    const headers = [[
+      "Code", "Name", "Number 1", "Number 2", "Business", "Closing Date", "Closing Price", 
+      "Closing Category", "Bill Type", "Qr Code", "Advance Payment", "Remaining Amount",
+      "Rest Amount", "Rest Amount Date", "Country", "State", "City", "Project Status", 
+      "Sales Person", "Remark"
+    ]];
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheet_id,
+      range: `${sheetName}!A1:Z1`,
+      valueInputOption: "USER_ENTERED",
+      resource: { values: headers }
+    });
+
+    console.log(`Created new sheet: ${sheetName} with headers.`);
+  } catch (error) {
+    console.error("Error creating new sheet:", error);
+  }
+};
+const appendToGoogleSheet2 = async (customer, sheetName) => {
+  try {
+    const values = [[
+      customer.custCode,
+      customer.custName,
+      customer.custNumb,
+      customer.custNumb2 || "",
+      customer.custBussiness,
+      customer.closingDate ? new Date(customer.closingDate).toLocaleDateString('en-GB') : "",
+      customer.closingPrice || "",
+      customer.closingCateg || "",
+      customer.billType || "",
+      customer.Qr || "",
+      customer.AdvPay || "",
+      customer.remainingAmount || "",
+      customer.restAmount || "",
+      customer.restPaymentDate ? new Date(customer.restPaymentDate).toLocaleDateString('en-GB') : "",
+      customer.custCountry || "",
+      customer.custState || "",
+      customer.custCity || "",
+      customer.projectStatus || "",
+      customer.salesPerson || "",
+      customer.remark || ""
+    ]];
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheet_id,
+      range: `${sheetName}!A:Z`,
+      valueInputOption: "USER_ENTERED",
+      resource: { values }
+    });
+
+    console.log(`Customer ${customer.custCode} added to ${sheetName}`);
+    return true;
+  } catch (error) {
+    console.error("Error adding data to Google Sheet:", error);
+    return false;
+  }
+};
+
+
 
 // Edit Employee
 
@@ -878,169 +1218,173 @@ router.get('/customerProjectName/:projectName', async (req, res) => {
 
 // Google Sheet automation
 
-// const auth = new google.auth.GoogleAuth({
-//   keyFile: "linen-server-454711-n0-68215f82d26a.json",
-//   scopes: ["https://www.googleapis.com/auth/spreadsheets"]
-// });
-// const sheets = google.sheets({ version: "v4", auth });
+const auth = new google.auth.GoogleAuth({
+  //keyFile: "linen-server-454711-n0-68215f82d26a.json",
+  keyFile: "pro-variety-455511-k8-253aaee250ac.json",
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+});
+const sheets = google.sheets({ version: "v4", auth });
 
-// const sheet_id = "1dSocR_Folw5nYP-Y9FftBouBP2BadOx8gxcK-CeGckM";
+//const sheet_id = "1dSocR_Folw5nYP-Y9FftBouBP2BadOx8gxcK-CeGckM";
+const sheet_id = "11fUcMQ4KyHkmnQ4XBG_tSWRyNRCZm6I2Mh3BAReMG0s";
 
-// // Column Headers to be Added When a New Sheet is Created
-// const HEADERS = [
-//   "Code", "Name", "Number 1", "Number 2", "Bussiness", "Closing Date",
-//   "Closing Price", "Closing Category", "Bill Type", "Qr code", "Advance Payment",
-//   "Remaining Amount", "Rest Amount", "Rest Amount Date", "Country", "State",
-//   "City", "Project Status", "Sales Person", "Remark"
-// ];
+// Column Headers to be Added When a New Sheet is Created
+const HEADERS = [
+  "Code", "Name", "Number 1", "Number 2", "Bussiness", "Closing Date",
+  "Closing Price", "Closing Category", "Bill Type", "Qr code", "Advance Payment",
+  "Remaining Amount", "Rest Amount", "Rest Amount Date", "Country", "State",
+  "City", "Project Status", "Sales Person", "Remark"
+];
 
-// const appendToGoogleSheet = async (customer) => {
-//   try {
-//     if (!customer.closingDate) {
-//       console.error("Closing Date is required");
-//       return;
-//     }
-//     const closingDate = new Date(customer.closingDate);
-//     const monthYear = `${closingDate.toLocaleString('default', { month: 'long' })} ${closingDate.getFullYear()}`;
+const appendToGoogleSheet = async (customer) => {
+  try {
+    if (!customer.closingDate) {
+      console.error("Closing Date is required");
+      return;
+    }
+    const closingDate = new Date(customer.closingDate);
+    const monthYear = `${closingDate.toLocaleString('default', { month: 'long' })} ${closingDate.getFullYear()}`;
 
-//     const sheetExists = await checkIfSheetExists(sheet_id, monthYear);
-//     if (!sheetExists) {
-//       await createNewSheet(sheet_id, monthYear);
-//       await addHeadersToSheet(sheet_id, monthYear);
-//     }
+    const sheetExists = await checkIfSheetExists(sheet_id, monthYear);
+    if (!sheetExists) {
+      await createNewSheet(sheet_id, monthYear);
+      await addHeadersToSheet(sheet_id, monthYear);
+    }
 
-//     const values = [
-//       [
-//         customer.custCode,
-//         customer.custName,
-//         customer.custNumb,
-//         customer.custNumb2,
-//         customer.custBussiness,
-//         customer.closingDate ? customer.closingDate.toISOString() : "",
-//         customer.closingPrice,
-//         customer.closingCateg,
-//         customer.billType,
-//         customer.Qr,
-//         customer.AdvPay,
-//         customer.remainingAmount,
-//         customer.restAmount,
-//         customer.restPaymentDate,
-//         customer.custCountry,
-//         customer.custState,
-//         customer.custCity,
-//         customer.projectStatus,
-//         customer.salesPerson,
-//         customer.remark
-//       ],
-//     ];
-//     await sheets.spreadsheets.values.append({
-//       spreadsheetId: sheet_id,
-//       range: `${monthYear}!A:Z`,
-//       valueInputOption: "USER_ENTERED",
-//       resource: { values },
-//     });
-//     console.log(`Data Added to Google Sheet -> sheet: ${monthYear}`)
-//   } catch (error) {
-//     console.error("Error adding data to Google Sheet:", error);
-//   }
-// };
+    const values = [
+      [
+        customer.custCode,
+        customer.custName,
+        customer.custNumb,
+        customer.custNumb2,
+        customer.custBussiness,
+        //customer.closingDate ? customer.closingDate.toISOString() : "",
+        customer.closingDate ? new Date(customer.closingDate).toLocaleDateString('en-GB') : "", // Format as DD-MM-YYYY
+        customer.closingPrice,
+        customer.closingCateg,
+        customer.billType,
+        customer.Qr,
+        customer.AdvPay,
+        customer.remainingAmount,
+        customer.restAmount,
+        //customer.restPaymentDate,
+        customer.restPaymentDate ? new Date(customer.restPaymentDate).toLocaleDateString('en-GB') : "",
+        customer.custCountry,
+        customer.custState,
+        customer.custCity,
+        customer.projectStatus,
+        customer.salesPerson,
+        customer.remark
+      ],
+    ];
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheet_id,
+      range: `${monthYear}!A:Z`,
+      valueInputOption: "USER_ENTERED",
+      resource: { values },
+    });
+    console.log(`Data Added to Google Sheet -> sheet: ${monthYear}`)
+  } catch (error) {
+    console.error("Error adding data to Google Sheet:", error);
+  }
+};
 
-// const checkIfSheetExists = async (spreadsheetId, sheetTitle) => {
-//   try {
-//     const sheetData = await sheets.spreadsheets.get({ spreadsheetId });
-//     const sheetNames = sheetData.data.sheets.map(sheet => sheet.properties.title);
-//     return sheetNames.includes(sheetTitle);
-//   } catch (error) {
-//     console.error("Error checking sheet existence:", error);
-//     return false;
-//   }
-// };
+const checkIfSheetExists = async (spreadsheetId, sheetTitle) => {
+  try {
+    const sheetData = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetNames = sheetData.data.sheets.map(sheet => sheet.properties.title);
+    return sheetNames.includes(sheetTitle);
+  } catch (error) {
+    console.error("Error checking sheet existence:", error);
+    return false;
+  }
+};
 
-// const createNewSheet = async (spreadsheetId, sheetTitle) => {
-//   try {
-//     await sheets.spreadsheets.batchUpdate({
-//       spreadsheetId,
-//       resource: {
-//         requests: [{
-//           addSheet: {
-//             properties: { title: sheetTitle }
-//           }
-//         }]
-//       }
-//     });
-//     console.log(`New sheet "${sheetTitle}" created!`);
-//   } catch (error) {
-//     console.error("Error creating new sheet:", error);
-//   }
-// };
+const createNewSheet = async (spreadsheetId, sheetTitle) => {
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: sheetTitle }
+          }
+        }]
+      }
+    });
+    console.log(`New sheet "${sheetTitle}" created!`);
+  } catch (error) {
+    console.error("Error creating new sheet:", error);
+  }
+};
 
-// // ✅ Function to Add Headers to the New Sheet
-// const addHeadersToSheet = async (spreadsheetId, sheetTitle) => {
-//   try {
-//     await sheets.spreadsheets.values.update({
-//       spreadsheetId,
-//       range: `${sheetTitle}!A1:Z1`, // Set headers in the first row
-//       valueInputOption: "USER_ENTERED",
-//       resource: { values: [HEADERS] }
-//     });
-//     console.log(`Headers added to sheet: ${sheetTitle}`);
-//   } catch (error) {
-//     console.error("Error adding headers to sheet:", error);
-//   }
-// };
-
-// router.post('/customer', async (req, res) => {
-//   try {
-//     const customer = new Customer(req.body);
-//     await customer.save();
-
-//     await appendToGoogleSheet(customer);
-//     res.json({ success: true, message: "Customer Added and Google Sheet Updated" });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: "Error adding Customer", error: error.message });
-//   }
-// });
+// ✅ Function to Add Headers to the New Sheet
+const addHeadersToSheet = async (spreadsheetId, sheetTitle) => {
+  try {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetTitle}!A1:Z1`, // Set headers in the first row
+      valueInputOption: "USER_ENTERED",
+      resource: { values: [HEADERS] }
+    });
+    console.log(`Headers added to sheet: ${sheetTitle}`);
+  } catch (error) {
+    console.error("Error adding headers to sheet:", error);
+  }
+};
 
 router.post('/customer', async (req, res) => {
-  //const tempLeadsData = [];
-  const customer = new Customer({
-    custCode: req.body.custCode,
-    custName: req.body.custName,
-    custNumb: req.body.custNumb,
-    custNumb2: req.body.custNumb2,
-    custBussiness: req.body.custBussiness,
-    closingDate: req.body.closingDate,
-    closingPrice: req.body.closingPrice,
-    closingCateg: req.body.closingCateg,
-    billType: req.body.billType,
-    AdvPay: req.body.AdvPay,
-    remainingAmount: req.body.remainingAmount,
-    restAmount: req.body.restAmount,
-    custCountry: req.body.custCountry,
-    custCity: req.body.custCity,
-    custState: req.body.custState,
-    projectStatus: req.body.projectStatus,
-    salesPerson: req.body.salesPerson,
-    youtubeLink: req.body.youtubeLink,
-    remark: req.body.remark,
-    editor: req.body.editor,
-    scriptWriter: req.body.scriptWriter,
-    voiceOver: req.body.voiceOver,
-    salesTeam: req.body.salesTeam,
-    companyName: req.body.companyName,
-    scriptPassDate: req.body.scriptPassDate,
-    graphicDesigner: req.body.graphicDesigner,
-    graphicPassDate: req.body.graphicPassDate,
-    Qr: req.body.Qr
-  });
-  await customer.save()
-    .then((_) => {
-      res.json({ success: true, message: "User Added!!" })
-    })
-    .catch((err) => {
-      res.json({ success: false, message: "User Not Added!!" })
-    })
+  try {
+    const customer = new Customer(req.body);
+    await customer.save();
+
+    await appendToGoogleSheet(customer);
+    res.json({ success: true, message: "Customer Added and Google Sheet Updated" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error adding Customer", error: error.message });
+  }
 });
+
+// router.post('/customer', async (req, res) => {
+//   //const tempLeadsData = [];
+//   const customer = new Customer({
+//     custCode: req.body.custCode,
+//     custName: req.body.custName,
+//     custNumb: req.body.custNumb,
+//     custNumb2: req.body.custNumb2,
+//     custBussiness: req.body.custBussiness,
+//     closingDate: req.body.closingDate,
+//     closingPrice: req.body.closingPrice,
+//     closingCateg: req.body.closingCateg,
+//     billType: req.body.billType,
+//     AdvPay: req.body.AdvPay,
+//     remainingAmount: req.body.remainingAmount,
+//     restAmount: req.body.restAmount,
+//     custCountry: req.body.custCountry,
+//     custCity: req.body.custCity,
+//     custState: req.body.custState,
+//     projectStatus: req.body.projectStatus,
+//     salesPerson: req.body.salesPerson,
+//     youtubeLink: req.body.youtubeLink,
+//     remark: req.body.remark,
+//     editor: req.body.editor,
+//     scriptWriter: req.body.scriptWriter,
+//     voiceOver: req.body.voiceOver,
+//     salesTeam: req.body.salesTeam,
+//     companyName: req.body.companyName,
+//     scriptPassDate: req.body.scriptPassDate,
+//     graphicDesigner: req.body.graphicDesigner,
+//     graphicPassDate: req.body.graphicPassDate,
+//     Qr: req.body.Qr
+//   });
+//   await customer.save()
+//     .then((_) => {
+//       res.json({ success: true, message: "User Added!!" })
+//     })
+//     .catch((err) => {
+//       res.json({ success: false, message: "User Not Added!!" })
+//     })
+// });
 
 // router.post('/customer', async (req, res) => {
 //   try {
