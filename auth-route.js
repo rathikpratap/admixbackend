@@ -3084,7 +3084,7 @@ const people = google.people({
 //   }
 // });
 
-
+// Latest LEads
 router.get('/salesFacebook-leads', async (req, res) => {
   try {
     // 1️⃣ Fetch the latest Facebook access token from the database
@@ -3149,7 +3149,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
             }
 
             // ✅ Check if lead already exists
-            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
+            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime});
 
             if (!existingLead) {
               // ✅ Save new lead in MongoDB
@@ -3163,7 +3163,7 @@ router.get('/salesFacebook-leads', async (req, res) => {
                 custBussiness: leadObj.custBussiness,
                 custNumb: leadObj.custNumb,
                 state: leadObj.state,
-                salesTeam: 'personTeam', // Replace with actual team variable if needed
+                salesTeam: personTeam, // Replace with actual team variable if needed
                 leadsCreatedDate: new Date(createdTime),
                 subsidiaryName: 'AdmixMedia',
                 additionalFields: leadObj.additionalFields
@@ -3546,7 +3546,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
               else leadObj.additionalFields[fieldName] = value;
             }
 
-            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
+            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime});
 
             if (!existingLead) {
               const newLead = new salesLead({
