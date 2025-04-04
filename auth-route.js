@@ -16,6 +16,7 @@ const salesLead = require('./models/salesLead');
 const incentive = require('./models/incentive');
 const transferLead = require('./models/adminLeads');
 const Payroll = require('./models/payroll');
+const CampaignAssignment = require('./models/campaignAssignment');
 const EstInvoice = require('./models/estInvoice');
 const Notification = require('./models/notification');
 const { Country, State, City } = require('country-state-city');
@@ -25,7 +26,8 @@ const checkAuth = require('./middleware/chech-auth');
 const axios = require('axios');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const sendNotif = require('./middleware/sendNotif');
+const {sendNotif, sendCampaignNotif} = require('./middleware/sendNotif');
+// const sendCampaignNotif = require('./middleware/sendNotif');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const moment = require('moment');
@@ -474,9 +476,55 @@ router.get('/allOngoingProjects', async (req, res) => {
   try {
     const products = await Customer.find({
       closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+      },
+      projectStatus: { $ne: 'Completed' }
+    }).sort({ closingDate: -1 });
+
+    if (products.length > 0) {
+      res.json(products);
+    } else {
+      res.json({ result: "No Data Found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/allOngoingProjectsExcludingLogo', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
+      closingCateg: { $nin: ['Logo Design', 'Logo Animation']},
+      projectStatus: { $ne: 'Completed' }
+    }).sort({ closingDate: -1 });
+
+    if (products.length > 0) {
+      res.json(products);
+    } else {
+      res.json({ result: "No Data Found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.get('/allOngoingProjectsIncludingLogo', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
+    const products = await Customer.find({
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+      },
+      closingCateg: { $in: ['Logo Design', 'Logo Animation']},
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -586,23 +634,10 @@ router.delete('/delete-emp/:id', async (req, res) => {
 
 // Delete Customers
 
-// router.delete('/delete-cust/:id', async (req, res) => {
-//   try {
-//     const deleteCust = await Customer.findByIdAndDelete(req.params.id);
-//     if (deleteCust) {
-//       return res.json(deleteCust);
-//     } else {
-//       return res.json({ result: "No Data Deleted" });
-//     }
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// });
-
 router.delete('/delete-cust/:id', async (req, res) => {
   try {
     const customer = await Customer.findByIdAndDelete(req.params.id);
-    
+
     if (!customer) {
       return res.json({ result: "No Data Deleted" });
     }
@@ -713,101 +748,6 @@ router.put('/updateEditor/:id', async (req, res) => {
 
 // Edit Customer Details
 
-// router.put('/update/:id', checkAuth, async (req, res) => {
-//   try {
-//     const person1 = req.userData.name;
-//     const personTeam1 = req.userData.Saleteam;
-//     let custDet = await Customer.findById(req.params.id);
-//     let leadDet = await salesLead.findById(req.params.id);
-//     if (custDet) {
-//       custDet = await Customer.findByIdAndUpdate(req.params.id, {
-//         $set: req.body
-//       })
-//       return res.json(custDet)
-//     } else if (leadDet) {
-//       if (req.body.projectStatus === 'Not Interested') {
-//         leadDet = await salesLead.findByIdAndUpdate(req.params.id, {
-//           $set: req.body
-//         })
-//         return res.json(leadDet)
-//       } else {
-//         const newCustomer = new Customer({
-//           _id: leadDet._id,
-//           custCode: req.body.custCode,
-//           custName: leadDet.custName,
-//           custNumb: leadDet.custNumb,
-//           custNumb2: req.body.custNumb2,
-//           custEmail: leadDet.custEmail,
-//           custBussiness: leadDet.custBussiness,
-//           closingDate: req.body.closingDate,
-//           leadsCreatedDate: leadDet.closingDate,
-//           closingPrice: req.body.closingPrice,
-//           closingCateg: req.body.closingCateg,
-//           billType: req.body.billType,
-//           AdvPay: req.body.AdvPay,
-//           remainingAmount: req.body.remainingAmount,
-//           custCountry: req.body.custCountry,
-//           custCity: req.body.custCity,
-//           custState: req.body.custState,
-//           projectStatus: req.body.projectStatus,
-//           youtubeLink: req.body.youtubeLink,
-//           restAmount: req.body.restAmount,
-//           restPaymentDate: req.body.restPaymentDate,
-//           remark: req.body.remark,
-//           salesPerson: person1,
-//           salesTeam: personTeam1,
-//           graphicDesigner: req.body.graphicDesigner,
-//           editor: req.body.editor,
-//           scriptWriter: req.body.scriptWriter,
-//           voiceOver: req.body.voiceOver,
-//           wordsCount: req.body.wordsCount,
-//           scriptDuration: req.body.scriptDuration,
-//           script: req.body.script,
-//           scriptDeliveryDate: req.body.scriptDeliveryDate,
-//           scriptStatus: req.body.scriptStatus,
-//           scriptPayment: req.body.scriptPayment,
-//           scriptOtherChanges: req.body.scriptOtherChanges,
-//           scriptChangesPayment: req.body.scriptChangesPayment,
-//           videoDuration: req.body.videoDuration,
-//           videoDeliveryDate: req.body.videoDeliveryDate,
-//           videoType: req.body.videoType,
-//           editorStatus: req.body.editorStatus,
-//           editorPayment: req.body.editorPayment,
-//           editorOtherChanges: req.body.editorOtherChanges,
-//           editorChangesPayment: req.body.editorChangesPayment,
-//           voiceDuration: req.body.voiceDuration,
-//           voiceDeliveryDate: req.body.voiceDeliveryDate,
-//           voiceOverType: req.body.voiceOverType,
-//           voiceOverStatus: req.body.voiceOverStatus,
-//           voicePayment: req.body.voicePayment,
-//           voiceOtherChanges: req.body.voiceOtherChanges,
-//           voiceChangesPayment: req.body.voiceChangesPayment,
-//           totalEditorPayment: req.body.totalEditorPayment,
-//           totalScriptPayment: req.body.totalScriptPayment,
-//           totalVoicePayment: req.body.totalVoicePayment,
-//           videoDurationMinutes: req.body.videoDurationMinutes,
-//           videoDurationSeconds: req.body.videoDurationSeconds,
-//           voiceDurationMinutes: req.body.voiceDurationMinutes,
-//           voiceDurationSeconds: req.body.voiceDurationSeconds,
-//           scriptDurationMinutes: req.body.scriptDurationMinutes,
-//           scriptDurationSeconds: req.body.scriptDurationSeconds,
-//           numberOfVideos: req.body.numberOfVideos,
-//           companyName: req.body.companyName,
-//           scriptPassDate: req.body.scriptPassDate,
-//           Qr: req.body.Qr
-//         });
-//         await newCustomer.save();
-//         await salesLead.findByIdAndDelete(req.params.id);
-//         return res.json(newCustomer);
-//       }
-//     } else {
-//       return res.json({ result: "No Data" });
-//     }
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// });
-
 router.put('/update/:id', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData.name;
@@ -821,9 +761,9 @@ router.put('/update/:id', checkAuth, async (req, res) => {
 
       // Update in Google Sheets
       const sheetUpdated = await updateCustomerInGoogleSheet(custDet);
-      
+
       return res.json({ custDet, sheetUpdated });
-    } 
+    }
     else if (leadDet) {
       if (req.body.projectStatus === 'Not Interested') {
         leadDet = await salesLead.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
@@ -926,7 +866,7 @@ const updateCustomerInGoogleSheet = async (customer) => {
     });
 
     const sheetTitles = sheetMetadata.data.sheets.map(sheet => sheet.properties.title);
-    
+
     // If the sheet doesn't exist, create it
     if (!sheetTitles.includes(sheetName)) {
       await createNewSheetWithHeaders(sheetName);
@@ -1004,9 +944,9 @@ const createNewSheetWithHeaders = async (sheetName) => {
 
     // Add headers to the new sheet
     const headers = [[
-      "Code", "Name", "Number 1", "Number 2", "Business", "Closing Date", "Closing Price", 
+      "Code", "Name", "Number 1", "Number 2", "Business", "Closing Date", "Closing Price",
       "Closing Category", "Bill Type", "Qr Code", "Advance Payment", "Remaining Amount",
-      "Rest Amount", "Rest Amount Date", "Country", "State", "City", "Project Status", 
+      "Rest Amount", "Rest Amount Date", "Country", "State", "City", "Project Status",
       "Sales Person", "Remark"
     ]];
 
@@ -1061,8 +1001,6 @@ const appendToGoogleSheet2 = async (customer, sheetName) => {
     return false;
   }
 };
-
-
 
 // Edit Employee
 
@@ -1187,34 +1125,6 @@ router.get('/customerProjectName/:projectName', async (req, res) => {
 });
 
 // New Customer
-
-// It mine
-// const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
-// const CLIENT_SECRET = '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';
-// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04ANDRa4SHFL5CgYIARAAGAQSNwF-L9IrzxdIssH80Mi5GzXAVd6OehkqSoOA2AzT51o_1gbJ-Sg2Uh-rOQRBddxdKEopI2x5Da4';
-
-// AdmixmediaIndia
-// const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
-// const CLIENT_SECRET = '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';
-// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04oYPmVXDFST4CgYIARAAGAQSNwF-L9Ir2W_zkoh2yTnn6LhQuwLwcfgWN8dOF7vhEvxfmE6G7FJv4G4xpTeJAJw22L9treLFQLM';
-
-// const oauth2Client = new google.auth.OAuth2(
-//   CLIENT_ID,
-//   CLIENT_SECRET,
-//   REDIRECT_URI
-// );
-
-// oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
-// // const drive = google.drive({
-// //   version: 'v3',
-// //   auth: oauth2Client
-// // });
-// const people = google.people({
-//   version: 'v1',
-//   auth: oauth2Client
-// });
 
 // Google Sheet automation
 
@@ -1344,128 +1254,6 @@ router.post('/customer', async (req, res) => {
     res.status(500).json({ success: false, message: "Error adding Customer", error: error.message });
   }
 });
-
-// router.post('/customer', async (req, res) => {
-//   //const tempLeadsData = [];
-//   const customer = new Customer({
-//     custCode: req.body.custCode,
-//     custName: req.body.custName,
-//     custNumb: req.body.custNumb,
-//     custNumb2: req.body.custNumb2,
-//     custBussiness: req.body.custBussiness,
-//     closingDate: req.body.closingDate,
-//     closingPrice: req.body.closingPrice,
-//     closingCateg: req.body.closingCateg,
-//     billType: req.body.billType,
-//     AdvPay: req.body.AdvPay,
-//     remainingAmount: req.body.remainingAmount,
-//     restAmount: req.body.restAmount,
-//     custCountry: req.body.custCountry,
-//     custCity: req.body.custCity,
-//     custState: req.body.custState,
-//     projectStatus: req.body.projectStatus,
-//     salesPerson: req.body.salesPerson,
-//     youtubeLink: req.body.youtubeLink,
-//     remark: req.body.remark,
-//     editor: req.body.editor,
-//     scriptWriter: req.body.scriptWriter,
-//     voiceOver: req.body.voiceOver,
-//     salesTeam: req.body.salesTeam,
-//     companyName: req.body.companyName,
-//     scriptPassDate: req.body.scriptPassDate,
-//     graphicDesigner: req.body.graphicDesigner,
-//     graphicPassDate: req.body.graphicPassDate,
-//     Qr: req.body.Qr
-//   });
-//   await customer.save()
-//     .then((_) => {
-//       res.json({ success: true, message: "User Added!!" })
-//     })
-//     .catch((err) => {
-//       res.json({ success: false, message: "User Not Added!!" })
-//     })
-// });
-
-// router.post('/customer', async (req, res) => {
-//   try {
-//     const tempLeadsData = [];
-
-//     // Creating a new customer instance
-//     const customer = new Customer({
-//       custCode: req.body.custCode,
-//       custName: req.body.custName,
-//       custNumb: req.body.custNumb,
-//       custNumb2: req.body.custNumb2,
-//       custBussiness: req.body.custBussiness,
-//       closingDate: req.body.closingDate,
-//       closingPrice: req.body.closingPrice,
-//       closingCateg: req.body.closingCateg,
-//       billType: req.body.billType,
-//       AdvPay: req.body.AdvPay,
-//       remainingAmount: req.body.remainingAmount,
-//       restAmount: req.body.restAmount,
-//       custCountry: req.body.custCountry,
-//       custCity: req.body.custCity,
-//       custState: req.body.custState,
-//       projectStatus: req.body.projectStatus,
-//       salesPerson: req.body.salesPerson,
-//       youtubeLink: req.body.youtubeLink,
-//       remark: req.body.remark,
-//       editor: req.body.editor,
-//       scriptWriter: req.body.scriptWriter,
-//       voiceOver: req.body.voiceOver,
-//       salesTeam: req.body.salesTeam,
-//       companyName: req.body.companyName,
-//       scriptPassDate: req.body.scriptPassDate,
-//       graphicDesigner: req.body.graphicDesigner,
-//       graphicPassDate: req.body.graphicPassDate,
-//       Qr: req.body.Qr
-//     });
-
-//     // Formatting the closing date
-//     function formatDate(timestamp) {
-//       const date = new Date(timestamp);
-//       const day = String(date.getDate()).padStart(2, '0');
-//       const month = String(date.getMonth() + 1).padStart(2, '0');
-//       const year = String(date.getFullYear()).slice(-2);
-//       return `${day}${month}${year}`;
-//     }
-
-//     // Creating lead data with formatted name
-//     const formattedName = `${formatDate(req.body.closingDate)} ${req.body.custName}`;
-//     tempLeadsData.push({ custName: formattedName, custNumb: req.body.custNumb });
-
-//     let contactSaved = false; // Track if contact is saved
-
-//     for (const lead of tempLeadsData) {
-//       const contact = {
-//         names: [{ givenName: lead.custName }],
-//         phoneNumbers: [{ value: String(req.body.custNumb) }]
-//       };
-
-//       try {
-//         const response = await people.people.createContact({ requestBody: contact });
-//         if (response.status === 200) {
-//           contactSaved = true;
-//         }
-//       } catch (error) {
-//         console.error("Error Creating Contact:", error);
-//       }
-//     }
-
-//     // Save the customer to the database
-//     await customer.save();
-
-//     // Response message based on contact saving status
-//     res.json({
-//       success: true,
-//       message: contactSaved ? "User Added!!" : "User Added, but Contact Not Saved!"
-//     });
-//   } catch (err) {
-//     console.error("Error Adding Customer:", err);
-//     res.json({ success: false, message: "Error Adding Customer!" });
-//   }
-// });
 
 // Country State City
 
@@ -1616,107 +1404,6 @@ router.get('/receivedQr', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
-
-// router.get('/receivedQr', async (req, res) => {
-//   const currentDate = new Date();
-
-//   // Helper function to generate query objects
-//   const generateQuery = (qrName, dateField, rangeType = 'current') => {
-//     const startOfDay = rangeType === 'previous'
-//       ? new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 1)
-//       : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-
-//     const endOfDay = rangeType === 'previous'
-//       ? new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
-//       : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
-
-//     return {
-//       [dateField]: {
-//         $gte: startOfDay,
-//         $lte: endOfDay,
-//       },
-//       Qr: qrName,
-//     };
-//   };
-
-//   // Helper function to calculate total amounts
-//   const calculateTotalAmount = async (qrName, rangeType) => {
-//     const advQuery = generateQuery(qrName, 'closingDate', rangeType);
-//     const restQuery = generateQuery(qrName, 'restPaymentDate', rangeType);
-
-//     const advDocs = await Customer.find(advQuery);
-//     const restDocs = await Customer.find(restQuery);
-
-//     const advAmount = advDocs.reduce((sum, doc) => sum + (doc.AdvPay || 0), 0);
-//     const restAmount = restDocs.reduce((sum, doc) => sum + (doc.restAmount || 0), 0);
-
-//     return { advDocs, restDocs, totalAmount: advAmount + restAmount };
-//   };
-
-//   try {
-//     // Calculate totals for each Qr name for both current and previous days
-//     const [admixMediaCurrent, admixMediaPrevious] = await Promise.all([
-//       calculateTotalAmount('Admix Media', 'current'),
-//       calculateTotalAmount('Admix Media', 'previous'),
-//     ]);
-//     const [shivaVarshneyCurrent, shivaVarshneyPrevious] = await Promise.all([
-//       calculateTotalAmount('Shiva Varshney', 'current'),
-//       calculateTotalAmount('Shiva Varshney', 'previous'),
-//     ]);
-//     const [swatiVarshneyCurrent, swatiVarshneyPrevious] = await Promise.all([
-//       calculateTotalAmount('Swati Varshney', 'current'),
-//       calculateTotalAmount('Swati Varshney', 'previous'),
-//     ]);
-//     const [umeshchandVarshneyCurrent, umeshchandVarshneyPrevious] = await Promise.all([
-//       calculateTotalAmount('Umeshchand Varshney', 'current'),
-//       calculateTotalAmount('Umeshchand Varshney', 'previous'),
-//     ]);
-
-//     res.json({
-//       totals: {
-//         currentDay: {
-//           AdmixMedia: admixMediaCurrent.totalAmount,
-//           ShivaVarshney: shivaVarshneyCurrent.totalAmount,
-//           SwatiVarshney: swatiVarshneyCurrent.totalAmount,
-//           UmeshchandVarshney: umeshchandVarshneyCurrent.totalAmount,
-//         },
-//         previousDay: {
-//           AdmixMedia: admixMediaPrevious.totalAmount,
-//           ShivaVarshney: shivaVarshneyPrevious.totalAmount,
-//           SwatiVarshney: swatiVarshneyPrevious.totalAmount,
-//           UmeshchandVarshney: umeshchandVarshneyPrevious.totalAmount,
-//         },
-//       },
-//       details: {
-//         currentDay: {
-//           admixMediaAdv: admixMediaCurrent.advDocs,
-//           admixMediaRest: admixMediaCurrent.restDocs,
-//           shivaVarshneyAdv: shivaVarshneyCurrent.advDocs,
-//           shivaVarshneyRest: shivaVarshneyCurrent.restDocs,
-//           swatiVarshneyAdv: swatiVarshneyCurrent.advDocs,
-//           swatiVarshneyRest: swatiVarshneyCurrent.restDocs,
-//           umeshchandVarshneyAdv: umeshchandVarshneyCurrent.advDocs,
-//           umeshchandVarshneyRest: umeshchandVarshneyCurrent.restDocs,
-//         },
-//         previousDay: {
-//           admixMediaAdv: admixMediaPrevious.advDocs,
-//           admixMediaRest: admixMediaPrevious.restDocs,
-//           shivaVarshneyAdv: shivaVarshneyPrevious.advDocs,
-//           shivaVarshneyRest: shivaVarshneyPrevious.restDocs,
-//           swatiVarshneyAdv: swatiVarshneyPrevious.advDocs,
-//           swatiVarshneyRest: swatiVarshneyPrevious.restDocs,
-//           umeshchandVarshneyAdv: umeshchandVarshneyPrevious.advDocs,
-//           umeshchandVarshneyRest: umeshchandVarshneyPrevious.restDocs,
-//         },
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server Error' });
-//   }
-// });
-
 
 // total Month rest Amount Received
 
@@ -2839,7 +2526,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04YPJgVm2wz2WCgYIARAAGAQSNwF-L9IrPty3WKtVUE87VPD9Q6cdH_Jm87Yl9sD2WPkRwz_6G_fFjuiTq1dwRp2Ujn2CZOtRj_g';
+const REFERESH_TOKEN = '1//04zkMq0Lu2rm1CgYIARAAGAQSNwF-L9Ir14b3OOxwf7TGMkCUmB6xhjwJbO2_8Is3rNEfGrPhnRz1csz8w-Wf-oWMyeubxmUK_qk';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2857,385 +2544,55 @@ const people = google.people({
   auth: oauth2Client
 });
 
-// // router.get('/salesFacebook-leads', async (req, res) => {
-// //   try {
-// //     // Fetch the latest Facebook access token from the database
-// //     const accessToken1 = await FbAccessToken.findOne();
-// //     if (!accessToken1 || !accessToken1.newAccessToken) {
-// //       return res.status(400).json({ error: 'Access token is missing or invalid' });
-// //     }
+//API TO ASSIGN EMPLOYEES TO A CAMPAIGN
 
-// //     console.log("ACCESS TOKEN=====>>", accessToken1.newAccessToken);
+router.put("/assign-campaign", async (req, res) => {
+  try {
+    const { campaignName, employees } = req.body;
 
-// //     // Fetch leads data from Facebook Graph API
-// //     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken1.newAccessToken}`);
+    if (!campaignName || !Array.isArray(employees) || employees.length === 0) {
+      return res.status(400).json({ error: "Invalid campaign or employees list" });
+    }
 
-// //     const leadsData = response.data.adaccounts?.data || [];
-// //     console.log("LEADS DATA============>>>>", leadsData);
+    await CampaignAssignment.findOneAndUpdate(
+      { campaignName },
+      { employees },
+      { upsert: true, new: true }
+    );
 
-// //     for (const leadData of leadsData) {
-// //       if (!leadData.campaigns || !leadData.campaigns.data) {
-// //         console.warn(`No campaigns found for leadData ID: ${leadData.id}`);
-// //         continue;
-// //       }
+    res.json({ success: true, message: "Campaign assigned successfully!" });
+  } catch (error) {
+    console.error("❌ Error assigning campaign:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
-// //       const campaigns = leadData.campaigns.data;
-// //       for (const campaign of campaigns) {
-// //         if (!campaign.ads || !campaign.ads.data) {
-// //           console.warn(`No ads found for campaign: ${campaign.name}`);
-// //           continue;
-// //         }
+router.get("/get-assigned-campaigns", async (req, res) => {
+  try {
+    // Fetch all campaign names from leads
+    const oneMonthAgo = moment().subtract(30, 'days').toDate();
+    const recentLeads = await salesLead.find({ leadsCreatedDate: { $gte: oneMonthAgo } });
+    const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
 
-// //         for (const ad of campaign.ads.data) {
-// //           if (!ad.leads || !ad.leads.data) {
-// //             console.warn(`No leads found for ad: ${ad.name}`);
-// //             continue;
-// //           }
+    // Fetch all assigned campaigns
+    const assignedCampaigns = await CampaignAssignment.find();
 
-// //           // Extract leads and save them to MongoDB
-// //           for (const lead of ad.leads.data) {
-// //             const { created_time: createdTime, field_data } = lead;
+    // Merge assigned employees into campaign names
+    const campaignsWithAssignments = campaignNames.map((campaignName) => {
+      const assignment = assignedCampaigns.find(a => a.campaignName === campaignName);
+      return {
+        campaignName: campaignName,
+        employees: assignment ? assignment.employees : [] // Default to empty if not assigned
+      };
+    });
 
-// //             let existingLead = await salesLead.findOne({ closingDate: createdTime });
-// //             if (existingLead) {
-// //               console.log(`Duplicate lead found for time: ${createdTime}. Skipping.`);
-// //               continue;  // Skip if the lead already exists
-// //             }
+    res.json({ success: true, data: campaignsWithAssignments });
+  } catch (error) {
+    console.error("❌ Error fetching campaigns:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
-// //             let cust_name = '',
-// //               company_name = '',
-// //               phone = '',
-// //               state = '',
-// //               email = '';
-
-// //             // Extract field data from the lead
-// //             for (const field of field_data) {
-// //               if (field.name === 'full_name') cust_name = field.values[0];
-// //               if (field.name === 'email') email = field.values[0];
-// //               if (field.name === 'company_name') company_name = field.values[0];
-// //               if (field.name === 'phone_number') phone = field.values[0];
-// //               if (field.name === 'state') state = field.values[0];
-// //             }
-
-// //             // Save the lead to the database if it doesn't already exist
-// //             const newLead = new salesLead({
-// //               id: leadData.id,
-// //               closingDate: createdTime,
-// //               campaign_Name: campaign.name,
-// //               ad_Name: ad.name,
-// //               custName: cust_name,
-// //               custEmail: email,
-// //               custBussiness: company_name,
-// //               custNumb: phone,
-// //               state: state,
-// //               salesTeam: personTeam,  // Add the actual sales team
-// //               leadsCreatedDate: createdTime,
-// //               subsidiaryName: 'AdmixMedia'
-// //             });
-
-// //             await newLead.save();
-// //             console.log(`New lead saved: ${cust_name}`);
-// //           }
-// //         }
-// //       }
-// //     }
-
-// //     res.json({ success: true, message: 'All leads fetched and saved to MongoDB.' });
-
-// //   } catch (error) {
-// //     console.error('Error fetching and saving Facebook leads:', error);
-// //     res.status(500).json({ error: 'Internal server error' });
-// //   }
-// // });
-
-// router.get('/salesFacebook-leads', async (req, res) => {
-//   try {
-//     // Fetch the latest Facebook access token from the database
-//     const accessTokenRecord = await FbAccessToken.findOne();
-//     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-//       return res.status(400).json({ error: 'Access token is missing or invalid' });
-//     }
-
-//     const accessToken = accessTokenRecord.newAccessToken;
-//     //console.log("ACCESS TOKEN=====>>", accessToken);
-
-//     // Fetch leads data from Facebook Graph API
-//     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken}`);
-//     const leadsData = response.data.adaccounts?.data || [];
-
-//     //console.log("Fetched Leads Data:", JSON.stringify(leadsData, null, 2));
-
-//     let allLeads = [];
-
-//     for (const leadData of leadsData) {
-//       if (!leadData.campaigns?.data) continue;
-
-//       for (const campaign of leadData.campaigns.data) {
-//         if (!campaign.ads?.data) continue;
-
-//         for (const ad of campaign.ads.data) {
-//           if (!ad.leads?.data) continue;
-
-//           for (const lead of ad.leads.data) {
-//             const { created_time: createdTime, field_data } = lead;
-//             const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
-
-//             // Extract lead details dynamically
-//             let leadObj = {
-//               custName: '',
-//               custEmail: '',
-//               custBussiness: '',
-//               custNumb: '',
-//               state: '',
-//               additionalFields: {} // Store unknown fields dynamically
-//             };
-
-//             for (const field of field_data) {
-//               const fieldName = field.name.toLowerCase().replace('_', ' '); // Normalize field names
-//               const value = field.values[0] || '';
-
-//               if (fieldName === 'full name') leadObj.custName = value;
-//               else if (fieldName === 'email') leadObj.custEmail = value;
-//               else if (fieldName === 'company name') leadObj.custBussiness = value;
-//               else if (fieldName === 'phone number') leadObj.custNumb = value;
-//               else if (fieldName === 'state') leadObj.state = value;
-//               else {
-//                 leadObj.additionalFields[fieldName] = value; // Store unknown fields
-//               }
-//             }
-
-//             // ✅ Ensure additionalFields always exists
-//             //leadObj.additionalFields = leadObj.additionalFields || {};
-
-//             // Check if the lead already exists
-//             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
-
-//             if (!existingLead) {
-//               // Save new lead in MongoDB
-//               const newLead = new salesLead({
-//                 id: leadData.id,
-//                 closingDate: createdTime,
-//                 campaign_Name: campaign.name,
-//                 ad_Name: ad.name,
-//                 custName: leadObj.custName,
-//                 custEmail: leadObj.custEmail,
-//                 custBussiness: leadObj.custBussiness,
-//                 custNumb: leadObj.custNumb,
-//                 state: leadObj.state,
-//                 salesTeam: personTeam,
-//                 leadsCreatedDate: new Date(createdTime),
-//                 subsidiaryName: 'AdmixMedia',
-//                 additionalFields: leadObj.additionalFields
-//               });
-
-//               await newLead.save();
-//               console.log(`New lead saved First: ${leadObj.custName}`);
-              
-//               await people.people.createContact({
-//                 requestBody: {
-//                   names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
-//                   emailAddresses: [{ value: leadObj.custEmail }],
-//                   phoneNumbers: [{ value: leadObj.custNumb }],
-//                   organizations: [{ name: leadObj.custBussiness }],
-//                   addresses: [{ region: leadObj.state }]
-//                 }
-//               });
-//               console.log(`Lead saved to Google Contacts First: ${formattedDate} ${leadObj.custName}`);
-//             } else {
-//               console.log(`Lead already exists First: ${leadObj.custName}`);
-
-//               // Check for new fields and update only if necessary
-//               let updateFields = {};
-//               for (const key in leadObj.additionalFields) {
-//                 if (!existingLead.additionalFields || !(key in existingLead.additionalFields)) {
-//                   updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
-//                 }
-//               }
-              
-
-//               if (Object.keys(updateFields).length > 0) {
-//                 await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
-//                 console.log(`Lead updated with new fields First: ${JSON.stringify(updateFields)}`);
-//               }
-//             }
-
-//             allLeads.push({
-//               id: leadData.id,
-//               campaign_Name: campaign.name,
-//               ad_Name: ad.name,
-//               custName: leadObj.custName,
-//               custEmail: leadObj.custEmail,
-//               custBussiness: leadObj.custBussiness,
-//               custNumb: leadObj.custNumb,
-//               state: leadObj.state,
-//               leadsCreatedDate: createdTime,
-//               additionalFields: leadObj.additionalFields
-//             });
-//           }
-//         }
-//       }
-//     }
-
-//     res.json({ success: true, message: 'All leads fetched and saved to MongoDB.', leads: allLeads });
-
-//   } catch (error) {
-//     console.error('Error fetching and saving Facebook leads First:', error);
-//     res.status(500).json({ error: 'Internal server error' });
-//   }
-// });
-
-// Latest LEads
-// router.get('/salesFacebook-leads', async (req, res) => {
-//   try {
-//     // 1️⃣ Fetch the latest Facebook access token from the database
-//     const accessTokenRecord = await FbAccessToken.findOne();
-//     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-//       return res.status(400).json({ error: 'Access token is missing or invalid' });
-//     }
-
-//     const accessToken = accessTokenRecord.newAccessToken;
-
-//     // 2️⃣ Fetch leads data from Facebook Graph API
-//     const fbResponse = await axios.get(
-//       `https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken}`
-//     );
-
-//     // ✅ Check if adaccounts data exists
-//     if (!fbResponse.data || !fbResponse.data.adaccounts || !Array.isArray(fbResponse.data.adaccounts.data)) {
-//       console.error('Invalid response structure from Facebook API:', fbResponse.data);
-//       return res.status(500).json({ error: 'Invalid response from Facebook API' });
-//     }
-
-//     const leadsData = fbResponse.data.adaccounts.data;
-//     let allLeads = [];
-
-//     // 3️⃣ Process and save leads
-//     for (const leadData of leadsData) {
-//       if (!leadData.campaigns?.data) continue;
-
-//       for (const campaign of leadData.campaigns.data) {
-//         if (!campaign.ads?.data) continue;
-
-//         for (const ad of campaign.ads.data) {
-//           if (!ad.leads || !Array.isArray(ad.leads.data)) continue;
-
-//           for (const lead of ad.leads.data) {
-//             console.log("FIRST TOTAL LEADS ==========>>", lead);
-//             const { created_time: createdTime, field_data } = lead;
-//             const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
-
-//             // ✅ Extract lead details safely
-//             let leadObj = {
-//               custName: '',
-//               custEmail: '',
-//               custBussiness: '',
-//               custNumb: '',
-//               state: '',
-//               additionalFields: {}
-//             };
-
-//             // ✅ Safely process field_data
-//             if (Array.isArray(field_data)) {
-//               for (const field of field_data) {
-//                 const fieldName = field.name.toLowerCase().replace('_', ' ');
-//                 const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : '';
-
-//                 if (fieldName === 'full name') leadObj.custName = value;
-//                 else if (fieldName === 'email') leadObj.custEmail = value;
-//                 else if (fieldName === 'company name') leadObj.custBussiness = value;
-//                 else if (fieldName === 'phone number') leadObj.custNumb = value;
-//                 else if (fieldName === 'state') leadObj.state = value;
-//                 else leadObj.additionalFields[fieldName] = value;
-//               }
-//             }
-
-//             // ✅ Check if lead already exists
-//             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime});
-
-//             if (!existingLead) {
-//               // ✅ Save new lead in MongoDB
-//               const newLead = new salesLead({
-//                 id: leadData.id,
-//                 closingDate: createdTime,
-//                 campaign_Name: campaign.name,
-//                 ad_Name: ad.name,
-//                 custName: leadObj.custName,
-//                 custEmail: leadObj.custEmail,
-//                 custBussiness: leadObj.custBussiness,
-//                 custNumb: leadObj.custNumb,
-//                 state: leadObj.state,
-//                 salesTeam: personTeam, // Replace with actual team variable if needed
-//                 leadsCreatedDate: new Date(createdTime),
-//                 subsidiaryName: 'AdmixMedia',
-//                 additionalFields: leadObj.additionalFields
-//               });
-
-//               await newLead.save();
-//               console.log(`✅ New lead saved: ${leadObj.custName}`);
-
-//               // ✅ Save lead to Google Contacts
-//               await people.people.createContact({
-//                 requestBody: {
-//                   names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
-//                   emailAddresses: [{ value: leadObj.custEmail }],
-//                   phoneNumbers: [{ value: leadObj.custNumb }],
-//                   organizations: [{ name: leadObj.custBussiness }],
-//                   addresses: [{ region: leadObj.state }]
-//                 }
-//               });
-
-//               console.log(`✅ Lead saved to Google Contacts: ${formattedDate} ${leadObj.custName}`);
-//             } else {
-//               console.log(`⚠️ Lead already exists: ${leadObj.custName}`);
-
-//               // ✅ Check for new fields and update only if necessary
-//               let updateFields = {};
-//               if (!existingLead.additionalFields) existingLead.additionalFields = {};
-
-//               for (const key in leadObj.additionalFields) {
-//                 if (!(key in existingLead.additionalFields)) {
-//                   updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
-//                 }
-//               }
-
-//               if (Object.keys(updateFields).length > 0) {
-//                 await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
-//                 console.log(`✅ Lead updated with new fields: ${JSON.stringify(updateFields)}`);
-//               }
-//             }
-
-//             // ✅ Add processed lead to allLeads array
-//             allLeads.push({
-//               id: leadData.id,
-//               campaign_Name: campaign.name,
-//               ad_Name: ad.name,
-//               custName: leadObj.custName,
-//               custEmail: leadObj.custEmail,
-//               custBussiness: leadObj.custBussiness,
-//               custNumb: leadObj.custNumb,
-//               state: leadObj.state,
-//               leadsCreatedDate: createdTime,
-//               additionalFields: leadObj.additionalFields
-//             });
-//           }
-//         }
-//       }
-//     }
-//     console.log("ALL LEADS SAVED");
-
-//     // ✅ Send successful response
-//     res.json({ success: true, message: 'All leads fetched and saved to MongoDB.', leads: allLeads });
-
-//   } catch (error) {
-//     console.error('❌ Error fetching and saving Facebook leads:', {
-//       message: error.message,
-//       stack: error.stack,
-//       responseData: error.response?.data || 'No response data'
-//     });
-
-//     res.status(500).json({ error: 'Internal server error' });
-//   }
-// });
 
 // 🔹 Function to Delay (Exponential Backoff for Rate Limits)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -3244,13 +2601,13 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const fetchLeadsFromFacebook = async (accessToken) => {
   let allLeads = [];
   let nextPage = `https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads.limit(100){created_time,field_data}}}}&access_token=${accessToken}`;
-  
+
   let retryCount = 0;
   const maxRetries = 5; // Prevent infinite loops
 
   while (nextPage && retryCount < maxRetries) {
     try {
-      console.log(`Fetching leads from: ${nextPage}`);
+      //console.log(`Fetching leads from: ${nextPage}`);
       const fbResponse = await axios.get(nextPage);
 
       if (!fbResponse.data || !fbResponse.data.adaccounts || !Array.isArray(fbResponse.data.adaccounts.data)) {
@@ -3287,23 +2644,22 @@ const fetchLeadsFromFacebook = async (accessToken) => {
   return allLeads;
 };
 
-// 🔹 API Endpoint to Fetch & Save Leads
-router.get('/salesFacebook-leads', async (req, res) => {
+// 🔹 Function to Fetch & Save Leads
+const fetchAndSaveFacebookLeads = async () => {
   try {
-    // 1️⃣ Fetch the latest Facebook access token
+    // Fetch Access Token
     const accessTokenRecord = await FbAccessToken.findOne();
     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-      return res.status(400).json({ error: 'Access token is missing or invalid' });
+      console.error('❌ Access token is missing or invalid');
+      return;
     }
     const accessToken = accessTokenRecord.newAccessToken;
 
-    // 2️⃣ Fetch Leads from Facebook
+    // Fetch Leads
     const leads = await fetchLeadsFromFacebook(accessToken);
-    let allLeads = [];
 
     for (const lead of leads) {
       const { created_time: createdTime, field_data, campaign_Name, ad_Name } = lead;
-      const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
 
       let leadObj = {
         custName: '',
@@ -3328,27 +2684,23 @@ router.get('/salesFacebook-leads', async (req, res) => {
         }
       }
 
-      // 3️⃣ Check if lead already exists (Based on email or phone)
       let existingLead = await salesLead.findOne({
-        $or: [
-          { custEmail: leadObj.custEmail },
-          { custNumb: leadObj.custNumb }
-        ]
+        //$or: [{ custEmail: leadObj.custEmail }, { custNumb: leadObj.custNumb }]
+        closingDate: createdTime
       });
 
       if (!existingLead) {
-        // 4️⃣ Save new lead in MongoDB
         const newLead = new salesLead({
           id: lead.id,
           closingDate: createdTime,
-          campaign_Name,
-          ad_Name,
+          campaign_Name: campaign_Name,
+          ad_Name: ad_Name,
           custName: leadObj.custName,
           custEmail: leadObj.custEmail,
           custBussiness: leadObj.custBussiness,
           custNumb: leadObj.custNumb,
           state: leadObj.state,
-          salesTeam: 'ReplaceWithActualTeam', // Replace with actual team variable
+          salesTeam: 'Sales Team 1',
           leadsCreatedDate: new Date(createdTime),
           subsidiaryName: 'AdmixMedia',
           additionalFields: leadObj.additionalFields
@@ -3357,10 +2709,19 @@ router.get('/salesFacebook-leads', async (req, res) => {
         await newLead.save();
         console.log(`✅ New lead saved: ${leadObj.custName}`);
 
-        // 5️⃣ Save lead to Google Contacts
+        // 🔹 Send Notification
+        //const userToken = "cCteoy2qAjob1vN4y2OZjU:APA91bGCxrojvA-fl7Za8OtGNfO80kmGiZ4KhCNgKAlFdhlP2v91ikagZf5K9KqQVfwYiyduRYZsmF2-x_5en9_YBFG3mMIX5WY8v9mlwrm7_2ySAu09nVwMr4ssY6wbecUrd2sutjMK"; // ✅ Replace with actual FCM token
+        const notifTitle = "🎉 New Lead Alert!";
+        //const notifBody = `New lead from ${leadObj.custName} (${leadObj.custEmail})`;
+        const notifBody = `New lead from ${campaign_Name} (${leadObj.custName});`;
+
+        //await sendNotif(userToken, notifTitle, notifBody);
+        await sendCampaignNotif(campaign_Name, notifTitle, notifBody);
+        console.log(`✅ Notification sent for: ${leadObj.custName}`);
+
         await people.people.createContact({
           requestBody: {
-            names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
+            names: [{ givenName: leadObj.custName }],
             emailAddresses: [{ value: leadObj.custEmail }],
             phoneNumbers: [{ value: leadObj.custNumb }],
             organizations: [{ name: leadObj.custBussiness }],
@@ -3368,318 +2729,32 @@ router.get('/salesFacebook-leads', async (req, res) => {
           }
         });
 
-        console.log(`✅ Lead saved to Google Contacts: ${formattedDate} ${leadObj.custName}`);
+        console.log(`✅ Lead saved to Google Contacts: ${leadObj.custName}`);
       } else {
-        console.log(`⚠️ Lead already exists: ${leadObj.custName}`);
-
-        let updateFields = {};
-        if (!existingLead.additionalFields) existingLead.additionalFields = {};
-
-        for (const key in leadObj.additionalFields) {
-          if (!(key in existingLead.additionalFields)) {
-            updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
-          }
-        }
-
-        if (Object.keys(updateFields).length > 0) {
-          await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
-          console.log(`✅ Lead updated with new fields: ${JSON.stringify(updateFields)}`);
-        }
+        //console.log(`⚠️ Lead already exists: ${leadObj.custName}`);
       }
-
-      allLeads.push({
-        id: lead.id,
-        campaign_Name,
-        ad_Name,
-        custName: leadObj.custName,
-        custEmail: leadObj.custEmail,
-        custBussiness: leadObj.custBussiness,
-        custNumb: leadObj.custNumb,
-        state: leadObj.state,
-        leadsCreatedDate: createdTime,
-        additionalFields: leadObj.additionalFields
-      });
     }
-
-    res.json({ success: true, message: 'All leads fetched and saved to MongoDB.', leads: allLeads });
-
   } catch (error) {
-    console.error('❌ General Error:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ Error fetching and saving Facebook leads:', error.message);
   }
-});
+};
 
 // Second account facebook meta leads
 
-// router.get('/salesSecondFacebook-leads', async (req, res) => {
-//   try {
-//     //Local
-//     //const response = await axios.get(`https://graph.facebook.com/v19.0/me?fields=adaccounts%7Bid%2Ccampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken}`);
-//     //Real
-//     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
-//     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id%2Cadaccounts%7Bcampaigns%7Bid%2Cname%2Cads%7Bname%2Cleads%7D%7D%7D&access_token=${accessToken2}`);
-//     const leadsData = response.data.adaccounts.data;
-//     let cust_name, company_name, phone, state, email = '';
-//     for (const leadData of leadsData) {
-//       const campaigns = leadData.campaigns.data;
-//       const tempLeadsData = [];
-//       for (const campaign of campaigns) {
-//         const { id: campId, name: campName, ads } = campaign;
+//const delay1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-//         for (const ad of ads.data) {
-//           const { name: adName, leads } = ad;
-
-//           if (leads && leads.data) {
-//             for (const lead of leads.data) {
-//               const { created_time: createdTime, field_data } = lead;
-
-//               let existingLead = await salesLead.findOne({ closingDate: lead.created_time });
-
-//               if (existingLead) {
-//                 existingLead.salesTeam = personTeam;
-//                 await existingLead.save();
-//               }
-//               if (!existingLead) {
-//                 for (const field of field_data) {
-//                   if (field.name === 'full_name') {
-//                     cust_name = field.values[0];
-//                   } else if (field.name === 'email') {
-//                     email = field.values[0];
-//                   } else if (field.name === 'company_name') {
-//                     company_name = field.values[0];
-//                   } else if (field.name === 'phone_number') {
-//                     phone = field.values[0];
-//                   } else if (field.name === 'state') {
-//                     state = field.values[0];
-//                   }
-//                 }
-//                 let customerLead = await Customer.findOne({ leadsCreatedDate: createdTime });
-//                 if (!customerLead) {
-//                   const newLead = new salesLead({
-//                     id: leadData.id,
-//                     closingDate: createdTime,
-//                     campaign_Name: campName,
-//                     ad_Name: adName,
-//                     custName: cust_name,
-//                     custEmail: email,
-//                     custBussiness: company_name,
-//                     custNumb: phone,
-//                     state: state,
-//                     salesTeam: personTeam,
-//                     leadsCreatedDate: createdTime,
-//                     subsidiaryName: 'AdmixMedia'
-//                   });
-//                   await newLead.save();
-//                   tempLeadsData.push({ custName: `${formatDate(createdTime)} ${cust_name}`, custNumb: phone });
-//                   function formatDate(timestamp) {
-//                     const date = new Date(timestamp);
-//                     const day = String(date.getDate()).padStart(2, '0'); // Get day with leading zero if necessary
-//                     const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month with leading zero if necessary
-//                     const year = String(date.getFullYear()).slice(-2);
-//                     return `${day}${month}${year}`;
-//                   }
-//                 } else {
-//                   console.log("All leads Stored");
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }
-//       // Prepare VCF data
-//       // let vcfContent = "";
-//       // tempLeadsData.forEach(function (lead) {
-//       //   vcfContent += `BEGIN:VCARD\n`;
-//       //   vcfContent += `VERSION:3.0\n`;
-//       //   vcfContent += `FN:${lead.custName}\n`;
-//       //   vcfContent += `TEL:${lead.custNumb}\n`;
-//       //   vcfContent += `END:VCARD\n`;
-//       // });
-
-//       // const tempFilePath = 'extracted_leads.vcf';
-//       // fs.writeFileSync(tempFilePath, vcfContent)
-//       // const driveResponse = await drive.files.create({
-//       //   requestBody: {
-//       //     name: 'Facebook-leads.vcf',
-//       //     mimeType: 'text/vcard'
-//       //   },
-//       //   media: {
-//       //     mimeType: 'text/vcard',
-//       //     body: fs.createReadStream(tempFilePath)
-//       //   }
-//       // });
-//       tempLeadsData.forEach(async (lead) => {
-//         const contact = {
-//           names: [{
-//             givenName: lead.custName
-//           }],
-//           phoneNumbers: [{
-//             value: lead.custNumb
-//           }]
-//         };
-//         try {
-//           const res = await people.people.createContact({
-//             requestBody: contact
-//           });
-//         } catch (error) {
-//           console.error("Error Creating Contact", error);
-//         }
-//       })
-//     }
-//     //res.json({ success: true, fileId: driveResponse.data.id });
-//     res.json({ success: true });
-//   } catch (error) {
-//     console.error('Error fetching and saving Facebook leads:', error);
-//     res.status(500).json({ error: 'Internal server error' });
-//   }
-// });
-
-// // // router.get('/salesSecondFacebook-leads', async (req, res) => {
-// // //   try {
-// // //     // Retrieve Facebook access token
-// // //     const accessTokenRecord = await FbAccessToken.findOne();
-// // //     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-// // //       return res.status(400).json({ error: 'Access token is missing or invalid' });
-// // //     }
-
-// // //     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
-// // //     console.log("Using Access Token:", accessToken2);
-
-// // //     // Fetch leads from Facebook Graph API
-// // //     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
-// // //     const leadsData = response.data.adaccounts?.data || [];
-
-// // //     //console.log("Fetched Leads Data:", leadsData);
-
-// // //     let allLeads = []; // Store all leads here
-
-// // //     for (const leadData of leadsData) {
-// // //       if (!leadData.campaigns || !leadData.campaigns.data) continue;
-
-// // //       for (const campaign of leadData.campaigns.data) {
-// // //         if (!campaign.ads || !campaign.ads.data) continue;
-
-// // //         for (const ad of campaign.ads.data) {
-// // //           if (!ad.leads || !ad.leads.data) continue;
-
-// // //           for (const lead of ad.leads.data) {
-// // //             const { created_time: createdTime, field_data } = lead;
-// // //             //console.log("NEW DATA=========>>", JSON.stringify(lead, null, 2)); // Pretty print JSON
-
-// // //             let leadObj = {
-// // //               custName: '',
-// // //               custEmail: '',
-// // //               custBussiness: '',
-// // //               custNumb: '',
-// // //               state: '',
-// // //               additionalFields: {} // Store any new fields here
-// // //             };
-
-// // //             // Process fields dynamically
-// // //             for (const field of field_data) {
-// // //               const fieldName = field.name.toLowerCase().replace('_', ' '); // Normalize field name
-// // //               const value = field.values[0] || ''; // Ensure value exists
-
-// // //               //console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`);
-
-// // //               if (fieldName === 'full name') leadObj.custName = value;
-// // //               else if (fieldName === 'email') leadObj.custEmail = value;
-// // //               else if (fieldName === 'company name') leadObj.custBussiness = value;
-// // //               else if (fieldName === 'phone number') leadObj.custNumb = value;
-// // //               else if (fieldName === 'state') leadObj.state = value;
-// // //               else {
-// // //                 // Store unknown fields in additionalFields
-// // //                 leadObj.additionalFields[fieldName] = value;
-// // //               }
-// // //             }
-
-// // //             // ✅ Ensure additionalFields always exists
-// // //             //leadObj.additionalFields = leadObj.additionalFields || {};
-
-// // //             // Check if lead already exists in MongoDB
-// // //             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: leadObj.custEmail });
-
-// // //             if (!existingLead) {
-// // //               // Save new lead in MongoDB with additional fields
-// // //               const newLead = new salesLead({
-// // //                 id: leadData.id,
-// // //                 closingDate: createdTime,
-// // //                 campaign_Name: campaign.name,
-// // //                 ad_Name: ad.name,
-// // //                 custName: leadObj.custName,
-// // //                 custEmail: leadObj.custEmail,
-// // //                 custBussiness: leadObj.custBussiness,
-// // //                 custNumb: leadObj.custNumb,
-// // //                 state: leadObj.state,
-// // //                 salesTeam: personTeam, // Adjust as needed
-// // //                 leadsCreatedDate: new Date(createdTime),
-// // //                 additionalFields: leadObj.additionalFields
-// // //               });
-
-// // //               await newLead.save();
-// // //               console.log(`New lead saved Second: ${leadObj.custName}`);
-// // //             } else {
-// // //               console.log(`Lead already exists Second: ${leadObj.custName}`);
-
-// // //               // Check for new fields that aren't in the existing lead and update
-// // //               let updateFields = {};
-
-// // //               // **Check if custName is missing and update it**
-// // //               if (!existingLead.custName && leadObj.custName) {
-// // //                 updateFields.custName = leadObj.custName;
-// // //                 console.log(`Updating missing custName for lead Second: ${leadObj.custEmail}`);
-// // //               }
-              
-// // //               // Check if Bussiness is missing and update it
-// // //               if(!existingLead.custBussiness && leadObj.custBussiness){
-// // //                 updateFields.custBussiness = leadObj.custBussiness;
-// // //               }
-
-// // //               for (const key in leadObj.additionalFields) {
-// // //                 if (!existingLead.additionalFields || !(key in existingLead.additionalFields)) {
-// // //                   updateFields[`additionalFields.${key}`] = leadObj.additionalFields[key];
-// // //                 }
-// // //               }
-
-// // //               if (Object.keys(updateFields).length > 0) {
-// // //                 await salesLead.updateOne({ _id: existingLead._id }, { $set: updateFields });
-// // //                 console.log(`Lead updated with new fields Second: ${JSON.stringify(updateFields)}`);
-// // //               }
-// // //             }
-
-// // //             allLeads.push({
-// // //               id: leadData.id,
-// // //               campaign_Name: campaign.name,
-// // //               ad_Name: ad.name,
-// // //               custName: leadObj.custName,
-// // //               custEmail: leadObj.custEmail,
-// // //               custBussiness: leadObj.custBussiness,
-// // //               custNumb: leadObj.custNumb,
-// // //               state: leadObj.state,
-// // //               leadsCreatedDate: createdTime,
-// // //               additionalFields: leadObj.additionalFields
-// // //             });
-// // //           }
-// // //         }
-// // //       }
-// // //     }
-
-// // //     res.json({ success: true, leads: allLeads }); // Return saved leads
-// // //   } catch (error) {
-// // //     console.error('Error fetching Facebook leads Second:', error);
-// // //     res.status(500).json({ error: 'Internal server error' });
-// // //   }
-// // // });
-
-router.get('/salesSecondFacebook-leads', async (req, res) => {
+// 🔹 Function to Fetch Facebook Leads for the Second Automation
+const fetchAndSaveSecondFacebookLeads = async () => {
   try {
     const accessTokenRecord = await FbAccessToken.findOne();
     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-      return res.status(400).json({ error: 'Access token is missing or invalid' });
+      console.error('❌ Access token is missing or invalid');
+      return;
     }
 
+    // ✅ Hardcoded second access token
     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
-    console.log('Using Access Token:', accessToken2);
+    //console.log('Using Access Token:', accessToken2);
 
     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
     const leadsData = response.data.adaccounts?.data || [];
@@ -3720,7 +2795,7 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
               else leadObj.additionalFields[fieldName] = value;
             }
 
-            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime});
+            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime });
 
             if (!existingLead) {
               const newLead = new salesLead({
@@ -3733,15 +2808,21 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
                 custBussiness: leadObj.custBussiness,
                 custNumb: leadObj.custNumb,
                 state: leadObj.state,
-                salesTeam: personTeam,
+                salesTeam: 'Sales Team 1',
                 leadsCreatedDate: new Date(createdTime),
                 additionalFields: leadObj.additionalFields
               });
 
               await newLead.save();
-              console.log(`New lead saved Second: ${leadObj.custName}`);
-              
-              // Save to Google Contacts with formatted name
+              console.log(`✅ New lead saved Second: ${leadObj.custName}`);
+
+              const notifTitle = "🎉 New Lead Alert!";
+              const notifBody = `New lead from ${campaign.name} (${leadObj.custName});`;
+
+              await sendCampaignNotif(campaign.name, notifTitle, notifBody);
+              console.log(`✅ Notification sent for: ${leadObj.custName}`);
+
+              // ✅ Save to Google Contacts with formatted name
               await people.people.createContact({
                 requestBody: {
                   names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
@@ -3751,7 +2832,8 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
                   addresses: [{ region: leadObj.state }]
                 }
               });
-              console.log(`Lead saved to Google Contacts Second: ${formattedDate} ${leadObj.custName}`);
+
+              console.log(`✅ Lead saved to Google Contacts Second: ${formattedDate} ${leadObj.custName}`);
             }
 
             allLeads.push(leadObj);
@@ -3760,133 +2842,20 @@ router.get('/salesSecondFacebook-leads', async (req, res) => {
       }
     }
 
-    res.json({ success: true, leads: allLeads });
+    console.log(`✅ Successfully processed ${allLeads.length} leads`);
   } catch (error) {
-    console.error('Error fetching Facebook leads:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ Error fetching Facebook leads:', error.message);
   }
-});
-
-
-// // router.get('/salesSecondFacebook-leads', async (req, res) => {
-// //   try {
-// //     // Retrieve Facebook access token
-// //     const accessTokenRecord = await FbAccessToken.findOne();
-// //     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-// //       return res.status(400).json({ error: 'Access token is missing or invalid' });
-// //     }
-
-// //     const accessToken2 = 'EAAHV6LHxdvoBO2dIFGuzO2ZAkxf7JwfkoCd4wUPL23zcr8gxPBCtjgnuXCucWCdYitfVrEN8nPHG93kuoT0H7xlzcEWyk6FeuKts5eUl9GU1dZBPm7HxqRXjj5bL9ULvKXDRpSYNS3v0VRE1uPPxSBlV3dyPpIOzEcLBWoEIW0ooZCcIrF3YO75NA8GAODvaliLaKLc';
-// //     console.log("Using Access Token:", accessToken2);
-
-// //     // Fetch leads from Facebook Graph API
-// //     const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken2}`);
-// //     const leadsData = response.data.adaccounts?.data || [];
-
-// //     console.log("Fetched Leads Data:", leadsData);
-
-// //     let allLeads = []; // Store all leads here
-
-// //     for (const leadData of leadsData) {
-// //       if (!leadData.campaigns || !leadData.campaigns.data) continue;
-
-// //       for (const campaign of leadData.campaigns.data) {
-// //         if (!campaign.ads || !campaign.ads.data) continue;
-
-// //         for (const ad of campaign.ads.data) {
-// //           if (!ad.leads || !ad.leads.data) continue;
-
-// //           for (const lead of ad.leads.data) {
-// //             const { created_time: createdTime, field_data } = lead;
-// //             console.log("NEW DATA=========>>", lead);
-
-// //             let cust_name = '',
-// //               company_name = '',
-// //               phone = '',
-// //               state = '',
-// //               email = '';
-// //               no_video = '';
-
-// //             // for (const field of field_data) {
-// //             //   console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`); // Log field details
-// //             //   if (field.name === 'full_name') cust_name = field.values[0];
-// //             //   if (field.name === 'email') email = field.values[0];
-// //             //   if (field.name === 'company_name') company_name = field.values[0];
-// //             //   if (field.name === 'phone_number') phone = field.values[0];
-// //             //   if (field.name === 'state') state = field.values[0];
-// //             // }
-
-// //             for (const field of field_data) {
-// //               const fieldName = field.name.toLowerCase().replace('_', ' '); // Normalize field name
-// //               console.log(`Field: ${field.name}, Values: ${JSON.stringify(field.values)}`); // Log field details
-
-// //               const value = field.values[0] || ''; // Ensure value exists, otherwise set empty string
-
-// //               if (fieldName === 'full name' && !cust_name) cust_name = value;
-// //               if (fieldName === 'email' && !email) email = value;
-// //               if (fieldName === 'company name' && !company_name) company_name = value;
-// //               if (fieldName === 'phone number' && !phone) phone = value;
-// //               if (fieldName === 'state' && !state) state = value;
-// //               if (fieldName === 'how_many_video_you_want') no_video = field.values[0];
-// //             }
-
-// //             // Check if lead already exists in MongoDB
-// //             let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime, custEmail: email });
-// //             if (!existingLead) {
-// //               // Save new lead in MongoDB
-// //               const newLead = new salesLead({
-// //                 id: leadData.id,
-// //                 closingDate: createdTime,
-// //                 campaign_Name: campaign.name,
-// //                 ad_Name: ad.name,
-// //                 custName: cust_name,
-// //                 custEmail: email,
-// //                 no_video: no_video,
-// //                 custBussiness: company_name,
-// //                 custNumb: phone,
-// //                 state: state,
-// //                 salesTeam: personTeam,
-// //                 leadsCreatedDate: new Date(createdTime)
-// //               });
-
-// //               await newLead.save();
-// //               console.log(`New lead saved: ${cust_name}`);
-// //             } else {
-// //               console.log(`Lead already exists Second: ${cust_name}`);
-// //             }
-
-// //             allLeads.push({
-// //               id: leadData.id,
-// //               campaign_Name: campaign.name,
-// //               ad_Name: ad.name,
-// //               custName: cust_name,
-// //               custEmail: email,
-// //               no_video: no_video,
-// //               custBussiness: company_name,
-// //               custNumb: phone,
-// //               state: state,
-// //               leadsCreatedDate: createdTime
-// //             });
-// //           }
-// //         }
-// //       }
-// //     }
-
-// //     res.json({ success: true, leads: allLeads });  // Return saved leads
-// //   } catch (error) {
-// //     console.error('Error fetching Facebook leads:', error);
-// //     res.status(500).json({ error: 'Internal server error' });
-// //   }
-// // });
+};
 
 // Helper function to format date for lead names
-function formatDate(timestamp) {
-  const date = new Date(timestamp);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = String(date.getFullYear()).slice(-2);
-  return `${day}${month}${year}`;
-}
+// function formatDate(timestamp) {
+//   const date = new Date(timestamp);
+//   const day = String(date.getDate()).padStart(2, '0');
+//   const month = String(date.getMonth() + 1).padStart(2, '0');
+//   const year = String(date.getFullYear()).slice(-2);
+//   return `${day}${month}${year}`;
+// }
 
 // get leads
 
@@ -7994,162 +6963,6 @@ router.get('/allIncentive', async (req, res) => {
 });
 
 // GET route to calculate incentive based on sales
-// router.get('/categoryAmount', async (req, res) => {
-
-//   const {year, month} =req.query;
-
-//   // const startMonth = moment().startOf('month').toDate();
-//   // const endMonth = moment().endOf('month').toDate();
-
-//   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
-// const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
-
-//   try {
-//     // Step 1: Aggregate customer data within the current month date range
-//     const results = await Customer.aggregate([
-//       {
-//         $match: {
-//           closingDate: {
-//             $gte: startMonth,
-//             $lte: endMonth
-//           }
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             closingCateg: '$closingCateg',
-//             salesPerson: '$salesPerson'
-//           },
-//           numberOfClosings: { $sum: 1 },
-//           totalClosingPrice: { $sum: '$closingPrice' }
-//         }
-//       }
-//     ]);
-
-//     // Step 2: Calculate incentives for each sales person and category based on thresholds
-//     for (let result of results) {
-//       const { closingCateg, salesPerson } = result._id;
-//       const totalClosingPrice = result.totalClosingPrice;
-
-//       // Step 3: Find matching incentive for the sales person and category
-//       const incentivess = await incentive.findOne({
-//         employeeName: salesPerson,
-//         category: closingCateg
-//       });
-
-//       if (incentivess && incentivess.incentives) {
-//         let calculatedIncentive = 0;
-
-//         // Loop through incentives thresholds to calculate the correct incentive
-//         for (let threshold of incentivess.incentives) {
-//           if (totalClosingPrice >= threshold.amount) {
-//             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
-//           }
-//         }
-
-//         // Add calculated incentive to the result
-//         result.calculatedIncentive = calculatedIncentive;
-//       } else {
-//         // No matching incentive found, set incentive to 0
-//         result.calculatedIncentive = 0;
-//       }
-//     }
-
-//     // Step 4: Send the final response
-//     if (results.length > 0) {
-//       console.log('Top Category Results:', results);
-//       results.forEach(result => {
-//         console.log(`Category: ${result._id.closingCateg}, SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
-//       });
-//       res.json(results);
-//     } else {
-//       console.log('No sales entries found for the current month');
-//       res.json({ message: 'No sales entries found for the current month' });
-//     }
-
-//   } catch (error) {
-//     console.error("Error retrieving category amounts and incentives:", error.message);
-//     res.status(500).json({ status: "fail", error: error.message });
-//   }
-// });
-
-// router.get('/categoryAmount', async (req, res) => {
-
-//   const {year, month} = req.query;
-
-//   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
-//   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
-//   try {
-//     // Step 1: Aggregate customer data within the current month date range
-//     const results = await Customer.aggregate([
-//       {
-//         $match: {
-//           closingDate: {
-//             $gte: startMonth,
-//             $lte: endMonth
-//           },
-//           remainingAmount: 0
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             salesPerson: '$salesPerson'
-//           },
-//           numberOfClosings: { $sum: 1 },
-//           totalClosingPrice: { $sum: '$closingPrice' }
-//         }
-//       }
-//     ]);
-
-//     // Step 2: Calculate incentives for each sales person based on thresholds
-//     for (let result of results) {
-//       const { salesPerson } = result._id;
-//       const totalClosingPrice = result.totalClosingPrice;
-
-//       // Step 3: Find matching incentive for the sales person
-//       const incentivess = await incentive.findOne({
-//         employeeName: salesPerson
-//       });
-
-//       if (incentivess && incentivess.incentives) {
-//         let calculatedIncentive = 0;
-
-//         // Loop through incentives thresholds to calculate the correct incentive
-//         for (let threshold of incentivess.incentives) {
-//           if (totalClosingPrice >= threshold.amount) {
-//             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
-//           }
-//         }
-
-//         // Add calculated incentive to the result
-//         result.calculatedIncentive = calculatedIncentive;
-//       } else {
-//         // No matching incentive found, set incentive to 0
-//         result.calculatedIncentive = 0;
-//       }
-//     }
-
-//     // Step 4: Send the final response
-//     if (results.length > 0) {
-//       console.log('Results:', results);
-//       results.forEach(result => {
-//         console.log(`SalesPerson: ${result._id.salesPerson}, Number of Closings: ${result.numberOfClosings}, Calculated Incentive: ${result.calculatedIncentive}`);
-//       });
-//       res.json(results);
-//     } else {
-//       console.log('No sales entries found for the current month');
-//       res.json({ message: 'No sales entries found for the current month' });
-//     }
-
-//   } catch (error) {
-//     console.error("Error retrieving amounts and incentives:", error.message);
-//     res.status(500).json({ status: "fail", error: error.message });
-//   }
-// });
 
 router.get('/categoryAmount', async (req, res) => {
   const { year, month } = req.query;
@@ -8268,158 +7081,6 @@ router.get('/categoryAmount', async (req, res) => {
 });
 
 // Sales Person Incentives
-
-// router.get('/salesIncentive', checkAuth, async (req, res) => {
-//   const {year, month} = req.query;
-//   const password = req.query.pass;
-//   const person1 = req.userData.name;
-//   // const startMonth = moment().startOf('month').toDate();
-//   // const endMonth = moment().endOf('month').toDate();
-//   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
-//   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
-//   try {
-//     // Verify user's password
-//     const user = await User.findOne({ signupUsername: person1 });
-//     if (!user) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-//     if (user.incentivePassword !== password) {
-//       return res.status(401).json({ message: 'Password not matched' });
-//     }
-//     console.log("Password verified");
-
-//     // Aggregate sales data for the user in the current month
-//     const results = await Customer.aggregate([
-//       {
-//         $match: {
-//           closingDate: { $gte: startMonth, $lte: endMonth },
-//           salesPerson: person1
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             closingCateg: '$closingCateg',
-//             salesPerson: '$salesPerson'
-//           },
-//           numberOfClosings: { $sum: 1 },
-//           totalClosingPrice: { $sum: '$closingPrice' }
-//         }
-//       }
-//     ]);
-
-//     // Calculate incentives for each category and sales person
-//     for (let result of results) {
-//       const { closingCateg, salesPerson } = result._id;
-//       const totalClosingPrice = result.totalClosingPrice;
-
-//       // Find the incentive information for this sales person and category
-//       const incentivess = await incentive.findOne({ employeeName: salesPerson, category: closingCateg });
-//       if (incentivess && incentivess.incentives) {
-//         let calculatedIncentive = 0;
-
-//         // Loop through incentives to find the appropriate incentive level
-//         for (let threshold of incentivess.incentives) {
-//           if (totalClosingPrice >= threshold.amount) {
-//             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
-//           }
-//         }
-//         result.calculatedIncentive = calculatedIncentive;
-//       } else {
-//         result.calculatedIncentive = 0;
-//       }
-//     }
-
-//     // Send response with calculated incentives
-//     if (results.length > 0) {
-//       console.log('Incentive Calculation Results:', results);
-//       res.json(results);
-//     } else {
-//       res.json({ message: 'No sales entries found for the current month' });
-//     }
-
-//   } catch (error) {
-//     console.error("Error retrieving incentives:", error.message);
-//     res.status(500).json({ status: "fail", error: error.message });
-//   }
-// });
-
-//=================================================================Correct Down==============================================================
-
-// router.get('/salesIncentive', checkAuth, async (req, res) => {
-//   const {year, month} = req.query;
-//   const password = req.query.pass;
-//   const person1 = req.userData.name;
-//   const startMonth = moment().year(year).month(month - 1).startOf('month').toDate();
-//   const endMonth = moment().year(year).month(month - 1).endOf('month').toDate();
-
-//   try {
-//     // Verify user's password
-//     const user = await User.findOne({ signupUsername: person1 });
-//     if (!user) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-//     if (user.incentivePassword !== password) {
-//       return res.status(401).json({ message: 'Password not matched' });
-//     }
-//     console.log("Password verified");
-
-//     // Aggregate sales data for the user in the current month where remainingAmount is 0
-//     const results = await Customer.aggregate([
-//       {
-//         $match: {
-//           closingDate: { $gte: startMonth, $lte: endMonth },
-//           salesPerson: person1,
-//           remainingAmount: 0
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             salesPerson: '$salesPerson'
-//           },
-//           numberOfClosings: { $sum: 1 },
-//           totalClosingPrice: { $sum: '$closingPrice' }
-//         }
-//       }
-//     ]);
-
-//     // Calculate incentives for each sales person
-//     for (let result of results) {
-//       const { salesPerson } = result._id;
-//       const totalClosingPrice = result.totalClosingPrice;
-
-//       // Find the incentive information for this sales person
-//       const incentivess = await incentive.findOne({ employeeName: salesPerson });
-//       if (incentivess && incentivess.incentives) {
-//         let calculatedIncentive = 0;
-
-//         // Loop through incentives to find the appropriate incentive level
-//         for (let threshold of incentivess.incentives) {
-//           if (totalClosingPrice >= threshold.amount) {
-//             calculatedIncentive = (totalClosingPrice - threshold.amount) * (threshold.increment / 100);
-//           }
-//         }
-//         result.calculatedIncentive = calculatedIncentive;
-//       } else {
-//         result.calculatedIncentive = 0;
-//       }
-//     }
-
-//     // Send response with calculated incentives
-//     if (results.length > 0) {
-//       console.log('Incentive Calculation Results:', results);
-//       res.json(results);
-//     } else {
-//       res.json({ message: 'No sales entries found for the current month' });
-//     }
-
-//   } catch (error) {
-//     console.error("Error retrieving incentives:", error.message);
-//     res.status(500).json({ status: "fail", error: error.message });
-//   }
-// });
 
 router.get('/salesIncentive', checkAuth, async (req, res) => {
   const { year, month } = req.query;
@@ -9072,4 +7733,6 @@ router.get('/sales-data', async (req, res) => {
   }
 });
 
-module.exports = router
+module.exports = router;
+module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
+module.exports.fetchAndSaveSecondFacebookLeads = fetchAndSaveSecondFacebookLeads;

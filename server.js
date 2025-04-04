@@ -3,6 +3,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const cors = require('cors');
+const cron = require('node-cron');
+// const fetchAndSaveFacebookLeads = require('./auth-route');
+
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
@@ -21,11 +24,27 @@ require('./config');
 const port = process.env.PORT || 3000;
 
 const authRoute = require('./auth-route');
+const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
+const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
 app.use('/auth',authRoute);
 
 app.get('/',(req,res)=>{
     res.send('Welcome Rathik')
-})
+});
+
+// Run the job every 1 minute
+
+cron.schedule('* * * * *', async () => {
+    console.log('⏳ Running Scheduled Task: Fetching Facebook Leads');
+    await fetchAndSaveFacebookLeads();
+});
+
+// ✅ Run second job every 1 minutes
+cron.schedule('* * * * *', async () => {
+    console.log('⏳ Running Scheduled Task: Fetching Second Facebook Leads');
+    await fetchAndSaveSecondFacebookLeads();
+});
+
 app.listen(port,()=>{
     console.log("Server Connected!!!!")
-})
+});
