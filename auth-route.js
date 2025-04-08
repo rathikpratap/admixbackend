@@ -32,6 +32,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const moment = require('moment');
 const momment = require('moment-timezone');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 
 const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
@@ -68,64 +70,169 @@ router.post('/register', async (req, res) => {
     });
 });
 
+// OTP sending
+
+const otpStore = {};
+
+// const transporter = nodemailer.createTransport({
+//   service: 'gmail',
+//   auth: {
+//     user: 'itwebdeveloper47@gmail.com',
+//     pass: 'sjlx jxmt cjbc gatr'
+//   }
+// });
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'admixmediaindia@gmail.com',
+    pass: 'ddvu kfjl anyo tcnr'
+  }
+});
+
+router.post('/send-otp', async (req, res) => {
+  const { username } = req.body;
+  const user = await User.findOne({ signupUsername: username });
+
+  if (!user) {
+    return res.json({ success: false, message: "User not found!" });
+  }
+
+  // Check role
+  const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
+
+  // Restrict time if not admin
+  if (!isAdmin) {
+    const now = momment().tz("Asia/Kolkata");
+    const hour = now.hour();
+    const minute = now.minute();
+
+    const startHour = 9, startMinute = 30;
+    const endHour = 19, endMinute = 30;
+
+    const beforeStart = hour < startHour || (hour === startHour && minute < startMinute);
+    const afterEnd = hour > endHour || (hour === endHour && minute > endMinute);
+
+    if (beforeStart || afterEnd) {
+      return res.json({
+        success: false,
+        message: "OTP requests allowed only between 9:30 AM and 7:30 PM IST"
+      });
+    }
+  }
+
+  const otp = crypto.randomInt(100000, 999999);
+  otpStore[username] = {
+    otp,
+    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+  };
+
+  // Send OTP
+  await transporter.sendMail({
+    from: 'admixmediaindia@gmail.com',
+    to: user.signupEmail,
+    subject: 'Your OTP for Login',
+    text: `Your OTP is ${otp}. It will expire in 5 minutes.`
+  });
+
+  res.json({ success: true, message: "OTP sent successfully!" });
+});
+
 // Login Bellow
 
-router.post('/login', (req, res) => {
-  User.findOne({ signupUsername: req.body.loginUsername }).exec()
-    .then(user => {
-      if (!user) {
-        return res.json({ success: false, message: "User not found!!" });
-      }
-      // Check password
-      if (req.body.loginPswd !== user.signupPassword) {
-        return res.json({ success: false, message: "Password not Matched" });
-      }
-      // Check if the user has "admin" role
-      const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
-      // If not an admin, enforce time-based login restrictions
-      if (!isAdmin) {
-        // Get current time in IST
-        const currentISTTime = momment().tz("Asia/Kolkata");
-        const currentHour = currentISTTime.hour();
-        const currentMinute = currentISTTime.minute();
-        // Define allowed login hours (9:30 AM to 6:30 PM IST)
-        const startHour = 8, startMinute = 30;
-        const endHour = 19, endMinute = 30;
-        // Check if login time is within the allowed range
-        if (
-          (currentHour < startHour || (currentHour === startHour && currentMinute < startMinute)) ||
-          (currentHour > endHour || (currentHour === endHour && currentMinute > endMinute))
-        ) {
-          return res.json({ success: false, message: "Login allowed only between 9:30 AM and 6:30 PM IST" });
-        }
-      }
-      // Proceed with authentication (generate token)
-      const payload = {
-        userId: user._id,
-        name: user.signupUsername,
-        Saleteam: user.salesTeam,
-        signupRole: user.signupRole
-      };
-      const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
+// router.post('/login', (req, res) => {
+//   User.findOne({ signupUsername: req.body.loginUsername }).exec()
+//     .then(user => {
+//       if (!user) {
+//         return res.json({ success: false, message: "User not found!!" });
+//       }
+//       // Check password
+//       if (req.body.loginPswd !== user.signupPassword) {
+//         return res.json({ success: false, message: "Password not Matched" });
+//       }
+//       // Check if the user has "admin" role
+//       const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
+//       // If not an admin, enforce time-based login restrictions
+//       if (!isAdmin) {
+//         // Get current time in IST
+//         const currentISTTime = momment().tz("Asia/Kolkata");
+//         const currentHour = currentISTTime.hour();
+//         const currentMinute = currentISTTime.minute();
+//         // Define allowed login hours (9:30 AM to 6:30 PM IST)
+//         const startHour = 8, startMinute = 30;
+//         const endHour = 19, endMinute = 30;
+//         // Check if login time is within the allowed range
+//         if (
+//           (currentHour < startHour || (currentHour === startHour && currentMinute < startMinute)) ||
+//           (currentHour > endHour || (currentHour === endHour && currentMinute > endMinute))
+//         ) {
+//           return res.json({ success: false, message: "Login allowed only between 9:30 AM and 6:30 PM IST" });
+//         }
+//       }
+//       // Proceed with authentication (generate token)
+//       const payload = {
+//         userId: user._id,
+//         name: user.signupUsername,
+//         Saleteam: user.salesTeam,
+//         signupRole: user.signupRole
+//       };
+//       const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
 
-      user.save()
-        .then(() => {
-          return res.json({
-            success: true,
-            token: token,
-            role: user.signupRole,
-            team: user.salesTeam,
-            message: "Login Successful"
-          });
-        })
-        .catch(err => {
-          console.error("Error saving login time: ", err);
-          return res.json({ success: false, message: "Failed to save login time." });
-        });
-    })
-    .catch(err => {
-      res.json({ success: false, message: "Authentication Failed" });
-    });
+//       user.save()
+//         .then(() => {
+//           return res.json({
+//             success: true,
+//             token: token,
+//             role: user.signupRole,
+//             team: user.salesTeam,
+//             message: "Login Successful"
+//           });
+//         })
+//         .catch(err => {
+//           console.error("Error saving login time: ", err);
+//           return res.json({ success: false, message: "Failed to save login time." });
+//         });
+//     })
+//     .catch(err => {
+//       res.json({ success: false, message: "Authentication Failed" });
+//     });
+// });
+
+router.post('/login', async (req, res) => {
+  const { username, otp } = req.body;
+
+  const user = await User.findOne({ signupUsername: username });
+  if (!user) return res.json({ success: false, message: "User not found!" });
+
+  const stored = otpStore[username];
+
+  if (!stored || stored.expiresAt < Date.now()) {
+    return res.json({ success: false, message: "OTP expired or invalid!" });
+  }
+
+  if (parseInt(otp) !== stored.otp) {
+    return res.json({ success: false, message: "Incorrect OTP!" });
+  }
+
+  delete otpStore[username]; // Clear used OTP
+
+  // Generate JWT
+  const payload = {
+    userId: user._id,
+    name: user.signupUsername,
+    Saleteam: user.salesTeam,
+    signupRole: user.signupRole
+  };
+
+  const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
+
+  res.json({
+    success: true,
+    token,
+    role: user.signupRole,
+    team: user.salesTeam,
+    message: "Login successful!"
+  });
 });
 
 // router.post('/login', (req, res) => {
@@ -2526,7 +2633,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04zkMq0Lu2rm1CgYIARAAGAQSNwF-L9Ir14b3OOxwf7TGMkCUmB6xhjwJbO2_8Is3rNEfGrPhnRz1csz8w-Wf-oWMyeubxmUK_qk';
+const REFERESH_TOKEN = '1//04hHCE15EUh3tCgYIARAAGAQSNwF-L9IrFr0oBEAxRuWYMwI2Svn5lZuYs5ON8QYePPSLHIjnzzjvPmLAGEZTb0hCNo5bz8kUgmw';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2735,7 +2842,7 @@ const fetchAndSaveFacebookLeads = async () => {
       }
     }
   } catch (error) {
-    console.error('❌ Error fetching and saving Facebook leads:', error.message);
+    console.error('❌ Error fetching and saving Facebook leads 1:', error.message);
   }
 };
 
@@ -2844,7 +2951,7 @@ const fetchAndSaveSecondFacebookLeads = async () => {
 
     console.log(`✅ Successfully processed ${allLeads.length} leads`);
   } catch (error) {
-    console.error('❌ Error fetching Facebook leads:', error.message);
+    console.error('❌ Error fetching Facebook leads 2:', error.message);
   }
 };
 
@@ -5437,6 +5544,12 @@ router.put('/save-Token/:token1', checkAuth, async (req, res) => {
     const userId = req.userData.userId;
     const token1 = req.params.token1;
     const updatedUser = await User.findByIdAndUpdate(userId);
+
+    if (updatedUser.accessToken) {
+      console.log("TOKEN ALREADY STORED");
+      return res.status(400).json({ success: false, message: "Token already exists for this user" });
+    }
+
     if (updatedUser) {
       updatedUser.accessToken = token1;
       await updatedUser.save();
