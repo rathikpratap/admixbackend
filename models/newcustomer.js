@@ -85,6 +85,7 @@ const customerSchema = new mongoose.Schema({
     bundleStatus: {type:String},
     bundlePassDate: {type:Date},
     Qr: {type:String},
+    customerType: {type: String},
     isHighlighted: { type: Boolean, default: false }
 });
 

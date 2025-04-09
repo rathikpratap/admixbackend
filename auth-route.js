@@ -944,7 +944,8 @@ router.put('/update/:id', checkAuth, async (req, res) => {
           numberOfVideos: req.body.numberOfVideos,
           companyName: req.body.companyName,
           scriptPassDate: req.body.scriptPassDate,
-          Qr: req.body.Qr
+          Qr: req.body.Qr,
+          customerType: req.body.customerType
         });
 
         await newCustomer.save();
@@ -1017,6 +1018,7 @@ const updateCustomerInGoogleSheet = async (customer) => {
       customer.remainingAmount || "",
       customer.restAmount || "",
       customer.restPaymentDate ? customer.restPaymentDate.toISOString() : "",
+      customer.customerType,
       customer.custCountry || "",
       customer.custState || "",
       customer.custCity || "",
@@ -1057,7 +1059,7 @@ const createNewSheetWithHeaders = async (sheetName) => {
     const headers = [[
       "Code", "Name", "Number 1", "Number 2", "Business", "Closing Date", "Closing Price",
       "Closing Category", "Bill Type", "Qr Code", "Advance Payment", "Remaining Amount",
-      "Rest Amount", "Rest Amount Date", "Country", "State", "City", "Project Status",
+      "Rest Amount", "Rest Amount Date","Customer Type", "Country", "State", "City", "Project Status",
       "Sales Person", "Remark"
     ]];
 
@@ -1090,6 +1092,7 @@ const appendToGoogleSheet2 = async (customer, sheetName) => {
       customer.remainingAmount || "",
       customer.restAmount || "",
       customer.restPaymentDate ? new Date(customer.restPaymentDate).toLocaleDateString('en-GB') : "",
+      customer.customerType,
       customer.custCountry || "",
       customer.custState || "",
       customer.custCity || "",
@@ -1253,7 +1256,7 @@ const sheet_id = "11fUcMQ4KyHkmnQ4XBG_tSWRyNRCZm6I2Mh3BAReMG0s";
 const HEADERS = [
   "Code", "Name", "Number 1", "Number 2", "Bussiness", "Closing Date",
   "Closing Price", "Closing Category", "Bill Type", "Qr code", "Advance Payment",
-  "Remaining Amount", "Rest Amount", "Rest Amount Date", "Country", "State",
+  "Remaining Amount", "Rest Amount", "Rest Amount Date","Customer Type", "Country", "State",
   "City", "Project Status", "Sales Person", "Remark"
 ];
 
@@ -1290,6 +1293,7 @@ const appendToGoogleSheet = async (customer) => {
         customer.restAmount,
         //customer.restPaymentDate,
         customer.restPaymentDate ? new Date(customer.restPaymentDate).toLocaleDateString('en-GB') : "",
+        customer.customerType,
         customer.custCountry,
         customer.custState,
         customer.custCity,
