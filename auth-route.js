@@ -98,7 +98,6 @@ router.post('/send-otp', async (req, res) => {
     return res.json({ success: false, message: "User not found!" });
   }
 
-  // Check role
   const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
 
   // Restrict time if not admin
@@ -107,11 +106,8 @@ router.post('/send-otp', async (req, res) => {
     const hour = now.hour();
     const minute = now.minute();
 
-    const startHour = 9, startMinute = 30;
-    const endHour = 19, endMinute = 30;
-
-    const beforeStart = hour < startHour || (hour === startHour && minute < startMinute);
-    const afterEnd = hour > endHour || (hour === endHour && minute > endMinute);
+    const beforeStart = hour < 9 || (hour === 9 && minute < 30);
+    const afterEnd = hour > 19 || (hour === 19 && minute > 30);
 
     if (beforeStart || afterEnd) {
       return res.json({
@@ -121,21 +117,26 @@ router.post('/send-otp', async (req, res) => {
     }
   }
 
-  const otp = crypto.randomInt(100000, 999999);
-  otpStore[username] = {
-    otp,
-    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
-  };
+  if (!isAdmin) {
+    const otp = crypto.randomInt(100000, 999999);
+    otpStore[username] = {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000
+    };
 
-  // Send OTP
-  await transporter.sendMail({
-    from: 'admixmediaindia@gmail.com',
-    to: user.signupEmail,
-    subject: 'Your OTP for Login',
-    text: `Your OTP is ${otp}. It will expire in 5 minutes.`
+    await transporter.sendMail({
+      from: 'admixmediaindia@gmail.com',
+      to: user.signupEmail,
+      subject: 'Your OTP for Login',
+      text: `Your OTP is ${otp}. It will expire in 5 minutes.`
+    });
+  }
+
+  return res.json({
+    success: true,
+    message: isAdmin ? "Admin login, OTP not required" : "OTP sent successfully!",
+    isAdmin
   });
-
-  res.json({ success: true, message: "OTP sent successfully!" });
 });
 
 // Login Bellow
@@ -204,19 +205,21 @@ router.post('/login', async (req, res) => {
   const user = await User.findOne({ signupUsername: username });
   if (!user) return res.json({ success: false, message: "User not found!" });
 
-  const stored = otpStore[username];
+  const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
 
-  if (!stored || stored.expiresAt < Date.now()) {
-    return res.json({ success: false, message: "OTP expired or invalid!" });
+  if (!isAdmin) {
+    const stored = otpStore[username];
+    if (!stored || stored.expiresAt < Date.now()) {
+      return res.json({ success: false, message: "OTP expired or invalid!" });
+    }
+
+    if (parseInt(otp) !== stored.otp) {
+      return res.json({ success: false, message: "Incorrect OTP!" });
+    }
+
+    delete otpStore[username];
   }
 
-  if (parseInt(otp) !== stored.otp) {
-    return res.json({ success: false, message: "Incorrect OTP!" });
-  }
-
-  delete otpStore[username]; // Clear used OTP
-
-  // Generate JWT
   const payload = {
     userId: user._id,
     name: user.signupUsername,
@@ -234,6 +237,7 @@ router.post('/login', async (req, res) => {
     message: "Login successful!"
   });
 });
+
 
 // router.post('/login', (req, res) => {
 //   User.findOne({ signupUsername: req.body.loginUsername }).exec()
