@@ -43,7 +43,9 @@ const registerSchema = new mongoose.Schema({
     default: {}
   },
   subsidiaryName: {type: String},
-  incentivePassword: {type: String}
+  incentivePassword: {type: String},
+  lastOTPLogin: {type: Date},
+  lastOTPSent: {type: Date}
 });
 
 module.exports = mongoose.model('User', registerSchema);

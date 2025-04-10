@@ -99,10 +99,11 @@ router.post('/send-otp', async (req, res) => {
   }
 
   const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
+  const now = momment().tz("Asia/Kolkata");
 
   // Restrict time if not admin
   if (!isAdmin) {
-    const now = momment().tz("Asia/Kolkata");
+    //const now = momment().tz("Asia/Kolkata");
     const hour = now.hour();
     const minute = now.minute();
 
@@ -114,6 +115,38 @@ router.post('/send-otp', async (req, res) => {
         success: false,
         message: "OTP requests allowed only between 9:30 AM and 7:30 PM IST"
       });
+    }
+
+    // Check if already logged in today
+    // if (user.lastOTPLogin && momment(user.lastOTPLogin).isSame(now, 'day')) {
+    //   return res.json({
+    //     success: false,
+    //     message: "OTP already used today. Login not required again."
+    //   });
+    // }
+
+    if (user.lastOTPLogin && moment(user.lastOTPLogin).isSame(now, 'day')) {
+      const payload = {
+        userId: user._id,
+        name: user.signupUsername,
+        Saleteam: user.salesTeam,
+        signupRole: user.signupRole
+      };
+    
+      const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
+    
+      return res.json({
+        success: true,
+        token,
+        role: user.signupRole,
+        team: user.salesTeam,
+        message: "Already logged in today. Redirecting...",
+        isAdmin: false  // treat like normal user
+      });
+    }
+
+    if (user.lastOTPSent && momment().diff(user.lastOTPSent, 'minutes') < 1) {
+      return res.json({ success: false, message: 'Please wait before requesting another OTP.' });
     }
   }
 
@@ -130,6 +163,9 @@ router.post('/send-otp', async (req, res) => {
       subject: 'Your OTP for Login',
       text: `Your OTP is ${otp}. It will expire in 5 minutes.`
     });
+
+    user.lastOTPSent = now.toDate();
+    await user.save();
   }
 
   return res.json({
@@ -140,64 +176,6 @@ router.post('/send-otp', async (req, res) => {
 });
 
 // Login Bellow
-
-// router.post('/login', (req, res) => {
-//   User.findOne({ signupUsername: req.body.loginUsername }).exec()
-//     .then(user => {
-//       if (!user) {
-//         return res.json({ success: false, message: "User not found!!" });
-//       }
-//       // Check password
-//       if (req.body.loginPswd !== user.signupPassword) {
-//         return res.json({ success: false, message: "Password not Matched" });
-//       }
-//       // Check if the user has "admin" role
-//       const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
-//       // If not an admin, enforce time-based login restrictions
-//       if (!isAdmin) {
-//         // Get current time in IST
-//         const currentISTTime = momment().tz("Asia/Kolkata");
-//         const currentHour = currentISTTime.hour();
-//         const currentMinute = currentISTTime.minute();
-//         // Define allowed login hours (9:30 AM to 6:30 PM IST)
-//         const startHour = 8, startMinute = 30;
-//         const endHour = 19, endMinute = 30;
-//         // Check if login time is within the allowed range
-//         if (
-//           (currentHour < startHour || (currentHour === startHour && currentMinute < startMinute)) ||
-//           (currentHour > endHour || (currentHour === endHour && currentMinute > endMinute))
-//         ) {
-//           return res.json({ success: false, message: "Login allowed only between 9:30 AM and 6:30 PM IST" });
-//         }
-//       }
-//       // Proceed with authentication (generate token)
-//       const payload = {
-//         userId: user._id,
-//         name: user.signupUsername,
-//         Saleteam: user.salesTeam,
-//         signupRole: user.signupRole
-//       };
-//       const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
-
-//       user.save()
-//         .then(() => {
-//           return res.json({
-//             success: true,
-//             token: token,
-//             role: user.signupRole,
-//             team: user.salesTeam,
-//             message: "Login Successful"
-//           });
-//         })
-//         .catch(err => {
-//           console.error("Error saving login time: ", err);
-//           return res.json({ success: false, message: "Failed to save login time." });
-//         });
-//     })
-//     .catch(err => {
-//       res.json({ success: false, message: "Authentication Failed" });
-//     });
-// });
 
 router.post('/login', async (req, res) => {
   const { username, otp } = req.body;
@@ -218,6 +196,10 @@ router.post('/login', async (req, res) => {
     }
 
     delete otpStore[username];
+
+    // ✅ Save login time
+    user.lastOTPLogin = new Date();
+    await user.save();
   }
 
   const payload = {
@@ -238,57 +220,6 @@ router.post('/login', async (req, res) => {
   });
 });
 
-
-// router.post('/login', (req, res) => {
-//   User.findOne({ signupUsername: req.body.loginUsername }).exec()
-//     .then(user => {
-//       if (!user) {
-//         return res.json({ success: false, message: "User not found!!" });
-//       }
-//       if (req.body.loginPswd === user.signupPassword) {
-//         const payload = {
-//           userId: user._id,
-//           name: user.signupUsername,
-//           Saleteam: user.salesTeam,
-//           //
-//           signupRole: user.signupRole
-//         };
-//         const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
-
-//         // Save the current login time
-//         //const currentTime = new Date();
-
-//         // Push the login time to the user's loginTimes array
-//         // user.loginTimes = user.loginTimes || []; // Initialize if not already an array
-//         // user.loginTimes.push(currentTime);
-//         //user.loginSessions.push({ loginTime: currentTime });
-
-//         user.save()
-//           .then(() => {
-//             return res.json({
-//               success: true,
-//               token: token,
-//               role: user.signupRole,
-//               team: user.salesTeam,
-//               message: "Login Successful"
-//             });
-//           })
-//           .catch(err => {
-//             console.error("Error saving login time: ", err);
-//             return res.json({ success: false, message: "Failed to save login time." });
-//           });
-
-//         //person = req.body.loginUsername;
-//         //return res.json({ success: true, token: token, role: user.signupRole, team: user.salesTeam, message: "Login Successful" });
-//       } else {
-//         return res.json({ success: false, message: "Password not Matched" });
-//       }
-//     })
-//     .catch(err => {
-//       res.json({ success: false, message: "Authentication Failed" });
-//     });
-// });
-
 router.post('/logout', (req, res) => {
   const token = req.headers.authorization.split(' ')[1]; // Assumes token is in the format "Bearer <token>"
 
@@ -305,13 +236,6 @@ router.post('/logout', (req, res) => {
         if (!user) {
           return res.json({ success: false, message: "User not found!" });
         }
-
-        // Save the current logout time
-        // const currentTime = new Date();
-
-        // // Push the logout time to the user's logoutTimes array
-        // user.logoutTimes = user.logoutTimes || []; // Initialize if not already an array
-        // user.logoutTimes.push(currentTime);
 
         const lastSession = user.loginSessions.find(session => !session.logoutTime);
         if (lastSession) {
@@ -3407,7 +3331,7 @@ router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => 
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       campaign_Name: categ,
       closingDate: {
         $gte: startDate, $lte: endDate
@@ -3427,7 +3351,7 @@ router.get('/salesleadsByRange/:startDate/:endDate', async (req, res) => {
   endDate.setDate(endDate.getDate() + 1);
   try {
     let query = {
-      salesTeam: personTeam,
+      //salesTeam: personTeam,
       closingDate: {
         $gte: startDate, $lte: endDate
       }
