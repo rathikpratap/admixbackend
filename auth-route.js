@@ -220,6 +220,40 @@ router.post('/login', async (req, res) => {
   });
 });
 
+//impersonate User
+
+router.post('/impersonate', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Find the user to impersonate by their ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Generate a new token for impersonation
+    const token = jwt.sign(
+      { userId: user._id, name: user.signupUsername, signupRole: user.signupRole, saleTeam: user.salesTeam },
+      "webBatch", // Use a strong secret key
+      { expiresIn: '8h' }
+    );
+
+    // Send the token and roles back to the frontend
+    res.json({
+      success: true,
+      token,
+      role: user.signupRole,
+      team: user.salesTeam // Assuming you have a team field
+    });
+  } catch (error) {
+    console.error('Error impersonating user:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+//Logout
+
 router.post('/logout', (req, res) => {
   const token = req.headers.authorization.split(' ')[1]; // Assumes token is in the format "Bearer <token>"
 
@@ -2565,7 +2599,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04hHCE15EUh3tCgYIARAAGAQSNwF-L9IrFr0oBEAxRuWYMwI2Svn5lZuYs5ON8QYePPSLHIjnzzjvPmLAGEZTb0hCNo5bz8kUgmw';
+const REFERESH_TOKEN = '1//04XMB1lgyljvLCgYIARAAGAQSNwF-L9Ir5F-0dUMtBN2PYiw7HZFj4kvQJPBvRhwAD93tdkW_SQTv9XByUNz8LXJVLN9jJyjcSsA';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
