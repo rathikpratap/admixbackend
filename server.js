@@ -26,6 +26,7 @@ const port = process.env.PORT || 3000;
 const authRoute = require('./auth-route');
 const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
 const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
+const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
 app.use('/auth',authRoute);
 
 app.get('/',(req,res)=>{
@@ -43,6 +44,11 @@ cron.schedule('* * * * *', async () => {
 cron.schedule('* * * * *', async () => {
     console.log('⏳ Running Scheduled Task: Fetching Second Facebook Leads');
     await fetchAndSaveSecondFacebookLeads();
+});
+
+cron.schedule('* * * * *', async() => {
+    console.log('⏳ Running Scheduled Task: Fetching Third Facebook Leads');
+    await fetchAndSaveThirdFacebookLeads();
 });
 
 app.listen(port,()=>{

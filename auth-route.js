@@ -2599,7 +2599,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04XMB1lgyljvLCgYIARAAGAQSNwF-L9Ir5F-0dUMtBN2PYiw7HZFj4kvQJPBvRhwAD93tdkW_SQTv9XByUNz8LXJVLN9jJyjcSsA';
+const REFERESH_TOKEN = '1//04d33WW4YbI9mCgYIARAAGAQSNwF-L9Ir8wtPj6gA1YovNj9xCP80M-KUkozc3E0EGHWfPBYiHS1Ma4J4syzUsspNtq_WoG8X3o4';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2918,6 +2918,112 @@ const fetchAndSaveSecondFacebookLeads = async () => {
     console.log(`✅ Successfully processed ${allLeads.length} leads`);
   } catch (error) {
     console.error('❌ Error fetching Facebook leads 2:', error.message);
+  }
+};
+
+
+// 🔹 Function to Fetch Facebook Leads for the Second Automation
+const fetchAndSaveThirdFacebookLeads = async () => {
+  try {
+    const accessTokenRecord = await FbAccessToken.findOne();
+    if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
+      console.error('❌ Access token is missing or invalid');
+      return;
+    }
+
+    // ✅ Hardcoded second access token
+    const accessToken3 = 'EAANAfeT7U5gBO6L8IJFEzDnR9ZC1bHr2Tqpf0xk0yZA69kFxgzpVJtowyTskxxC8qyZCiWR7OaQHsFZCiECGZB3LZBYVEUuP1BLWglGguZBZBDGFMQZAEnuxYXI4iKGCutpPpIRvfMXWWXdXEMSvP9LF5SrZBj8Ohy6ZAARuqM94GSpkbRyUqbmK9mPdKgSlpsd0zIQ2pz30SfW';
+    //console.log('Using Access Token:', accessToken2);
+
+    const response = await axios.get(`https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads}}}&access_token=${accessToken3}`);
+    const leadsData = response.data.adaccounts?.data || [];
+
+    let allLeads = [];
+
+    for (const leadData of leadsData) {
+      if (!leadData.campaigns || !leadData.campaigns.data) continue;
+
+      for (const campaign of leadData.campaigns.data) {
+        if (!campaign.ads || !campaign.ads.data) continue;
+
+        for (const ad of campaign.ads.data) {
+          if (!ad.leads || !ad.leads.data) continue;
+
+          for (const lead of ad.leads.data) {
+            const { created_time: createdTime, field_data } = lead;
+            const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
+
+            let leadObj = {
+              custName: '',
+              custEmail: '',
+              custBussiness: '',
+              custNumb: '',
+              state: '',
+              additionalFields: {}
+            };
+
+            for (const field of field_data) {
+              const fieldName = field.name.toLowerCase().replace('_', ' ');
+              const value = field.values[0] || '';
+
+              if (fieldName === 'full name') leadObj.custName = value;
+              else if (fieldName === 'email') leadObj.custEmail = value;
+              else if (fieldName === 'company name') leadObj.custBussiness = value;
+              else if (fieldName === 'phone number') leadObj.custNumb = value;
+              else if (fieldName === 'state') leadObj.state = value;
+              else leadObj.additionalFields[fieldName] = value;
+            }
+
+            let existingLead = await salesLead.findOne({ leadsCreatedDate: createdTime });
+
+            if (!existingLead) {
+              const newLead = new salesLead({
+                id: leadData.id,
+                closingDate: createdTime,
+                campaign_Name: campaign.name,
+                ad_Name: ad.name,
+                custName: leadObj.custName,
+                custEmail: leadObj.custEmail,
+                custBussiness: leadObj.custBussiness,
+                custNumb: leadObj.custNumb,
+                state: leadObj.state,
+                salesTeam: 'Sales Team 1',
+                leadsCreatedDate: new Date(createdTime),
+                additionalFields: leadObj.additionalFields
+              });
+
+              await newLead.save();
+              console.log(`✅ New lead saved Third: ${leadObj.custName}`);
+
+              const notifTitle = "🎉 New Lead Alert!";
+              const notifBody = `New lead from ${campaign.name} (${leadObj.custName});`;
+
+              await sendCampaignNotif(campaign.name, notifTitle, notifBody);
+              console.log(`✅ Notification sent for: ${leadObj.custName}`);
+
+              // ✅ Save to Google Contacts with formatted name
+              await people.people.createContact({
+                requestBody: {
+                  names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
+                  emailAddresses: [{ value: leadObj.custEmail }],
+                  phoneNumbers: [{ value: leadObj.custNumb }],
+                  organizations: [{ name: leadObj.custBussiness }],
+                  addresses: [{ region: leadObj.state }]
+                }
+              });
+
+              console.log(`✅ Lead saved to Google Contacts Third: ${formattedDate} ${leadObj.custName}`);
+            }
+
+            allLeads.push(leadObj);
+          }
+        }
+      }
+    }
+
+    console.log(`✅ Successfully processed ${allLeads.length} leads`);
+  } catch (error) {
+    console.error('❌ Error fetching Facebook leads 3:', error.message);
   }
 };
 
@@ -7815,3 +7921,4 @@ router.get('/sales-data', async (req, res) => {
 module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
 module.exports.fetchAndSaveSecondFacebookLeads = fetchAndSaveSecondFacebookLeads;
+module.exports.fetchAndSaveThirdFacebookLeads = fetchAndSaveThirdFacebookLeads;
