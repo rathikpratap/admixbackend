@@ -2858,7 +2858,7 @@ const fetchAndSaveSecondFacebookLeads = async () => {
 
             for (const field of field_data) {
               const fieldName = field.name.toLowerCase().replace('_', ' ');
-              const value = field.values[0] || '';
+              const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : '';
 
               if (fieldName === 'full name') leadObj.custName = value;
               else if (fieldName === 'email') leadObj.custEmail = value;
@@ -2964,7 +2964,7 @@ const fetchAndSaveThirdFacebookLeads = async () => {
 
             for (const field of field_data) {
               const fieldName = field.name.toLowerCase().replace('_', ' ');
-              const value = field.values[0] || '';
+              const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : '';
 
               if (fieldName === 'full name') leadObj.custName = value;
               else if (fieldName === 'email') leadObj.custEmail = value;
