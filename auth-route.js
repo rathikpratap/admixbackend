@@ -26,7 +26,7 @@ const checkAuth = require('./middleware/chech-auth');
 const axios = require('axios');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const {sendNotif, sendCampaignNotif} = require('./middleware/sendNotif');
+const { sendNotif, sendCampaignNotif } = require('./middleware/sendNotif');
 // const sendCampaignNotif = require('./middleware/sendNotif');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -132,9 +132,9 @@ router.post('/send-otp', async (req, res) => {
         Saleteam: user.salesTeam,
         signupRole: user.signupRole
       };
-    
+
       const token = jwt.sign(payload, "webBatch", { expiresIn: '8h' });
-    
+
       return res.json({
         success: true,
         token,
@@ -570,7 +570,7 @@ router.get('/allOngoingProjectsExcludingLogo', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      closingCateg: { $nin: ['Logo Design', 'Logo Animation']},
+      closingCateg: { $nin: ['Logo Design', 'Logo Animation'] },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -593,7 +593,7 @@ router.get('/allOngoingProjectsIncludingLogo', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      closingCateg: { $in: ['Logo Design', 'Logo Animation']},
+      closingCateg: { $in: ['Logo Design', 'Logo Animation'] },
       projectStatus: { $ne: 'Completed' }
     }).sort({ closingDate: -1 });
 
@@ -1017,7 +1017,7 @@ const createNewSheetWithHeaders = async (sheetName) => {
     const headers = [[
       "Code", "Name", "Number 1", "Number 2", "Business", "Closing Date", "Closing Price",
       "Closing Category", "Bill Type", "Qr Code", "Advance Payment", "Remaining Amount",
-      "Rest Amount", "Rest Amount Date","Customer Type", "Country", "State", "City", "Project Status",
+      "Rest Amount", "Rest Amount Date", "Customer Type", "Country", "State", "City", "Project Status",
       "Sales Person", "Remark"
     ]];
 
@@ -1214,7 +1214,7 @@ const sheet_id = "11fUcMQ4KyHkmnQ4XBG_tSWRyNRCZm6I2Mh3BAReMG0s";
 const HEADERS = [
   "Code", "Name", "Number 1", "Number 2", "Bussiness", "Closing Date",
   "Closing Price", "Closing Category", "Bill Type", "Qr code", "Advance Payment",
-  "Remaining Amount", "Rest Amount", "Rest Amount Date","Customer Type", "Country", "State",
+  "Remaining Amount", "Rest Amount", "Rest Amount Date", "Customer Type", "Country", "State",
   "City", "Project Status", "Sales Person", "Remark"
 ];
 
@@ -2593,13 +2593,13 @@ router.get('/facebook-leads', async (req, res) => {
 // const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
 // const CLIENT_SECRET = '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';
 // const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04J-54Tc_hFJjCgYIARAAGAQSNwF-L9IrwFsX-TSceUYTJHQB3VyzUBEJ-c9ykK04N98Zz6i4fP8GCDKe8kyNng75C7H338T5t_M';
+// const REFERESH_TOKEN = '1//04SBK6MQijeCRCgYIARAAGAQSNwF-L9IrABSabeovlomKAcbDlyLAbEBHVGVUGIJ6dS6fT9y2rJIbvOxJ8nM7QJeAYaOPG7K8ros';
 
 // AdmixmediaIndia
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04d33WW4YbI9mCgYIARAAGAQSNwF-L9Ir8wtPj6gA1YovNj9xCP80M-KUkozc3E0EGHWfPBYiHS1Ma4J4syzUsspNtq_WoG8X3o4';
+const REFERESH_TOKEN = '1//04r5s8q1gVPVKCgYIARAAGAQSNwF-L9IrlDh3jyIFf67ZEfY5UoNvpRCRhnoGPyIGXeROmJOyKa7w12zaqMTut3ySOvHnjURFUdo';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2608,10 +2608,6 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 oauth2Client.setCredentials({ refresh_token: REFERESH_TOKEN })
-// const drive = google.drive({
-//   version: 'v3',
-//   auth: oauth2Client
-// });
 const people = google.people({
   version: 'v1',
   auth: oauth2Client
@@ -2733,6 +2729,7 @@ const fetchAndSaveFacebookLeads = async () => {
 
     for (const lead of leads) {
       const { created_time: createdTime, field_data, campaign_Name, ad_Name } = lead;
+      const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
 
       let leadObj = {
         custName: '',
@@ -2794,7 +2791,8 @@ const fetchAndSaveFacebookLeads = async () => {
 
         await people.people.createContact({
           requestBody: {
-            names: [{ givenName: leadObj.custName }],
+            names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
+            //names: [{ givenName: leadObj.custName }],
             emailAddresses: [{ value: leadObj.custEmail }],
             phoneNumbers: [{ value: leadObj.custNumb }],
             organizations: [{ name: leadObj.custBussiness }],
@@ -6912,7 +6910,10 @@ router.get('/getCampaignNames', async (req, res) => {
     const oneMonthAgo = moment().subtract(30, 'days').toDate();
 
     // Fetch leads from the last 7 days based on leadsCreatedDate
-    const recentLeads = await salesLead.find({ leadsCreatedDate: { $gte: oneMonthAgo } });
+    const recentLeads = await salesLead.find({
+      leadsCreatedDate: { $gte: oneMonthAgo },
+      campaignType: { $ne: "WhatsApp API"}
+     });
 
     // Extract unique campaign names
     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
@@ -6922,6 +6923,26 @@ router.get('/getCampaignNames', async (req, res) => {
   } catch (error) {
     console.error('Error Fetching Recent Campaign Leads:', error);
     res.status(500).json({ error: 'Failed to fetch recent campaign leads' });
+  }
+});
+
+// whatsApp API Campaigns
+
+router.get('/getWhatsAppCampaignNames', async(req,res)=>{
+  try{
+    const oneMonthAgo = moment().subtract(30, 'days').toDate();
+
+    const recentLeads = await salesLead.find({
+      leadsCreatedDate: {$gte: oneMonthAgo},
+      campaignType: { $eq: "WhatsApp API"}
+    });
+    const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
+
+    console.log("CAMPAIGN NAMES===========>>", campaignNames);
+    return res.json(campaignNames);
+  }catch(error){
+    console.error('Error Fetching Recent Campaign Leads', error);
+    res.status(500).json({ error: 'Failed to fetch campaign leads'});
   }
 });
 
@@ -7918,7 +7939,250 @@ router.get('/sales-data', async (req, res) => {
   }
 });
 
+// const SPREADSHEETS = [
+//   {
+//     id: "1X-YDMDCMnoq1fWGUYAlmURgwsrdKoXEyK5HyR5UQCF0", // Your first Spreadsheet
+//     sheets: ["Sheet1"], // List of sheet names
+//   },
+//   {
+//     id: "1coxRmiwvaihrlRT2m_75aCFL6Mnr1AvNLBxCzvPuiKw", // Your second Spreadsheet
+//     sheets: ["Sheet1"], // You can list multiple sheets here
+//   },
+// ];
+
+// const fetchAndSyncGoogleSheet = async () => {
+//   try {
+//     const authClient = await auth.getClient();
+
+//     for (let spreadsheet of SPREADSHEETS) {
+//       const { id: spreadsheetId, sheets: sheetNames } = spreadsheet;
+
+//       // 👉 Fetch Spreadsheet metadata to get its title
+//       const metadata = await sheets.spreadsheets.get({
+//         auth: authClient,
+//         spreadsheetId,
+//       });
+//       const spreadsheetTitle = metadata.data.properties.title;
+//       console.log(`📄 Processing Spreadsheet: ${spreadsheetTitle}`);
+
+//       for (let sheetName of sheetNames) {
+//         const response = await sheets.spreadsheets.values.get({
+//           auth: authClient,
+//           spreadsheetId,
+//           range: `${sheetName}!A2:T`,
+//         });
+
+//         const rows = response.data.values;
+//         if (!rows || rows.length === 0) {
+//           console.log(`No data found in spreadsheet: ${spreadsheetId}, sheet: ${sheetName}`);
+//           continue;
+//         }
+
+//         const updates = []; // ➡️ Collect updates for batch write
+//         const notifPromises = []; // ➡️ Collect notification promises
+//         const contactPromises = []; // ➡️ Collect Google Contacts promises
+
+//         for (let i = 0; i < rows.length; i++) {
+//           const row = rows[i];
+//           const custName = row[0];
+//           const custNumb = row[1];
+//           const existingClosingDate = row[4];
+//           const campaign_Name = spreadsheetTitle;
+
+//           if (existingClosingDate) {
+//             console.log(`⏭️ Skipping existing record: ${custName} (${spreadsheetId} - ${sheetName})`);
+//             continue;
+//           }
+
+//           const closingDate = new Date();
+
+//           const existing = await salesLead.findOne({
+//             custNumb,
+//             closingDate: closingDate,
+//           });
+
+//           if (existing) continue;
+
+//           const newCustomer = new salesLead({
+//             closingDate,
+//             custName,
+//             custNumb,
+//             campaign_Name,
+//             salesTeam: "Sales Team 1",
+//             leadsCreatedDate: closingDate,
+//             campaignType: "WhatsApp API",
+//           });
+
+//           await newCustomer.save();
+//           console.log(`✅ Inserted new customer: ${custName} (${spreadsheetId} - ${sheetName})`);
+
+//           // Prepare notification
+//           const notifTitle = "🎉 New WhatsApp Lead Alert!";
+//           const notifBody = `New WhatsApp lead from ${campaign_Name} ${custName};`;
+
+//           notifPromises.push(sendCampaignNotif(campaign_Name, notifTitle, notifBody));
+//           console.log(`📩 Notification triggered for: ${custName}`);
+
+//           // Prepare Google Contact
+//           const formattedDate = closingDate.toISOString().slice(0, 10).split('-').reverse().join('');
+
+//           contactPromises.push(
+//             people.people.createContact({
+//               requestBody: {
+//                 names: [{ givenName: `${formattedDate} ${custName}` }],
+//                 phoneNumbers: [{ value: `${custNumb}` }]
+//               }
+//             })
+//           );
+//           console.log(`📇 Contact creation triggered for: ${custName}`);
+
+//           // Prepare closingDate update in Sheet
+//           updates.push({
+//             range: `${sheetName}!E${i + 2}`,
+//             values: [[closingDate.toISOString()]],
+//           });
+//         }
+
+//         // ✨ Wait for all notifications and contacts to finish
+//         if (notifPromises.length > 0) {
+//           await Promise.allSettled(notifPromises);
+//           console.log(`✅ All notifications sent!`);
+//         }
+
+//         if (contactPromises.length > 0) {
+//           await Promise.allSettled(contactPromises);
+//           console.log(`✅ All contacts saved to Google Contacts!`);
+//         }
+
+//         // ✨ Batch update closing dates back to the sheet
+//         if (updates.length > 0) {
+//           await sheets.spreadsheets.values.batchUpdate({
+//             auth: authClient,
+//             spreadsheetId,
+//             requestBody: {
+//               valueInputOption: 'USER_ENTERED',
+//               data: updates,
+//             },
+//           });
+//           console.log(`📝 Batch updated ${updates.length} rows in spreadsheet: ${spreadsheetTitle} - ${sheetName}`);
+//         }
+//       }
+//     }
+//   } catch (error) {
+//     console.error('❌ Error syncing Google Sheets:', error.message);
+//   }
+// };
+
+// OLD FUNCTION
+
+// const fetchAndSyncGoogleSheet = async () => {
+//   try {
+//     const authClient = await auth.getClient();
+
+//     for (let spreadsheet of SPREADSHEETS) {
+//       const { id: spreadsheetId, sheets: sheetNames } = spreadsheet;
+
+//       // 👉 Fetch Spreadsheet metadata to get its title
+//       const metadata = await sheets.spreadsheets.get({
+//         auth: authClient,
+//         spreadsheetId,
+//       });
+//       const spreadsheetTitle = metadata.data.properties.title;
+//       console.log(`📄 Processing Spreadsheet: ${spreadsheetTitle}`);
+
+//       for (let sheetName of sheetNames) {
+//         const response = await sheets.spreadsheets.values.get({
+//           auth: authClient,
+//           spreadsheetId,
+//           range: `${sheetName}!A2:T`,
+//         });
+
+//         const rows = response.data.values;
+//         if (!rows || rows.length === 0) {
+//           console.log(`No data found in spreadsheet: ${spreadsheetId}, sheet: ${sheetName}`);
+//           continue;
+//         }
+
+//         const updates = []; // ➡️ Collect updates for batch write
+
+//         for (let i = 0; i < rows.length; i++) {
+//           const row = rows[i];
+//           const custName = row[0];
+//           const custNumb = row[1];
+//           const existingClosingDate = row[4];
+//           const campaign_Name = spreadsheetTitle;
+
+//           if (existingClosingDate) {
+//             console.log(`⏭️ Skipping existing record: ${custName} (${spreadsheetId} - ${sheetName})`);
+//             continue;
+//           }
+
+//           const closingDate = new Date();
+
+//           const existing = await salesLead.findOne({
+//             custNumb,
+//             closingDate: closingDate,
+//           });
+
+//           if (existing) continue;
+
+//           const newCustomer = new salesLead({
+//             closingDate,
+//             custName,
+//             custNumb,
+//             campaign_Name,
+//             salesTeam: "Sales Team 1",
+//             leadsCreatedDate: closingDate,
+//             campaignType: "WhatsApp API",
+//           });
+
+//           await newCustomer.save();
+//           console.log(`✅ Inserted new customer: ${custName} (${spreadsheetId} - ${sheetName})`);
+
+//           const notifTitle = "🎉 New WhatsApp Lead Alert!";
+//           const notifBody = `New WhatsApp lead from ${campaign_Name} ${custName};`;
+
+//           await sendCampaignNotif(campaign_Name, notifTitle, notifBody);
+//           console.log(`✅ Notification sent for: ${custName}`);
+
+//           const formattedDate = new Date(closingDate).toISOString().slice(0, 10).split('-').reverse().join('');
+
+//           await people.people.createContact({
+//             requestBody: {
+//               //names: [{ givenName: leadObj.custName }],
+//               names: [{ givenName: `${formattedDate} ${custName}` }],
+//               phoneNumbers: [{ value: `${custNumb}` }]
+//             }
+//           });
+
+//           console.log(`✅ Lead saved to Google Contacts: ${custName}`);
+
+//           updates.push({
+//             range: `${sheetName}!E${i + 2}`,
+//             values: [[closingDate.toISOString()]],
+//           });
+//         }
+
+//         if (updates.length > 0) {
+//           await sheets.spreadsheets.values.batchUpdate({
+//             auth: authClient,
+//             spreadsheetId,
+//             requestBody: {
+//               valueInputOption: 'USER_ENTERED',
+//               data: updates,
+//             },
+//           });
+//           console.log(`📝 Batch updated ${updates.length} rows in spreadsheet: ${spreadsheetId}, sheet: ${spreadsheetTitle}`);
+//         }
+//       }
+//     }
+//   } catch (error) {
+//     console.error('❌ Error syncing Google Sheets:', error.message);
+//   }
+// };
+
 module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
 module.exports.fetchAndSaveSecondFacebookLeads = fetchAndSaveSecondFacebookLeads;
 module.exports.fetchAndSaveThirdFacebookLeads = fetchAndSaveThirdFacebookLeads;
+module.exports.fetchAndSyncGoogleSheet = fetchAndSyncGoogleSheet;

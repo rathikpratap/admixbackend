@@ -27,6 +27,8 @@ const authRoute = require('./auth-route');
 const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
 const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
 const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
+
+const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
 app.use('/auth',authRoute);
 
 app.get('/',(req,res)=>{
@@ -49,6 +51,12 @@ cron.schedule('* * * * *', async () => {
 cron.schedule('* * * * *', async() => {
     console.log('⏳ Running Scheduled Task: Fetching Third Facebook Leads');
     await fetchAndSaveThirdFacebookLeads();
+});
+
+//Sync Google Sheet
+cron.schedule('* * * * *', async() => {
+    console.log("Running Google Sheet Sync...");
+    fetchAndSyncGoogleSheet();
 });
 
 app.listen(port,()=>{

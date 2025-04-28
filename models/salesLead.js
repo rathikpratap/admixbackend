@@ -19,7 +19,8 @@ const salesLeadSchema = new mongoose.Schema({
     subsidiaryName: String,
     transferBy: String,
     newSalesTeam: String,
-    additionalFields: Object
+    additionalFields: Object,
+    campaignType: String
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);
