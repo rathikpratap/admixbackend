@@ -54,10 +54,10 @@ cron.schedule('* * * * *', async() => {
 });
 
 //Sync Google Sheet
-cron.schedule('* * * * *', async() => {
-    console.log("Running Google Sheet Sync...");
-    fetchAndSyncGoogleSheet();
-});
+// cron.schedule('* * * * *', async() => {
+//     console.log("Running Google Sheet Sync...");
+//     fetchAndSyncGoogleSheet();
+// });
 
 app.listen(port,()=>{
     console.log("Server Connected!!!!")
