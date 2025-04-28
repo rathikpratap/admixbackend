@@ -28,7 +28,7 @@ const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLe
 const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
 const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
 
-const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
+//const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
 app.use('/auth',authRoute);
 
 app.get('/',(req,res)=>{

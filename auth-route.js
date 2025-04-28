@@ -8185,4 +8185,4 @@ module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
 module.exports.fetchAndSaveSecondFacebookLeads = fetchAndSaveSecondFacebookLeads;
 module.exports.fetchAndSaveThirdFacebookLeads = fetchAndSaveThirdFacebookLeads;
-module.exports.fetchAndSyncGoogleSheet = fetchAndSyncGoogleSheet;
+//module.exports.fetchAndSyncGoogleSheet = fetchAndSyncGoogleSheet;
