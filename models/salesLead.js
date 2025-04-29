@@ -20,7 +20,11 @@ const salesLeadSchema = new mongoose.Schema({
     transferBy: String,
     newSalesTeam: String,
     additionalFields: Object,
-    campaignType: String
+    campaignType: String,
+    followup1: String,
+    followup2: String,
+    followup3: String,
+    followup4: String
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);

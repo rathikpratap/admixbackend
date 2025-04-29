@@ -6,7 +6,7 @@ const cors = require('cors');
 const cron = require('node-cron');
 // const fetchAndSaveFacebookLeads = require('./auth-route');
 
-app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors({
@@ -28,7 +28,7 @@ const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLe
 const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
 const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
 
-//const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
+const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
 app.use('/auth',authRoute);
 
 app.get('/',(req,res)=>{
@@ -54,10 +54,10 @@ cron.schedule('* * * * *', async() => {
 });
 
 //Sync Google Sheet
-// cron.schedule('* * * * *', async() => {
-//     console.log("Running Google Sheet Sync...");
-//     fetchAndSyncGoogleSheet();
-// });
+cron.schedule('* * * * *', async() => {
+    console.log("Running Google Sheet Sync...");
+    fetchAndSyncGoogleSheet();
+});
 
 app.listen(port,()=>{
     console.log("Server Connected!!!!")

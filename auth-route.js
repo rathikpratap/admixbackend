@@ -4172,6 +4172,11 @@ router.post('/update-projectStatus', async (req, res) => {
       if (existingItem) {
         existingItem.projectStatus = item.projectStatus;
         existingItem.remark = item.remark;
+        existingItem.custBussiness = item.custBussiness;
+        existingItem.followup1 = item.followup1;
+        existingItem.followup2 = item.followup2;
+        existingItem.followup3 = item.followup3;
+        existingItem.followup4 = item.followup4;
         await existingItem.save();
       }
     }
@@ -4548,7 +4553,7 @@ router.post('/customLead', async (req, res) => {
       custBussiness: req.body.custBussiness,
       custNumb: req.body.custNumb,
       state: req.body.state,
-      salesTeam: req.body.salesTeam,
+      salesTeam: 'Sales Team 1',
       salesPerson: req.body.salesPerson,
       leadsCreatedDate: req.body.leadsCreatedDate,
       companyName: req.body.companyName,
@@ -7939,250 +7944,158 @@ router.get('/sales-data', async (req, res) => {
   }
 });
 
-// const SPREADSHEETS = [
-//   {
-//     id: "1X-YDMDCMnoq1fWGUYAlmURgwsrdKoXEyK5HyR5UQCF0", // Your first Spreadsheet
-//     sheets: ["Sheet1"], // List of sheet names
-//   },
-//   {
-//     id: "1coxRmiwvaihrlRT2m_75aCFL6Mnr1AvNLBxCzvPuiKw", // Your second Spreadsheet
-//     sheets: ["Sheet1"], // You can list multiple sheets here
-//   },
-// ];
+const SPREADSHEETS = [
+  {
+    id: "1ZAQ2f-hZDPrxN55gFk8-BbSXniL4qMENQ6vOgLaEY8c", // Your Chirag Spreadsheet
+    sheets: ["Sheet1"], // List of sheet names
+  },
+  {
+    id: "1q9biTOLqq3EEBxIoCjLhP4qKJfMK6UPnz3VB9co1jtE", // Your Sanjana Multiple Leads Spreadsheet
+    sheets: ["Sheet1"], // You can list multiple sheets here
+  },
+  {
+    id: "1lrcxKuraGj-eFmp0-98Pow2vP6xtBLWIoIerzYNXkRY", // Your Parul Logo Animation Spreadsheet
+    sheets: ["Sheet1"], // You can list multiple sheets here
+  },
+  {
+    id: "1VmPRop99pC7EOzDMpId2WckKy9dhfz2UaiyKhNofYUc", // Your Sanjana Ayurveda Spreadsheet
+    sheets: ["Sheet1"], // You can list multiple sheets here
+  },
+  {
+    id: "1s3bwJ9urWqHrPd98ITHWcxql9Zjd2CLLadaq8TT-Eyo", // Your Lovely Multiple Leads Spreadsheet
+    sheets: ["Sheet1"], // You can list multiple sheets here
+  },
+  {
+    id: "1DVtyNL4csnW9y_IblMkrXthvWNoqLdremPmzH76XzvQ", // Your Yamini Ai Spreadsheet
+    sheets: ["Sheet1"], // You can list multiple sheets here
+  },
+];
 
-// const fetchAndSyncGoogleSheet = async () => {
-//   try {
-//     const authClient = await auth.getClient();
+const fetchAndSyncGoogleSheet = async () => {
+  try {
+    const authClient = await auth.getClient();
 
-//     for (let spreadsheet of SPREADSHEETS) {
-//       const { id: spreadsheetId, sheets: sheetNames } = spreadsheet;
+    for (let spreadsheet of SPREADSHEETS) {
+      const { id: spreadsheetId, sheets: sheetNames } = spreadsheet;
 
-//       // 👉 Fetch Spreadsheet metadata to get its title
-//       const metadata = await sheets.spreadsheets.get({
-//         auth: authClient,
-//         spreadsheetId,
-//       });
-//       const spreadsheetTitle = metadata.data.properties.title;
-//       console.log(`📄 Processing Spreadsheet: ${spreadsheetTitle}`);
+      // 👉 Fetch Spreadsheet metadata to get its title
+      const metadata = await sheets.spreadsheets.get({
+        auth: authClient,
+        spreadsheetId,
+      });
+      const spreadsheetTitle = metadata.data.properties.title;
+      console.log(`📄 Processing Spreadsheet: ${spreadsheetTitle}`);
 
-//       for (let sheetName of sheetNames) {
-//         const response = await sheets.spreadsheets.values.get({
-//           auth: authClient,
-//           spreadsheetId,
-//           range: `${sheetName}!A2:T`,
-//         });
+      for (let sheetName of sheetNames) {
+        const response = await sheets.spreadsheets.values.get({
+          auth: authClient,
+          spreadsheetId,
+          range: `${sheetName}!A2:T`,
+        });
 
-//         const rows = response.data.values;
-//         if (!rows || rows.length === 0) {
-//           console.log(`No data found in spreadsheet: ${spreadsheetId}, sheet: ${sheetName}`);
-//           continue;
-//         }
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+          console.log(`No data found in spreadsheet: ${spreadsheetId}, sheet: ${sheetName}`);
+          continue;
+        }
 
-//         const updates = []; // ➡️ Collect updates for batch write
-//         const notifPromises = []; // ➡️ Collect notification promises
-//         const contactPromises = []; // ➡️ Collect Google Contacts promises
+        const updates = []; // ➡️ Collect updates for batch write
+        const notifPromises = []; // ➡️ Collect notification promises
+        const contactPromises = []; // ➡️ Collect Google Contacts promises
 
-//         for (let i = 0; i < rows.length; i++) {
-//           const row = rows[i];
-//           const custName = row[0];
-//           const custNumb = row[1];
-//           const existingClosingDate = row[4];
-//           const campaign_Name = spreadsheetTitle;
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const custName = row[0];
+          const custNumb = row[1];
+          const existingClosingDate = row[4];
+          const campaign_Name = spreadsheetTitle;
 
-//           if (existingClosingDate) {
-//             console.log(`⏭️ Skipping existing record: ${custName} (${spreadsheetId} - ${sheetName})`);
-//             continue;
-//           }
+          if (existingClosingDate) {
+            console.log(`⏭️ Skipping existing record: ${custName} (${spreadsheetId} - ${sheetName})`);
+            continue;
+          }
 
-//           const closingDate = new Date();
+          const closingDate = new Date();
 
-//           const existing = await salesLead.findOne({
-//             custNumb,
-//             closingDate: closingDate,
-//           });
+          const existing = await salesLead.findOne({
+            custNumb,
+            closingDate: closingDate,
+          });
 
-//           if (existing) continue;
+          if (existing) continue;
 
-//           const newCustomer = new salesLead({
-//             closingDate,
-//             custName,
-//             custNumb,
-//             campaign_Name,
-//             salesTeam: "Sales Team 1",
-//             leadsCreatedDate: closingDate,
-//             campaignType: "WhatsApp API",
-//           });
+          const newCustomer = new salesLead({
+            closingDate,
+            custName,
+            custNumb,
+            campaign_Name,
+            salesTeam: "Sales Team 1",
+            leadsCreatedDate: closingDate,
+            campaignType: "WhatsApp API",
+          });
 
-//           await newCustomer.save();
-//           console.log(`✅ Inserted new customer: ${custName} (${spreadsheetId} - ${sheetName})`);
+          await newCustomer.save();
+          console.log(`✅ Inserted new customer: ${custName} (${spreadsheetId} - ${sheetName})`);
 
-//           // Prepare notification
-//           const notifTitle = "🎉 New WhatsApp Lead Alert!";
-//           const notifBody = `New WhatsApp lead from ${campaign_Name} ${custName};`;
+          // Prepare notification
+          const notifTitle = "🎉 New WhatsApp Lead Alert!";
+          const notifBody = `New WhatsApp lead from ${campaign_Name} ${custName};`;
 
-//           notifPromises.push(sendCampaignNotif(campaign_Name, notifTitle, notifBody));
-//           console.log(`📩 Notification triggered for: ${custName}`);
+          notifPromises.push(sendCampaignNotif(campaign_Name, notifTitle, notifBody));
+          console.log(`📩 Notification triggered for: ${custName}`);
 
-//           // Prepare Google Contact
-//           const formattedDate = closingDate.toISOString().slice(0, 10).split('-').reverse().join('');
+          // Prepare Google Contact
+          const formattedDate = closingDate.toISOString().slice(0, 10).split('-').reverse().join('');
 
-//           contactPromises.push(
-//             people.people.createContact({
-//               requestBody: {
-//                 names: [{ givenName: `${formattedDate} ${custName}` }],
-//                 phoneNumbers: [{ value: `${custNumb}` }]
-//               }
-//             })
-//           );
-//           console.log(`📇 Contact creation triggered for: ${custName}`);
+          contactPromises.push(
+            people.people.createContact({
+              requestBody: {
+                names: [{ givenName: `${formattedDate} ${custName}` }],
+                phoneNumbers: [{ value: `${custNumb}` }]
+              }
+            })
+          );
+          console.log(`📇 Contact creation triggered for: ${custName}`);
 
-//           // Prepare closingDate update in Sheet
-//           updates.push({
-//             range: `${sheetName}!E${i + 2}`,
-//             values: [[closingDate.toISOString()]],
-//           });
-//         }
+          // Prepare closingDate update in Sheet
+          updates.push({
+            range: `${sheetName}!K${i + 2}`,
+            values: [[closingDate.toISOString()]],
+          });
+        }
 
-//         // ✨ Wait for all notifications and contacts to finish
-//         if (notifPromises.length > 0) {
-//           await Promise.allSettled(notifPromises);
-//           console.log(`✅ All notifications sent!`);
-//         }
+        // ✨ Wait for all notifications and contacts to finish
+        if (notifPromises.length > 0) {
+          await Promise.allSettled(notifPromises);
+          console.log(`✅ All notifications sent!`);
+        }
 
-//         if (contactPromises.length > 0) {
-//           await Promise.allSettled(contactPromises);
-//           console.log(`✅ All contacts saved to Google Contacts!`);
-//         }
+        if (contactPromises.length > 0) {
+          await Promise.allSettled(contactPromises);
+          console.log(`✅ All contacts saved to Google Contacts!`);
+        }
 
-//         // ✨ Batch update closing dates back to the sheet
-//         if (updates.length > 0) {
-//           await sheets.spreadsheets.values.batchUpdate({
-//             auth: authClient,
-//             spreadsheetId,
-//             requestBody: {
-//               valueInputOption: 'USER_ENTERED',
-//               data: updates,
-//             },
-//           });
-//           console.log(`📝 Batch updated ${updates.length} rows in spreadsheet: ${spreadsheetTitle} - ${sheetName}`);
-//         }
-//       }
-//     }
-//   } catch (error) {
-//     console.error('❌ Error syncing Google Sheets:', error.message);
-//   }
-// };
-
-// OLD FUNCTION
-
-// const fetchAndSyncGoogleSheet = async () => {
-//   try {
-//     const authClient = await auth.getClient();
-
-//     for (let spreadsheet of SPREADSHEETS) {
-//       const { id: spreadsheetId, sheets: sheetNames } = spreadsheet;
-
-//       // 👉 Fetch Spreadsheet metadata to get its title
-//       const metadata = await sheets.spreadsheets.get({
-//         auth: authClient,
-//         spreadsheetId,
-//       });
-//       const spreadsheetTitle = metadata.data.properties.title;
-//       console.log(`📄 Processing Spreadsheet: ${spreadsheetTitle}`);
-
-//       for (let sheetName of sheetNames) {
-//         const response = await sheets.spreadsheets.values.get({
-//           auth: authClient,
-//           spreadsheetId,
-//           range: `${sheetName}!A2:T`,
-//         });
-
-//         const rows = response.data.values;
-//         if (!rows || rows.length === 0) {
-//           console.log(`No data found in spreadsheet: ${spreadsheetId}, sheet: ${sheetName}`);
-//           continue;
-//         }
-
-//         const updates = []; // ➡️ Collect updates for batch write
-
-//         for (let i = 0; i < rows.length; i++) {
-//           const row = rows[i];
-//           const custName = row[0];
-//           const custNumb = row[1];
-//           const existingClosingDate = row[4];
-//           const campaign_Name = spreadsheetTitle;
-
-//           if (existingClosingDate) {
-//             console.log(`⏭️ Skipping existing record: ${custName} (${spreadsheetId} - ${sheetName})`);
-//             continue;
-//           }
-
-//           const closingDate = new Date();
-
-//           const existing = await salesLead.findOne({
-//             custNumb,
-//             closingDate: closingDate,
-//           });
-
-//           if (existing) continue;
-
-//           const newCustomer = new salesLead({
-//             closingDate,
-//             custName,
-//             custNumb,
-//             campaign_Name,
-//             salesTeam: "Sales Team 1",
-//             leadsCreatedDate: closingDate,
-//             campaignType: "WhatsApp API",
-//           });
-
-//           await newCustomer.save();
-//           console.log(`✅ Inserted new customer: ${custName} (${spreadsheetId} - ${sheetName})`);
-
-//           const notifTitle = "🎉 New WhatsApp Lead Alert!";
-//           const notifBody = `New WhatsApp lead from ${campaign_Name} ${custName};`;
-
-//           await sendCampaignNotif(campaign_Name, notifTitle, notifBody);
-//           console.log(`✅ Notification sent for: ${custName}`);
-
-//           const formattedDate = new Date(closingDate).toISOString().slice(0, 10).split('-').reverse().join('');
-
-//           await people.people.createContact({
-//             requestBody: {
-//               //names: [{ givenName: leadObj.custName }],
-//               names: [{ givenName: `${formattedDate} ${custName}` }],
-//               phoneNumbers: [{ value: `${custNumb}` }]
-//             }
-//           });
-
-//           console.log(`✅ Lead saved to Google Contacts: ${custName}`);
-
-//           updates.push({
-//             range: `${sheetName}!E${i + 2}`,
-//             values: [[closingDate.toISOString()]],
-//           });
-//         }
-
-//         if (updates.length > 0) {
-//           await sheets.spreadsheets.values.batchUpdate({
-//             auth: authClient,
-//             spreadsheetId,
-//             requestBody: {
-//               valueInputOption: 'USER_ENTERED',
-//               data: updates,
-//             },
-//           });
-//           console.log(`📝 Batch updated ${updates.length} rows in spreadsheet: ${spreadsheetId}, sheet: ${spreadsheetTitle}`);
-//         }
-//       }
-//     }
-//   } catch (error) {
-//     console.error('❌ Error syncing Google Sheets:', error.message);
-//   }
-// };
+        // ✨ Batch update closing dates back to the sheet
+        if (updates.length > 0) {
+          await sheets.spreadsheets.values.batchUpdate({
+            auth: authClient,
+            spreadsheetId,
+            requestBody: {
+              valueInputOption: 'USER_ENTERED',
+              data: updates,
+            },
+          });
+          console.log(`📝 Batch updated ${updates.length} rows in spreadsheet: ${spreadsheetTitle} - ${sheetName}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error syncing Google Sheets:', error.message);
+  }
+};
 
 module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
 module.exports.fetchAndSaveSecondFacebookLeads = fetchAndSaveSecondFacebookLeads;
 module.exports.fetchAndSaveThirdFacebookLeads = fetchAndSaveThirdFacebookLeads;
-//module.exports.fetchAndSyncGoogleSheet = fetchAndSyncGoogleSheet;
+module.exports.fetchAndSyncGoogleSheet = fetchAndSyncGoogleSheet;
