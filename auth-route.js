@@ -8007,7 +8007,7 @@ const fetchAndSyncGoogleSheet = async () => {
           const row = rows[i];
           const custName = row[0];
           const custNumb = row[1];
-          const existingClosingDate = row[4];
+          const existingClosingDate = row[10];
           const campaign_Name = spreadsheetTitle;
 
           if (existingClosingDate) {
