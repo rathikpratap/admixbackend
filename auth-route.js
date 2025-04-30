@@ -1361,7 +1361,7 @@ router.get('/totalEntries', async (req, res) => {
     query = {
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const totalEntries = await Customer.find(query);
@@ -1487,7 +1487,7 @@ router.get('/totalRecvAmount', async (req, res) => {
     query = {
       restPaymentDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const totalEntries = await Customer.find(query);
@@ -1508,7 +1508,7 @@ router.get('/totalEntriesEmp', checkAuth, async (req, res) => {
       salesPerson: person1,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const totalEntries = await Customer.find(query);
@@ -1531,7 +1531,7 @@ router.get('/totalEntriesDue', async (req, res) => {
       remainingAmount: { $gt: 0 },
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const dueAmount = await Customer.find(query);
@@ -1551,7 +1551,7 @@ router.get('/totalEntriesDueDownload', async (req, res) => {
       remainingAmount: { $gt: 0 },
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const dueAmount = await Customer.find(query);
@@ -1596,7 +1596,7 @@ router.get('/totalEntriesRest', async (req, res) => {
       restAmount: { $gt: 0 },
       restPaymentDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const restAmount = await Customer.find(query);
@@ -1679,7 +1679,7 @@ router.get('/totalEntriesRestAdmin', async (req, res) => {
       restAmount: { $gt: 0 },
       restPaymentDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0)
+        $lte: new Date(new Date().getUTCFullYear(), currentMonth, 0, 23, 59, 59, 999)
       }
     };
     const restAmount = await Customer.find(query);
