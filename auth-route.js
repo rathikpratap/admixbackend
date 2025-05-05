@@ -8161,7 +8161,58 @@ function excelDateToJSDate(serial) {
   return new Date(excelEpoch.getTime() + serial * 86400000); // 86400000 ms/day
 }
 
-router.post('/uploadLead', upload.single('file'),checkAuth, async (req, res) => {
+// router.post('/uploadLead', upload.single('file'),checkAuth, async (req, res) => {
+//   try {
+//     const person1 = req.userData?.name;
+//     const fileBuffer = req.file.buffer;
+//     const fileExt = path.extname(req.file.originalname).toLowerCase();
+//     const fileName = path.parse(req.file.originalname).name;
+//     const currentDate = new Date();
+
+//     // Load file based on extension
+//     let workbook;
+//     if (fileExt === '.csv') {
+//       workbook = XLSX.read(fileBuffer.toString(), { type: 'string' });
+//     } else if (fileExt === '.xlsx') {
+//       workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+//     } else {
+//       return res.status(400).json({ error: 'Unsupported file type' });
+//     }
+
+//     const sheetName = workbook.SheetNames[0];
+//     const sheet = workbook.Sheets[sheetName];
+//     const rawData = XLSX.utils.sheet_to_json(sheet);
+
+//     const mappedData = rawData.map(row => {
+//       let parsedDate = currentDate;
+//       const subscribedAt = row['Subscribed at'];
+
+//       // Excel date serial number check
+//       if (typeof subscribedAt === 'number') {
+//         parsedDate = excelDateToJSDate(subscribedAt);
+//       }
+
+//       return {
+//         custName: row['Name'] || '',
+//         custNumb: row['Phone Number'] || '',
+//         closingDate: parsedDate,
+//         campaign_Name: `${person1} ${row['Label Name'] || ''}`,
+//         label: row['Label Name'] || '',
+//         leadsCreatedDate: parsedDate,
+//         campaignType: "WhatsApp API"
+//       };
+//     });
+
+//     await salesLead.insertMany(mappedData);
+//     res.status(200).json({ message: 'Leads Upload Successful' });
+
+//   } catch (err) {
+//     console.error('Error Uploading Leads:', err);
+//     res.status(500).json({ error: 'Failed to Upload Leads' });
+//   }
+// });
+
+router.post('/uploadLead', upload.single('file'), checkAuth, async (req, res) => {
   try {
     const person1 = req.userData?.name;
     const fileBuffer = req.file.buffer;
@@ -8169,7 +8220,6 @@ router.post('/uploadLead', upload.single('file'),checkAuth, async (req, res) => 
     const fileName = path.parse(req.file.originalname).name;
     const currentDate = new Date();
 
-    // Load file based on extension
     let workbook;
     if (fileExt === '.csv') {
       workbook = XLSX.read(fileBuffer.toString(), { type: 'string' });
@@ -8186,8 +8236,6 @@ router.post('/uploadLead', upload.single('file'),checkAuth, async (req, res) => 
     const mappedData = rawData.map(row => {
       let parsedDate = currentDate;
       const subscribedAt = row['Subscribed at'];
-
-      // Excel date serial number check
       if (typeof subscribedAt === 'number') {
         parsedDate = excelDateToJSDate(subscribedAt);
       }
@@ -8203,16 +8251,33 @@ router.post('/uploadLead', upload.single('file'),checkAuth, async (req, res) => 
       };
     });
 
-    await salesLead.insertMany(mappedData);
-    res.status(200).json({ message: 'Leads Upload Successful' });
+    // Filter out existing leads
+    const filteredData = [];
+    for (const lead of mappedData) {
+      const exists = await salesLead.findOne({
+        custNumb: lead.custNumb,
+        closingDate: lead.closingDate
+      });
+      if (!exists) {
+        filteredData.push(lead);
+      }
+    }
+
+    if (filteredData.length > 0) {
+      await salesLead.insertMany(filteredData);
+    }
+
+    res.status(200).json({
+      message: 'Leads Upload Successful',
+      inserted: filteredData.length,
+      skipped: mappedData.length - filteredData.length
+    });
 
   } catch (err) {
     console.error('Error Uploading Leads:', err);
     res.status(500).json({ error: 'Failed to Upload Leads' });
   }
 });
-
-
 
 module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
