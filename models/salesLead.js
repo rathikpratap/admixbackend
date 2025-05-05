@@ -24,7 +24,9 @@ const salesLeadSchema = new mongoose.Schema({
     followup1: String,
     followup2: String,
     followup3: String,
-    followup4: String
+    followup4: String,
+    callReminderDate: Date,
+    Label: String
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);
