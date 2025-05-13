@@ -2602,7 +2602,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04H5viGt0YkCcCgYIARAAGAQSNwF-L9IrJouiL9I3S88CQ2hBpReWz3CSXjZoG0U6BjCgHsrRoN-KOHHEJLaspfis3VCHoMFKSHY';
+const REFERESH_TOKEN = '1//04oxamRgzQIkrCgYIARAAGAQSNwF-L9Ir2hqXtNyrZKowRkwOo6fOzu2dPj-bEcdbyUf6ONZ8HdU8ZSQ8GoT9HIjT2jV2Tn-ZzNI';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2758,7 +2758,6 @@ const fetchAndSaveFacebookLeads = async () => {
       }
 
       let existingLead = await salesLead.findOne({
-        //$or: [{ custEmail: leadObj.custEmail }, { custNumb: leadObj.custNumb }]
         closingDate: createdTime
       });
 
@@ -2783,9 +2782,7 @@ const fetchAndSaveFacebookLeads = async () => {
         console.log(`✅ New lead saved: ${leadObj.custName}`);
 
         // 🔹 Send Notification
-        //const userToken = "cCteoy2qAjob1vN4y2OZjU:APA91bGCxrojvA-fl7Za8OtGNfO80kmGiZ4KhCNgKAlFdhlP2v91ikagZf5K9KqQVfwYiyduRYZsmF2-x_5en9_YBFG3mMIX5WY8v9mlwrm7_2ySAu09nVwMr4ssY6wbecUrd2sutjMK"; // ✅ Replace with actual FCM token
         const notifTitle = "🎉 New Lead Alert!";
-        //const notifBody = `New lead from ${leadObj.custName} (${leadObj.custEmail})`;
         const notifBody = `New lead from ${campaign_Name} (${leadObj.custName});`;
 
         //await sendNotif(userToken, notifTitle, notifBody);
@@ -2795,7 +2792,6 @@ const fetchAndSaveFacebookLeads = async () => {
         await people.people.createContact({
           requestBody: {
             names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
-            //names: [{ givenName: leadObj.custName }],
             emailAddresses: [{ value: leadObj.custEmail }],
             phoneNumbers: [{ value: leadObj.custNumb }],
             organizations: [{ name: leadObj.custBussiness }],
