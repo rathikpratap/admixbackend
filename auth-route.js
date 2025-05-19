@@ -2602,7 +2602,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04oxamRgzQIkrCgYIARAAGAQSNwF-L9Ir2hqXtNyrZKowRkwOo6fOzu2dPj-bEcdbyUf6ONZ8HdU8ZSQ8GoT9HIjT2jV2Tn-ZzNI';
+const REFERESH_TOKEN = '1//04n455hatQXMaCgYIARAAGAQSNwF-L9IrR2FN7YBhVYUDX9DFBDH1cLnH7Km0-0mQ0rvgtkueCbW0Pekxbn26lQuqDZn5oEVx-sM';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -2664,7 +2664,6 @@ router.get("/get-assigned-campaigns", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 // 🔹 Function to Delay (Exponential Backoff for Rate Limits)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -2918,7 +2917,6 @@ const fetchAndSaveSecondFacebookLeads = async () => {
   }
 };
 
-
 // 🔹 Function to Fetch Facebook Leads for the Second Automation
 const fetchAndSaveThirdFacebookLeads = async () => {
   try {
@@ -3131,15 +3129,19 @@ router.get('/getTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0,0,0);
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+
     const todayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
         $gte: startOfToday,
         $lt: endOfToday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(todayLeads);
   } catch (error) {
@@ -3171,25 +3173,30 @@ router.get('/getSalesTeamWork', async (req, res) => {
 router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
+
     return res.json(yesterdayLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
     res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
+
 
 router.get('/getSalesYesterdayTeamWork', async (req, res) => {
   try {
@@ -3217,15 +3224,19 @@ router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+    
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
   } catch (error) {
@@ -3260,15 +3271,19 @@ router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 3);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+    
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
   } catch (error) {
@@ -3303,15 +3318,19 @@ router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 4);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+    
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+    
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
   } catch (error) {
@@ -3346,15 +3365,19 @@ router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 5);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+    
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+    
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
   } catch (error) {
@@ -3389,15 +3412,19 @@ router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 6);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = escapeRegex(name);
+
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
       },
-      campaign_Name: { $regex: new RegExp(name, 'i') }
+      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
   } catch (error) {
@@ -8274,6 +8301,54 @@ router.post('/uploadLead', upload.single('file'), checkAuth, async (req, res) =>
     res.status(500).json({ error: 'Failed to Upload Leads' });
   }
 });
+
+//date wise leads Data
+
+router.get('/getDateCampaign/:name', async (req, res) => {
+  const name = req.params.name;
+  const selectedDate = req.query.selectDate; // Get selected date and WhatsApp campaign from the query string
+
+  try {
+    const selectedDateObj = new Date(selectedDate); // Convert the date to a Date object
+    const startOfDay = new Date(selectedDateObj.setHours(0, 0, 0, 0)); // Set to the start of the selected date
+    const endOfDay = new Date(selectedDateObj.setHours(23, 59, 59, 999)); // Set to the end of the selected date
+    
+    const leads = await salesLead.find({
+      campaign_Name: { $regex: new RegExp(name, 'i') }, // Filter by campaign name
+      closingDate: { 
+        $gte: startOfDay, // Date range filter
+        $lte: endOfDay 
+      }
+    }).sort({ closingDate: -1 });
+    return res.json(leads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+// router.get('/getDateWhatsAppCampaign/:name', async(req,res)=>{
+//   const name = req.params.name;
+//   const selectedDate = req.query.selectDate;
+
+//   try{
+//     const selectedDateObj = new Date(selectedDate);
+//     const startOfDay = new Date(selectedDateObj.setHours(0, 0, 0, 0));
+//     const endOfDay = new Date(selectedDateObj.setHours(23,59,59,999));
+
+//     const leads = await salesLead.find({
+//       closingDate: {
+//         $gte: startOfDay,
+//         $lte: endOfDay
+//       },
+//       campaign_Name: {$regex: new RegExp(name, 'i')}
+//     }).sort({closingDate: -1});
+//     return res.json(leads);
+//   }catch(error){
+//     console.error('Error fetching leads: ', error);
+//     res.status(500).json({error: 'Failed to fetcg leads'});
+//   }
+// });
 
 module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
