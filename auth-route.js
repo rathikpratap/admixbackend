@@ -1437,11 +1437,12 @@ router.get('/receivedQr', async (req, res) => {
 
   try {
     // Calculate totals for each Qr name
-    const [admixMedia, shivaVarshney, swatiVarshney, umeshchandVarshney] = await Promise.all([
+    const [admixMedia, shivaVarshney, swatiVarshney, umeshchandVarshney, anupamVarshney] = await Promise.all([
       calculateTotalAmount('Admix Media'),
       calculateTotalAmount('Shiva Varshney'),
       calculateTotalAmount('Swati Varshney'),
       calculateTotalAmount('Umeshchand Varshney'),
+      calculateTotalAmount('Anupam Varshney')
     ]);
 
     res.json({
@@ -1449,19 +1450,22 @@ router.get('/receivedQr', async (req, res) => {
         AdmixMedia: admixMedia.totalAmount,
         ShivaVarshney: shivaVarshney.totalAmount,
         SwatiVarshney: swatiVarshney.totalAmount,
-        UmeshchandVarshney: umeshchandVarshney.totalAmount
+        UmeshchandVarshney: umeshchandVarshney.totalAmount,
+        AnupamVarshney: anupamVarshney.totalAmount
       },
       advTotals: {
         AdmixMedia: admixMedia.advAmount,
         ShivaVarshney: shivaVarshney.advAmount,
         SwatiVarshney: swatiVarshney.advAmount,
-        UmeshchandVarshney: umeshchandVarshney.advAmount
+        UmeshchandVarshney: umeshchandVarshney.advAmount,
+        AnupamVarshney: anupamVarshney.advAmount
       },
       restTotals: {
         AdmixMedia: admixMedia.restAmount,
         ShivaVarshney: shivaVarshney.restAmount,
         SwatiVarshney: swatiVarshney.restAmount,
-        UmeshchandVarshney: umeshchandVarshney.restAmount
+        UmeshchandVarshney: umeshchandVarshney.restAmount,
+        AnupamVarshney: anupamVarshney.restAmount
       },
       details: {
         admixMediaAdv: admixMedia.advDocs,
@@ -1472,6 +1476,8 @@ router.get('/receivedQr', async (req, res) => {
         swatiVarshneyRest: swatiVarshney.restDocs,
         umeshchandVarshneyAdv: umeshchandVarshney.advDocs,
         umeshchandVarshneyRest: umeshchandVarshney.restDocs,
+        anupamVarshneyAdv: anupamVarshney.advDocs,
+        anupamVarshneyRest: anupamVarshney.restDocs
       }
     });
 
