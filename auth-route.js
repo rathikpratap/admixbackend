@@ -58,7 +58,8 @@ router.post('/register', async (req, res) => {
     signupPayment: req.body.signupPayment,
     salesTeam: req.body.salesTeam,
     subsidiaryName: req.body.subsidiaryName,
-    incentivePassword: req.body.incentivePassword
+    incentivePassword: req.body.incentivePassword,
+    editorType: req.body.editorType
   })
   await user.save()
     .then((_) => {
@@ -2608,7 +2609,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//0473lLZ9J6vouCgYIARAAGAQSNwF-L9IrQIvujjr-B8CdlJn3904TFPNbdjhh1tPro0hAtVnbD3HHv32sXRTwcGYwHbGRtuQhhvg';
+const REFERESH_TOKEN = '1//04_Y_EAN7mHvdCgYIARAAGAQSNwF-L9Ir-dGsU_y6kFcIP2QCQd70BpGmgtEjSZpiqSNNsIGKSJdsTcOh5CW9sPXzHOotZiaNLoI';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3785,13 +3786,18 @@ router.get('/allEditorProjects', async (req, res) => {
 
 router.get('/editorProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
+    //const currentMonth = new Date().getMonth() + 1;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     const allProjects = await Customer.find({
       editor: person,
       companyName: "AdmixMedia",
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        //$gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        //$lte: new Date(new Date().getFullYear(), currentMonth, 0)
+        $gte: startOfMonth,
+        $lte: endOfToday
       }
     }).sort({ editorPassDate: -1 });
     return res.json(allProjects)
@@ -3808,7 +3814,7 @@ router.get('/editorPreviousProjects', async (req, res) => {
       editor: person,
       companyName: "AdmixMedia",
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 2),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
     }).sort({ editorPassDate: -1 });
@@ -3826,7 +3832,7 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
       editor: person,
       companyName: "AdmixMedia",
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 3),
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
     }).sort({ editorPassDate: -1 });
@@ -6677,6 +6683,24 @@ router.get('/mediumEditorProjects', async (req, res) => {
   }
 });
 
+router.get('/changesEditorProjects', async (req,res) => {
+    const currentMonth = new Date().getMonth() + 1;
+  try{
+    const changesProjects = await Customer.find({
+      editor: person,
+      editorPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth)
+      },
+      projectStatus: { $eq: 'Video Changes'}
+    }).sort({editorPassDate: -1});
+    return res.json(changesProjects)
+  } catch (error) {
+    console.error("Error Fetching Leads", error);
+    res.status(500).json({ error: 'Failed to fetch Leads'})
+  }
+});
+
 // Urgent Vo Projects
 
 router.get('/urgentVoProjects', async (req, res) => {
@@ -8330,6 +8354,74 @@ router.get('/getDateCampaign/:name', async (req, res) => {
   } catch (error) {
     console.error('Error fetching leads:', error);
     res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/closingCurrentMonth/:name', async(req,res) => {
+  const name = req.params.name;
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  try{
+    const projects = await Customer.find({
+      closingCateg: name,
+      closingDate: {
+        $gte: startOfMonth,
+        $lte: endOfToday
+      }
+    });
+    if(projects.length > 0){
+      res.json(projects);
+    }else{
+      res.json({ result: "No Data Found"});
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error'});
+  }
+});
+
+router.get('/closingPrevMonth/:name', async(req,res) => {
+  const name = req.params.name;
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    const projectsPrev = await Customer.find({
+      closingCateg: name,
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+      }
+    });
+    if(projectsPrev.length > 0){
+      res.json(projectsPrev);
+    }else{
+      res.json({ result: "No Data Found"});
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error'});
+  }
+});
+
+router.get('/closingTwoPrevMonth/:name', async(req,res) => {
+  const name = req.params.name;
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    const projectsTwoPrev = await Customer.find({
+      closingCateg: name,
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+      }
+    });
+    if(projectsTwoPrev.length > 0){
+      res.json(projectsTwoPrev);
+    }else{
+      res.json({ result: "No Data Found"});
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error'});
   }
 });
 

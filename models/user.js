@@ -27,6 +27,7 @@ const registerSchema = new mongoose.Schema({
   paymentTwoVideo: { type: Number },
   paymentThreeVideo: { type: Number },
   accessToken: { type: String },
+  editorType: {type: String},
   loginSessions: [
     {
       loginTime: { type: Date },
