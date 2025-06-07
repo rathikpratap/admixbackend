@@ -612,6 +612,29 @@ router.get('/allOngoingProjectsIncludingLogo', async (req, res) => {
   }
 });
 
+// All Production Projects
+
+router.get('/allProductionProjects', async(req,res)=>{
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    const products = await Customer.find({
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+      },
+      projectStatus: { $in: ['Video Editing', 'Video Changes']}
+    }).sort({ closingDate: -1});
+    if(products.length > 0){
+      res.json(products);
+    }else{
+      res.json({result: "No Data Found"});
+    }
+  }catch(error){
+    console.error(error);
+    res.status(500).json({ message: 'Server Error'});
+  }
+});
+
 //All Complete projects
 
 router.get('/allCompleteProjects', async (req, res) => {
@@ -2609,7 +2632,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04_Y_EAN7mHvdCgYIARAAGAQSNwF-L9Ir-dGsU_y6kFcIP2QCQd70BpGmgtEjSZpiqSNNsIGKSJdsTcOh5CW9sPXzHOotZiaNLoI';
+const REFERESH_TOKEN = '1//04ZZl5slFby4dCgYIARAAGAQSNwF-L9IrY3MN8telJCZJOeoF5CoNcqRiPrWkh6vs27yfHvdBzmQVzuczf-g2wzRPWQomwbCOD2w';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3638,6 +3661,23 @@ router.post('/updateEditor', async (req, res) => {
   }
 });
 
+router.post('/updateB2bEditorname', async(req,res)=>{
+  try{
+    const items = req.body.items;
+    for(const item of items) {
+      let existingItem = await B2bCustomer.findById(item._id);
+      if(existingItem){
+        existingItem.b2bEditor = item.b2bEditor;
+        existingItem.b2bEditorPassDate = item.b2bEditorPassDate;
+        await existingItem.save();
+      }
+    }
+    res.json({ message: "Editor updated"});
+  } catch(err){
+    res.status(500).json({ message: err.message});
+  }
+});
+
 //Script writer Projects
 router.get('/scriptProjects', async (req, res) => {
   try {
@@ -3776,9 +3816,10 @@ router.get('/scriptCompleteList', async (req, res) => {
 //Editor Projects
 
 router.get('/allEditorProjects', async (req, res) => {
-  const allProjects = await Customer.find({ editor: person, companyName: "AdmixMedia" }).sort({ closingDate: -1 });
-  if (allProjects) {
-    return res.json(allProjects)
+  const allProjects = (await Customer.find({ editor: person }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+  const allB2bProjects = (await B2bCustomer.find({ b2bEditor: person }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b'}));
+  if (allProjects || allB2bProjects) {
+    return res.json({list: [...allProjects, ...allB2bProjects]});
   } else {
     res.send({ result: "No Data Found" })
   }
@@ -3790,17 +3831,22 @@ router.get('/editorProjects', async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const allProjects = await Customer.find({
+    const allProjects = (await Customer.find({
       editor: person,
-      companyName: "AdmixMedia",
       editorPassDate: {
-        //$gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        //$lte: new Date(new Date().getFullYear(), currentMonth, 0)
         $gte: startOfMonth,
         $lte: endOfToday
       }
-    }).sort({ editorPassDate: -1 });
-    return res.json(allProjects)
+    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+    
+    const allB2bProjects = (await B2bCustomer.find({
+      b2bEditor: person,
+      b2bEditorPassDate: {
+        $gte: startOfMonth,
+        $lte: endOfToday
+      }
+    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b'}));    
+    return res.json({list: [...allProjects, ...allB2bProjects]})
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
@@ -3810,15 +3856,22 @@ router.get('/editorProjects', async (req, res) => {
 router.get('/editorPreviousProjects', async (req, res) => {
   try {
     const currentMonth = new Date().getMonth() + 1;
-    const allProjects = await Customer.find({
+    const allProjects = (await Customer.find({
       editor: person,
-      companyName: "AdmixMedia",
       editorPassDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
-    }).sort({ editorPassDate: -1 });
-    return res.json(allProjects)
+    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+
+    const b2bProducts = (await B2bCustomer.find({
+      b2bEditor: person,
+      b2bEditorPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+      }
+    }).sort({b2bEditorPassDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
+    return res.json({list: [...allProjects, ...b2bProducts]})
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
@@ -3828,15 +3881,22 @@ router.get('/editorPreviousProjects', async (req, res) => {
 router.get('/editorTwoPreviousProjects', async (req, res) => {
   try {
     const currentMonth = new Date().getMonth() + 1;
-    const allProjects = await Customer.find({
+    const allProjects = (await Customer.find({
       editor: person,
-      companyName: "AdmixMedia",
       editorPassDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
-    }).sort({ editorPassDate: -1 });
-    return res.json(allProjects)
+    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+
+    const b2bProducts = (await B2bCustomer.find({
+      b2bEditor: person,
+      b2bEditorPassDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+      }
+    }).sort({b2bEditorPassDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
+    return res.json({list: [...allProjects, ...b2bProducts]})
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
@@ -3869,7 +3929,6 @@ router.get('/todayEntriesEditor', async (req, res) => {
     let query;
     query = {
       editor: person,
-      companyName: "AdmixMedia",
       editorPassDate: {
         $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()),
         $lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1)
@@ -3886,16 +3945,24 @@ router.get('/todayEntriesEditor', async (req, res) => {
 router.get('/editorActiveList', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
-    const products = await Customer.find({
+    const products = (await Customer.find({
       editor: person,
-      companyName: "AdmixMedia",
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth)
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       editorStatus: { $ne: 'Completed' }
-    }).sort({ closingDate: -1 });
-    res.json(products);
+    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+
+    const b2bProducts = (await B2bCustomer.find({
+      b2bEditor: person,
+      b2bProjectDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+      },
+      projectStatus: { $ne: 'Completed'}
+    }).sort({closingDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
+    res.json({products, b2bProducts});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3905,16 +3972,24 @@ router.get('/editorActiveList', async (req, res) => {
 router.get('/editorCompleteList', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
-    const products = await Customer.find({
+    const products = (await Customer.find({
       editor: person,
-      companyName: "AdmixMedia",
       editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth)
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       editorStatus: { $regex: /^Completed$/i }
-    }).sort({ closingDate: -1 });
-    res.json(products);
+    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+
+    const b2bProducts = (await B2bCustomer.find({
+      b2bEditor: person,
+      b2bProjectDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+      },
+      projectStatus: { $regex: /^Completed$/i }
+    }).sort({b2bProjectDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
+    res.json({products, b2bProducts});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -4316,7 +4391,10 @@ router.post('/b2bProject', async (req, res) => {
     b2bRemark: req.body.b2bRemark,
     salesPerson: req.body.salesPerson,
     salesTeam: req.body.salesTeam,
-    projectStatus: req.body.projectStatus
+    projectStatus: req.body.projectStatus,
+    b2bRemainingAmount: req.body.b2bRemainingAmount,
+    b2bAdvanceAmount: req.body.b2bAdvanceAmount,
+    b2bRestAmount: req.body.b2bRestAmount
   })
   await customer.save().then((_) => {
     res.json({ success: true, message: "B2b Project Added!!" })
