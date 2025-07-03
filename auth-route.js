@@ -614,24 +614,24 @@ router.get('/allOngoingProjectsIncludingLogo', async (req, res) => {
 
 // All Production Projects
 
-router.get('/allProductionProjects', async(req,res)=>{
+router.get('/allProductionProjects', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     const products = await Customer.find({
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      projectStatus: { $in: ['Video Editing', 'Video Changes']}
-    }).sort({ closingDate: -1});
-    if(products.length > 0){
+      projectStatus: { $in: ['Video Editing', 'Video Changes'] }
+    }).sort({ closingDate: -1 });
+    if (products.length > 0) {
       res.json(products);
-    }else{
-      res.json({result: "No Data Found"});
+    } else {
+      res.json({ result: "No Data Found" });
     }
-  }catch(error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -1155,6 +1155,33 @@ router.put('/updatePay/:companyName/:signupName/:signupRole/:videoType', async (
   } catch (error) {
     console.error("Error updating paymeny information:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Search Invoice
+
+router.get('/searchInvoice/:mobile', async (req, res) => {
+  try {
+    const mobile = req.params.mobile;
+    const isNumeric = !isNaN(mobile);
+
+    // Build a flexible search query
+    let searchConditions = [
+      { custName: { $regex: mobile, $options: 'i' } }
+    ];
+
+    if (isNumeric) {
+      searchConditions.push({ custNumb: Number(mobile) });
+    }
+
+    const data = await EstInvoice.find({
+      $or: searchConditions
+    });
+
+    res.send(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error searching for Invoice");
   }
 });
 
@@ -2632,7 +2659,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04oT2MWn204uLCgYIARAAGAQSNwF-L9Iruc8Us0uw024TTM62ciYdw5KuBIy4s0-rHbWVsQ4jmPjuuejruKIpXAzcaxebnc4eX_c';
+const REFERESH_TOKEN = '1//04wer2h87Xy8yCgYIARAAGAQSNwF-L9Ir3ggCmF7F9eFZzxW7JvAXLBc2I0mXdoLUN68oLq7GxxMLjzU_AJ4d373oAGvQrzQau6Y';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3039,7 +3066,6 @@ const fetchAndSaveThirdFacebookLeads = async () => {
 
               console.log(`✅ Lead saved to Google Contacts Third: ${formattedDate} ${leadObj.custName}`);
             }
-
             allLeads.push(leadObj);
           }
         }
@@ -3159,9 +3185,9 @@ router.get('/getTeams-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0,0,0);
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-    
+
     const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedName = escapeRegex(name);
 
@@ -3227,7 +3253,6 @@ router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
   }
 });
 
-
 router.get('/getSalesYesterdayTeamWork', async (req, res) => {
   try {
     const today = new Date();
@@ -3254,9 +3279,9 @@ router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
-    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0));
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
     const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
-    
+
     const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedName = escapeRegex(name);
 
@@ -3303,7 +3328,7 @@ router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 3);
     const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
     const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
-    
+
     const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedName = escapeRegex(name);
 
@@ -3350,10 +3375,10 @@ router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 4);
     const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
     const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
-    
+
     const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedName = escapeRegex(name);
-    
+
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
@@ -3397,10 +3422,10 @@ router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
     yesterday.setDate(today.getDate() - 5);
     const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
     const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
-    
+
     const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedName = escapeRegex(name);
-    
+
     const yesterdayLeads = await salesLead.find({
       //salesTeam: personTeam,
       closingDate: {
@@ -3661,20 +3686,20 @@ router.post('/updateEditor', async (req, res) => {
   }
 });
 
-router.post('/updateB2bEditorname', async(req,res)=>{
-  try{
+router.post('/updateB2bEditorname', async (req, res) => {
+  try {
     const items = req.body.items;
-    for(const item of items) {
+    for (const item of items) {
       let existingItem = await B2bCustomer.findById(item._id);
-      if(existingItem){
+      if (existingItem) {
         existingItem.b2bEditor = item.b2bEditor;
         existingItem.b2bEditorPassDate = item.b2bEditorPassDate;
         await existingItem.save();
       }
     }
-    res.json({ message: "Editor updated"});
-  } catch(err){
-    res.status(500).json({ message: err.message});
+    res.json({ message: "Editor updated" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -3816,10 +3841,10 @@ router.get('/scriptCompleteList', async (req, res) => {
 //Editor Projects
 
 router.get('/allEditorProjects', async (req, res) => {
-  const allProjects = (await Customer.find({ editor: person }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
-  const allB2bProjects = (await B2bCustomer.find({ b2bEditor: person }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b'}));
+  const allProjects = (await Customer.find({ editor: person }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+  const allB2bProjects = (await B2bCustomer.find({ b2bEditor: person }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
   if (allProjects || allB2bProjects) {
-    return res.json({list: [...allProjects, ...allB2bProjects]});
+    return res.json({ list: [...allProjects, ...allB2bProjects] });
   } else {
     res.send({ result: "No Data Found" })
   }
@@ -3837,16 +3862,16 @@ router.get('/editorProjects', async (req, res) => {
         $gte: startOfMonth,
         $lte: endOfToday
       }
-    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
-    
+    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+
     const allB2bProjects = (await B2bCustomer.find({
       b2bEditor: person,
       b2bEditorPassDate: {
         $gte: startOfMonth,
         $lte: endOfToday
       }
-    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b'}));    
-    return res.json({list: [...allProjects, ...allB2bProjects]})
+    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+    return res.json({ list: [...allProjects, ...allB2bProjects] })
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
@@ -3862,7 +3887,7 @@ router.get('/editorPreviousProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
-    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
 
     const b2bProducts = (await B2bCustomer.find({
       b2bEditor: person,
@@ -3870,8 +3895,8 @@ router.get('/editorPreviousProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
-    }).sort({b2bEditorPassDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
-    return res.json({list: [...allProjects, ...b2bProducts]})
+    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+    return res.json({ list: [...allProjects, ...b2bProducts] })
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
@@ -3887,7 +3912,7 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
-    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
 
     const b2bProducts = (await B2bCustomer.find({
       b2bEditor: person,
@@ -3895,8 +3920,8 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
-    }).sort({b2bEditorPassDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
-    return res.json({list: [...allProjects, ...b2bProducts]})
+    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+    return res.json({ list: [...allProjects, ...b2bProducts] })
   } catch (error) {
     console.error("Error Fetching Leads", error);
     res.status(500).json({ error: 'Failed to Fetch Leads' })
@@ -3952,7 +3977,7 @@ router.get('/editorActiveList', async (req, res) => {
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       editorStatus: { $ne: 'Completed' }
-    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
 
     const b2bProducts = (await B2bCustomer.find({
       b2bEditor: person,
@@ -3960,9 +3985,9 @@ router.get('/editorActiveList', async (req, res) => {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
-      projectStatus: { $ne: 'Completed'}
-    }).sort({closingDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
-    res.json({products, b2bProducts});
+      projectStatus: { $ne: 'Completed' }
+    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+    res.json({ products, b2bProducts });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -3979,7 +4004,7 @@ router.get('/editorCompleteList', async (req, res) => {
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       editorStatus: { $regex: /^Completed$/i }
-    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer'}));
+    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
 
     const b2bProducts = (await B2bCustomer.find({
       b2bEditor: person,
@@ -3988,8 +4013,8 @@ router.get('/editorCompleteList', async (req, res) => {
         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
       },
       projectStatus: { $regex: /^Completed$/i }
-    }).sort({b2bProjectDate: -1})).map(item => ({ ...item.toObject(), type: 'b2b'}));
-    res.json({products, b2bProducts});
+    }).sort({ b2bProjectDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+    res.json({ products, b2bProducts });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -4281,7 +4306,6 @@ router.post('/update-projectStatus', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData?.name;
     const items = req.body.items;
-    console.log("PERSON1 UPDATE==========", person1);
     for (const item of items) {
       let existingItem = await salesLead.findById(item._id);
       if (existingItem) {
@@ -4304,32 +4328,6 @@ router.post('/update-projectStatus', checkAuth, async (req, res) => {
 });
 
 //Leads Reminder
-
-// const reminder = async () => {
-//   try {
-//     const now = new Date();
-
-//     // Round to the nearest minute (zero out seconds and milliseconds)
-//     now.setSeconds(0, 0);
-
-//     const nextMinute = new Date(now);
-//     nextMinute.setMinutes(now.getMinutes() + 1);
-
-//     const leads = await salesLead.find({
-//       callReminderDate: {
-//         $gte: now,
-//         $lt: nextMinute
-//       }
-//     });
-
-//     leads.forEach(lead => {
-//       console.log(`Reminder: Call ${lead.custName} at ${lead.custNumb}`);
-//     });
-//   } catch (error) {
-//     console.error('Error Reminder: ', error.message);
-//   }
-// };
-
 
 const reminder = async () => {
   try {
@@ -4766,34 +4764,6 @@ router.post('/customLead', async (req, res) => {
     res.json({ success: false, message: "Error Adding Lead and Contact!" })
   }
 });
-
-// router.post('/customLead', async (req, res) => {
-//   try {
-//     const customer = new salesLead({
-//       campaign_Name: req.body.campaign_Name,
-//       closingDate: req.body.closingDate,
-//       custName: req.body.custName,
-//       custEmail: req.body.custEmail,
-//       custBussiness: req.body.custBussiness,
-//       custNumb: req.body.custNumb,
-//       state: req.body.state,
-//       salesTeam: req.body.salesTeam,
-//       salesPerson: req.body.salesPerson,
-//       leadsCreatedDate: req.body.leadsCreatedDate,
-//       companyName: req.body.companyName,
-//       projectStatus: req.body.projectStatus,
-//       remark: req.body.remark
-//     });
-
-//     await customer.save();
-
-//     res.json({ success: true, message: "New Lead Added!" });
-//   } catch (err) {
-//     console.error("Error adding lead:", err);
-//     res.json({ success: false, message: "Error Adding Lead!" });
-//   }
-// });
-
 
 //update SalesTeam of Leads
 
@@ -5468,131 +5438,226 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
-// router.post('/estInvoice', async (req, res) => {
-//   try {
-//     const {
-//       custGST,
-//       custAddLine1,
-//       custAddLine2,
-//       custAddLine3,
-//       billNumber,
-//       billType,
-//       custName,
-//       custNumb,
-//       invoiceCateg,
-//       customCateg,
-//       rows, // Array of row data
-//       invoiceDate,
-//       GSTAmount,
-//       totalAmount,
-//       billFormat
-//     } = req.body;
-
-//     // Create a new invoice document
-//     const estInvoice = new EstInvoice({
-//       custGST,
-//       custAddLine1,
-//       custAddLine2,
-//       custAddLine3,
-//       billNumber,
-//       billType,
-//       custName,
-//       custNumb,
-//       invoiceCateg,
-//       customCateg,
-//       rows,
-//       date: invoiceDate,
-//       GSTAmount,
-//       totalAmount,
-//       billFormat
-//     });
-
-//     // Save the invoice to the database
-//     await estInvoice.save();
-//     res.json({ success: true, message: 'Estimate Invoice Added Successfully' });
-//   } catch (err) {
-//     console.error("Error adding Estimate Invoice Details", err);
-//     res.json({ success: false, message: "Error Adding Estimate Invoice" });
-//   }
-// });
-
 router.post('/estInvoice', async (req, res) => {
   try {
     const {
-      custGST,
-      custAddLine1,
-      custAddLine2,
-      custAddLine3,
-      billNumber,
-      billType,
-      custName,
-      custNumb,
-      invoiceCateg,
-      customCateg,
-      rows, // Array of row data
-      invoiceDate,
-      GSTAmount,
-      totalAmount,
-      billFormat,
-      allowDuplicate // Added to handle duplicate logic
+      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg, customCateg,
+      rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state, allowUpdate // Added to handle duplicate logic
     } = req.body;
-
     // Parse the invoiceDate to check for the current month and year
     const currentMonth = new Date(invoiceDate).getMonth();
     const currentYear = new Date(invoiceDate).getFullYear();
-
-    if (!allowDuplicate) {
-      // Check if an invoice exists for the current month
-      const existingInvoice = await EstInvoice.findOne({
-        custName,
-        custNumb,
-        billFormat,
-        $expr: {
-          $and: [
-            { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
-            { $eq: [{ $year: "$date" }, currentYear] }
-          ]
-        }
-      });
-
-      if (existingInvoice) {
-        // Send a response indicating data already exists
-        return res.json({
-          success: false,
-          message: "Invoice of the User is already exists in this Month. Do you want to save this as a new entry?",
-          dataExists: true
-        });
-      }
-    }
-
-    // Save the new invoice
-    const estInvoice = new EstInvoice({
-      custGST,
-      custAddLine1,
-      custAddLine2,
-      custAddLine3,
-      billNumber,
-      billType,
+    // Check if an invoice exists for the current month
+    const existingInvoice = await EstInvoice.findOne({
       custName,
       custNumb,
-      invoiceCateg,
-      customCateg,
-      rows,
-      date: invoiceDate,
-      GSTAmount,
-      totalAmount,
-      billFormat
+      $expr: {
+        $and: [
+          { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
+          { $eq: [{ $year: "$date" }, currentYear] }
+        ]
+      }
     });
-
+    if (existingInvoice && !allowUpdate) {
+      // Send a response indicating data already exists
+      return res.json({
+        success: false,
+        message: "Invoice of the User is already exists in this Month. Do you want to save this as a new entry?",
+        dataExists: true
+      });
+    }
+    if (existingInvoice && allowUpdate) {
+      Object.assign(existingInvoice, {
+        custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, invoiceCateg, customCateg, rows,
+        //date: invoiceDate,
+        GSTAmount, totalAmount, billFormat, discountValue, afterDiscountTotal, state
+      });
+      await existingInvoice.save();
+      return res.json({ success: true, message: 'Invoice Updated Successfully' });
+    }
+    // Save the new invoice
+    const estInvoice = new EstInvoice({
+      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
+      customCateg, rows, date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
+    });
     await estInvoice.save();
-    res.json({ success: true, message: 'Estimate Invoice Added Successfully' });
+    res.json({ success: true, message: 'Invoice Created Successfully' });
   } catch (err) {
-    console.error("Error adding Estimate Invoice Details", err);
-    res.json({ success: false, message: "Error Adding Estimate Invoice" });
+    console.error("Error saving/Updating Invoice Details", err);
+    res.json({ success: false, message: "Error Saving Invoice" });
   }
 });
 
+//Update Invoice
 
+// router.post('/updateInvoice', async (req, res) => {
+//   try {
+//     const {
+//       custGST, custAddLine1, custAddLine2, custAddLine3,
+//       billNumber, billType, gstType, custName, custNumb,
+//       invoiceCateg, customCateg, rows, invoiceDate,
+//       GSTAmount, totalAmount, billFormat, allowUpdate
+//     } = req.body;
+
+//     Validate invoiceDate
+//     if (!invoiceDate || isNaN(new Date(invoiceDate).getTime())) {
+//       return res.status(400).json({ success: false, message: "Invalid invoice date" });
+//     }
+
+//     const currentMonth = new Date(invoiceDate).getMonth(); // 0-based
+//     const currentYear = new Date(invoiceDate).getFullYear();
+
+//     Find existing invoice for same customer & format in same month/year
+//     const existingInvoice = await EstInvoice.findOne({
+//       custName,
+//       custNumb,
+//       billFormat,
+//       $expr: {
+//         $and: [
+//           { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
+//           { $eq: [{ $year: "$date" }, currentYear] }
+//         ]
+//       }
+//     });
+
+//     If invoice exists but allowUpdate is false
+//     if (existingInvoice && !allowUpdate) {
+//       return res.json({
+//         success: false,
+//         message: "Invoice of the User already exists in this Month. Do you want to save this as a new entry?",
+//         dataExists: true
+//       });
+//     }
+
+//     If invoice exists and allowUpdate is true
+//     if (existingInvoice && allowUpdate) {
+//       const updates = {};
+//       const fieldsToCompare = {
+//         custGST, custAddLine1, custAddLine2, custAddLine3,
+//         billNumber, billType, gstType, invoiceCateg,
+//         customCateg, GSTAmount, totalAmount, rows
+//       };
+
+//       Compare each field — only add to updates if changed
+//       for (const [key, newVal] of Object.entries(fieldsToCompare)) {
+//         const existingVal = existingInvoice[key];
+//         if (JSON.stringify(existingVal) !== JSON.stringify(newVal)) {
+//           updates[key] = newVal;
+//         }
+//       }
+
+//       If there are changes, update only those
+//       if (Object.keys(updates).length > 0) {
+//         await EstInvoice.updateOne(
+//           { _id: existingInvoice._id },
+//           { $set: updates }
+//         );
+//         return res.json({ success: true, message: 'Invoice Updated Successfully (only changed fields)' });
+//       } else {
+//         return res.json({ success: true, message: 'No changes detected — invoice already up to date' });
+//       }
+//     }
+
+//     No existing invoice — create new
+//     const estInvoice = new EstInvoice({
+//       custGST, custAddLine1, custAddLine2, custAddLine3,
+//       billNumber, billType, gstType, custName, custNumb,
+//       invoiceCateg, customCateg, rows,
+//       date: invoiceDate, GSTAmount, totalAmount, billFormat
+//     });
+
+//     await estInvoice.save();
+//     res.json({ success: true, message: 'Invoice Created Successfully' });
+
+//   } catch (err) {
+//     console.error("Error saving/updating invoice:", err);
+//     res.status(500).json({ success: false, message: "Error Saving Invoice" });
+//   }
+// });
+
+router.post('/updateInvoice', async (req, res) => {
+  try {
+    const {
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billNumber, billType, gstType, custName, custNumb,
+      invoiceCateg, customCateg, rows, invoiceDate,
+      GSTAmount, totalAmount, billFormat, allowUpdate, financialYear, discountValue, afterDiscountTotal, state
+    } = req.body;
+
+    if (!invoiceDate || isNaN(new Date(invoiceDate).getTime())) {
+      return res.status(400).json({ success: false, message: "Invalid invoice date" });
+    }
+
+    const currentMonth = new Date(invoiceDate).getMonth();
+    const currentYear = new Date(invoiceDate).getFullYear();
+
+    const existingInvoice = await EstInvoice.findOne({
+      custName,
+      custNumb,
+      //billFormat,
+      $expr: {
+        $and: [
+          { $eq: [{ $month: "$date" }, currentMonth + 1] },
+          { $eq: [{ $year: "$date" }, currentYear] }
+        ]
+      }
+    });
+
+    if (existingInvoice && !allowUpdate) {
+      return res.json({
+        success: false,
+        message: "Invoice of the User already exists in this Month. Do you want to save this as a new entry?",
+        dataExists: true
+      });
+    }
+
+    if (existingInvoice && allowUpdate) {
+      const updates = {};
+      const scalarFields = {
+        custGST, custAddLine1, custAddLine2, custAddLine3,
+        billNumber, billType, gstType,
+        invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state
+      };
+
+      for (const [key, newVal] of Object.entries(scalarFields)) {
+        const oldVal = existingInvoice[key];
+        if (oldVal !== newVal) {
+          updates[key] = newVal;
+        }
+      }
+
+      // Compare rows (deep comparison)
+      if (JSON.stringify(existingInvoice.rows) !== JSON.stringify(rows)) {
+        updates.rows = rows;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await EstInvoice.updateOne(
+          { _id: existingInvoice._id },
+          { $set: updates }
+        );
+        return res.json({ success: true, message: 'Invoice Updated Successfully (only changed fields)' });
+      } else {
+        return res.json({ success: true, message: 'No changes detected — invoice already up to date' });
+      }
+    }
+
+    // Create new invoice
+    const estInvoice = new EstInvoice({
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billNumber, billType, gstType, custName, custNumb,
+      invoiceCateg, customCateg, rows,
+      date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
+    });
+
+    await estInvoice.save();
+    res.json({ success: true, message: 'Invoice Created Successfully' });
+
+  } catch (err) {
+    console.error("Error saving/updating invoice:", err);
+    res.status(500).json({ success: false, message: "Error Saving Invoice" });
+  }
+});
 
 // Estimate Invoice Count
 
@@ -5604,10 +5669,64 @@ router.get('/estInvoiceCount', async (req, res) => {
 
 // Main Invoice Count
 
+// router.get('/mainInvoiceCount', async (req, res) => {
+//   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
+//   const nonGST = await EstInvoice.countDocuments({ billFormat: 'Non-GST'});
+//   return res.json({dataLength, nonGST});
+// });
+
 router.get('/mainInvoiceCount', async (req, res) => {
-  const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
-  //const dataLength = await EstInvoice.countDocuments();
-  return res.json(dataLength);
+  try {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+
+    const currentFY =
+      month >= 4
+        ? `${String(year).slice(-2)}-${String(year + 1).slice(-2)}`
+        : `${String(year - 1).slice(-2)}-${String(year).slice(-2)}`;
+
+    const { clientFY } = req.query;
+
+    const isCurrentFY = clientFY === currentFY;
+
+    // For current FY: count those with no financialYear OR with financialYear == clientFY
+    let mainFilter = { billFormat: 'Main' };
+    let nonGstFilter = { billFormat: 'Non-GST' };
+
+    if (!isCurrentFY) {
+      // For next year, only count where financialYear is set
+      mainFilter = { ...mainFilter, financialYear: clientFY };
+      nonGstFilter = { ...nonGstFilter, financialYear: clientFY };
+    } else {
+      // For current FY, include documents with missing financialYear or matching currentFY
+      mainFilter = {
+        ...mainFilter,
+        $or: [{ financialYear: { $exists: false } }, { financialYear: clientFY }]
+      };
+      nonGstFilter = {
+        ...nonGstFilter,
+        $or: [{ financialYear: { $exists: false } }, { financialYear: clientFY }]
+      };
+    }
+
+    const dataLength = await EstInvoice.countDocuments(mainFilter);
+    const nonGST = await EstInvoice.countDocuments(nonGstFilter);
+
+    const gstStart = isCurrentFY ? 111 : 1;
+    const nonGstStart = isCurrentFY ? 181 : 1;
+
+    return res.json({
+      dataLength,
+      nonGST,
+      invoiceStart: gstStart + dataLength,
+      nonGSTStart: nonGstStart + nonGST
+    });
+
+  } catch (err) {
+    console.error('Error in /mainInvoiceCount:', err);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 // sales Whatsapp Work Admin
@@ -6338,7 +6457,6 @@ router.get('/conversionRateMonthly', async (req, res) => {
   }
 });
 
-
 //Attendance & totalLoggedInTime
 
 router.get('/attendance1', (req, res) => {
@@ -6574,43 +6692,6 @@ router.get('/usersAttendance', async (req, res) => {
   }
 });
 
-// router.post('/attendance', async (req, res) => {
-//   const { year, month, attendanceData } = req.body;
-
-//   if (!year || !month || !attendanceData) {
-//       return res.status(400).json({ success: false, message: "Year, month, and attendance data are required." });
-//   }
-
-//   try {
-//       const yearStr = String(year);
-//       const monthStr = String(month);
-
-//       console.log(`Received attendance data for ${monthStr}/${yearStr}:`, attendanceData);
-
-//       // Prepare bulk update operations
-//       const bulkOps = attendanceData.map(attendance => {
-//           return {
-//               updateOne: {
-//                   filter: { signupUsername: attendance.username },
-//                   update: {
-//                       $set: {
-//                           [`attendance.${yearStr}.${monthStr}`]: attendance.attendance
-//                       }
-//                   }
-//               }
-//           };
-//       });
-
-//       const bulkWriteResult = await User.bulkWrite(bulkOps);
-//       console.log("Bulk write result:", bulkWriteResult);
-
-//       res.json({ success: true, message: 'Attendance updated successfully.' });
-//   } catch (err) {
-//       console.error("Error updating attendance:", err);
-//       res.status(500).json({ success: false, message: "Error updating attendance." });
-//   }
-// });
-
 // new Subsidiary
 
 router.post('/newSubsidiary', async (req, res) => {
@@ -6761,21 +6842,21 @@ router.get('/mediumEditorProjects', async (req, res) => {
   }
 });
 
-router.get('/changesEditorProjects', async (req,res) => {
-    const currentMonth = new Date().getMonth() + 1;
-  try{
+router.get('/changesEditorProjects', async (req, res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try {
     const changesProjects = await Customer.find({
       editor: person,
       editorPassDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth)
       },
-      projectStatus: { $eq: 'Video Changes'}
-    }).sort({editorPassDate: -1});
+      projectStatus: { $eq: 'Video Changes' }
+    }).sort({ editorPassDate: -1 });
     return res.json(changesProjects)
   } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads'})
+    res.status(500).json({ error: 'Failed to fetch Leads' })
   }
 });
 
@@ -7110,8 +7191,8 @@ router.get('/getCampaignNames', async (req, res) => {
     // Fetch leads from the last 7 days based on leadsCreatedDate
     const recentLeads = await salesLead.find({
       leadsCreatedDate: { $gte: oneMonthAgo },
-      campaignType: { $ne: "WhatsApp API"}
-     });
+      campaignType: { $ne: "WhatsApp API" }
+    });
 
     // Extract unique campaign names
     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
@@ -7126,21 +7207,21 @@ router.get('/getCampaignNames', async (req, res) => {
 
 // whatsApp API Campaigns
 
-router.get('/getWhatsAppCampaignNames', async(req,res)=>{
-  try{
+router.get('/getWhatsAppCampaignNames', async (req, res) => {
+  try {
     const oneMonthAgo = moment().subtract(30, 'days').toDate();
 
     const recentLeads = await salesLead.find({
-      leadsCreatedDate: {$gte: oneMonthAgo},
-      campaignType: { $eq: "WhatsApp API"}
+      leadsCreatedDate: { $gte: oneMonthAgo },
+      campaignType: { $eq: "WhatsApp API" }
     });
     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
 
     console.log("CAMPAIGN NAMES===========>>", campaignNames);
     return res.json(campaignNames);
-  }catch(error){
+  } catch (error) {
     console.error('Error Fetching Recent Campaign Leads', error);
-    res.status(500).json({ error: 'Failed to fetch campaign leads'});
+    res.status(500).json({ error: 'Failed to fetch campaign leads' });
   }
 });
 
@@ -7280,14 +7361,30 @@ router.get('/getInvoice/:startDate/:endDate', async (req, res) => {
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
   try {
-    let query = {
+    let query1 = {
       date: {
         $gte: startDate, $lte: endDate
       },
-      custGST: { $ne: '' }
+      // custGST: { $ne: '' }
+      billFormat: {$eq: 'GST'}
     };
-    const invoiceData = await EstInvoice.find(query);
-    res.json(invoiceData);
+    let query2 = {
+      date: {
+        $gte: startDate, $lte: endDate
+      },
+      // custGST: { $eq: '' }
+      billFormat: {$eq: 'Non-GST'}
+    };
+    let query3 = {
+      date: {
+        $gte: startDate, $lte: endDate
+      },
+      billFormat: {$eq: 'Estimate'}
+    }
+    const invoiceData = await EstInvoice.find(query1);
+    const nonGSTData = await EstInvoice.find(query2);
+    const quotationData = await EstInvoice.find(query3);
+    res.json({ invoiceData, nonGSTData, quotationData });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
@@ -7909,7 +8006,6 @@ router.get('/searchCategProjects/:name/:mobile', async (req, res) => {
   }
 });
 
-
 router.post('/update-projectStatusTeam', async (req, res) => {
   try {
     const items = req.body.items;
@@ -8420,12 +8516,12 @@ router.get('/getDateCampaign/:name', async (req, res) => {
     const selectedDateObj = new Date(selectedDate); // Convert the date to a Date object
     const startOfDay = new Date(selectedDateObj.setHours(0, 0, 0, 0)); // Set to the start of the selected date
     const endOfDay = new Date(selectedDateObj.setHours(23, 59, 59, 999)); // Set to the end of the selected date
-    
+
     const leads = await salesLead.find({
       campaign_Name: { $regex: new RegExp(name, 'i') }, // Filter by campaign name
-      closingDate: { 
+      closingDate: {
         $gte: startOfDay, // Date range filter
-        $lte: endOfDay 
+        $lte: endOfDay
       }
     }).sort({ closingDate: -1 });
     return res.json(leads);
@@ -8435,12 +8531,12 @@ router.get('/getDateCampaign/:name', async (req, res) => {
   }
 });
 
-router.get('/closingCurrentMonth/:name', async(req,res) => {
+router.get('/closingCurrentMonth/:name', async (req, res) => {
   const name = req.params.name;
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  try{
+  try {
     const projects = await Customer.find({
       closingCateg: name,
       closingDate: {
@@ -8448,21 +8544,21 @@ router.get('/closingCurrentMonth/:name', async(req,res) => {
         $lte: endOfToday
       }
     });
-    if(projects.length > 0){
+    if (projects.length > 0) {
       res.json(projects);
-    }else{
-      res.json({ result: "No Data Found"});
+    } else {
+      res.json({ result: "No Data Found" });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/closingPrevMonth/:name', async(req,res) => {
+router.get('/closingPrevMonth/:name', async (req, res) => {
   const name = req.params.name;
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     const projectsPrev = await Customer.find({
       closingCateg: name,
       closingDate: {
@@ -8470,21 +8566,21 @@ router.get('/closingPrevMonth/:name', async(req,res) => {
         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
       }
     });
-    if(projectsPrev.length > 0){
+    if (projectsPrev.length > 0) {
       res.json(projectsPrev);
-    }else{
-      res.json({ result: "No Data Found"});
+    } else {
+      res.json({ result: "No Data Found" });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/closingTwoPrevMonth/:name', async(req,res) => {
+router.get('/closingTwoPrevMonth/:name', async (req, res) => {
   const name = req.params.name;
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     const projectsTwoPrev = await Customer.find({
       closingCateg: name,
       closingDate: {
@@ -8492,14 +8588,14 @@ router.get('/closingTwoPrevMonth/:name', async(req,res) => {
         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
       }
     });
-    if(projectsTwoPrev.length > 0){
+    if (projectsTwoPrev.length > 0) {
       res.json(projectsTwoPrev);
-    }else{
-      res.json({ result: "No Data Found"});
+    } else {
+      res.json({ result: "No Data Found" });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
