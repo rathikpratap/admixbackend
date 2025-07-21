@@ -16,15 +16,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 const salesLead = require('./models/salesLead');
-app.use(cors({
-    origin: 'https://www.login.admixmedia.in',
-    credentials:true,
-}));
-
 // app.use(cors({
-//     origin: 'http://localhost:4200',
-//     credentials: true
+//     origin: 'https://www.login.admixmedia.in',
+//     credentials:true,
 // }));
+
+app.use(cors({
+    origin: 'http://localhost:4200',
+    credentials: true
+}));
 
 require('./config');
 
@@ -33,8 +33,8 @@ const port = process.env.PORT || 3000;
 // Setup Socket.IO
 const io = new Server(server, {
     cors: {
-        //origin: 'http://localhost:4200', // Change this in production
-        origin: 'https://www.login.admixmedia.in',
+        origin: 'http://localhost:4200', // Change this in production
+        //origin: 'https://www.login.admixmedia.in',
         methods: ['GET', 'POST'],
         credentials: true
     }

@@ -14,6 +14,7 @@ const Lead = require('./models/Leads');
 const Task = require('./models/task');
 const salesLead = require('./models/salesLead');
 const incentive = require('./models/incentive');
+const point = require('./models/points');
 const transferLead = require('./models/adminLeads');
 const Payroll = require('./models/payroll');
 const CampaignAssignment = require('./models/campaignAssignment');
@@ -662,26 +663,77 @@ router.get('/allCompleteProjects', async (req, res) => {
 
 //get Customer
 
+// router.get('/read-cust/:id', async (req, res) => {
+//   try {
+//     // Search in the Customer collection
+//     const customerDetails = await Customer.findById(req.params.id);
+
+//     // Search in other collections, for example, OtherCollection
+//     const otherDetails = await salesLead.findById(req.params.id);
+
+//     // Check if any data found in either collection
+//     if (customerDetails) {
+//       return res.json(customerDetails);
+//     } else if (otherDetails) {
+//       return res.json(otherDetails);
+//     } else {
+//       return res.json({ result: "No Data" });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// });
+
 router.get('/read-cust/:id', async (req, res) => {
   try {
-    // Search in the Customer collection
-    const customerDetails = await Customer.findById(req.params.id);
+    const { id } = req.params;
 
-    // Search in other collections, for example, OtherCollection
-    const otherDetails = await salesLead.findById(req.params.id);
-
-    // Check if any data found in either collection
+    // Try to find in main Customer collection
+    const customerDetails = await Customer.findById(id);
     if (customerDetails) {
       return res.json(customerDetails);
-    } else if (otherDetails) {
-      return res.json(otherDetails);
-    } else {
-      return res.json({ result: "No Data" });
     }
+
+    // Try to find in salesLead collection
+    const otherDetails = await salesLead.findById(id);
+    if (otherDetails) {
+      return res.json(otherDetails);
+    }
+
+    // Check subEntries in Customer collection
+    const allCustomers = await Customer.find({});
+    for (const doc of allCustomers) {
+      const subEntry = (doc.subEntries || []).find(sub => sub._id.toString() === id);
+      if (subEntry) {
+        return res.json({
+          ...subEntry,
+          parentId: doc._id,
+          parentCustCode: doc.custCode,
+          parentEntryType: 'Customer'
+        });
+      }
+    }
+
+    // Optionally: Check subEntries in salesLead (if applicable)
+    const allLeads = await salesLead.find({});
+    for (const doc of allLeads) {
+      const subEntry = (doc.subEntries || []).find(sub => sub._id.toString() === id);
+      if (subEntry) {
+        return res.json({
+          ...subEntry,
+          parentId: doc._id,
+          parentEntryType: 'salesLead'
+        });
+      }
+    }
+
+    return res.json({ result: "No Data" });
+
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
+
 
 //get Employee
 
@@ -831,16 +883,57 @@ router.delete('/delete-sales/:id', async (req, res) => {
 
 // Edit Customer Details By editor
 
+// router.put('/updateEditor/:id', async (req, res) => {
+//   const custDet = await Customer.findByIdAndUpdate(req.params.id, {
+//     $set: req.body
+//   })
+//   if (custDet) {
+//     return res.json(custDet)
+//   } else {
+//     res.send({ result: "No No Data" })
+//   }
+// });
+
 router.put('/updateEditor/:id', async (req, res) => {
-  const custDet = await Customer.findByIdAndUpdate(req.params.id, {
-    $set: req.body
-  })
-  if (custDet) {
-    return res.json(custDet)
-  } else {
-    res.send({ result: "No No Data" })
+  try {
+    // First try to update main document (if ID matches _id of a main entry)
+    const updatedMain = await Customer.findByIdAndUpdate(req.params.id, {
+      $set: req.body
+    }, { new: true });
+
+    if (updatedMain) {
+      return res.json({ updated: 'main', data: updatedMain });
+    }
+
+    // If not found in main, try to find parent document that has the sub-entry
+    const parentDoc = await Customer.findOne({ "subEntries._id": req.params.id });
+
+    if (!parentDoc) {
+      return res.status(404).json({ error: "Sub-entry or main entry not found" });
+    }
+
+    // Find sub-entry index
+    const subIndex = parentDoc.subEntries.findIndex(sub => sub._id.toString() === req.params.id);
+    if (subIndex === -1) {
+      return res.status(404).json({ error: "Sub-entry not found inside parent" });
+    }
+
+    // Merge existing sub-entry data with updates
+    parentDoc.subEntries[subIndex] = {
+      ...parentDoc.subEntries[subIndex]._doc,
+      ...req.body
+    };
+
+    // Save the whole parent document after sub-entry update
+    const updatedParent = await parentDoc.save();
+
+    return res.json({ updated: 'sub-entry', data: updatedParent.subEntries[subIndex] });
+  } catch (error) {
+    console.error("Error updating:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
+
 
 // Edit Customer Details
 
@@ -1370,17 +1463,162 @@ const addHeadersToSheet = async (spreadsheetId, sheetTitle) => {
   }
 };
 
+// router.post('/customer', async (req, res) => {
+//   try {
+//     const customer = new Customer(req.body);
+//     await customer.save();
+
+//     await appendToGoogleSheet(customer);
+//     res.json({ success: true, message: "Customer Added and Google Sheet Updated" });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: "Error adding Customer", error: error.message });
+//   }
+// });
+
+// router.post('/customer', async (req, res) => {
+//   try {
+//     const {
+//       graphicsCount = 0,
+//       videosCount = 0,
+//       reelsCount = 0,
+//       custName,
+//       closingDate,
+//       custCode,
+//     } = req.body;
+
+//     // Convert custCode to number (if it's string)
+//     const baseCustCode = parseInt(custCode, 10);
+//     if (isNaN(baseCustCode)) {
+//       return res.status(400).json({ success: false, message: "Invalid custCode: must be a number" });
+//     }
+
+//     // ✅ Create main entry (include counts)
+//     const mainCustomer = new Customer({
+//       ...req.body,
+//       entryType: 'Main',
+//       graphicsCount,
+//       videosCount,
+//       reelsCount
+//     });
+//     await mainCustomer.save();
+
+//     // ✅ Generate sub-entries with incremented custCodes
+//     let nextCustCode = baseCustCode + 1;
+//     const subEntries = [];
+
+//     const createSubEntries = (count, type) => {
+//       for (let i = 1; i <= count; i++) {
+//         subEntries.push(new Customer({
+//           custName: `${custName} (${type} ${i})`,
+//           closingDate,
+//           custCode: nextCustCode++,
+//           entryType: type
+//         }));
+//       }
+//     };
+
+//     createSubEntries(graphicsCount, 'Graphic');
+//     createSubEntries(videosCount, 'Video');
+//     createSubEntries(reelsCount, 'Reel');
+
+//     if (subEntries.length > 0) {
+//       await Customer.insertMany(subEntries);
+//     }
+
+//     // ✅ Send only main entry to Google Sheet
+//     await appendToGoogleSheet(mainCustomer);
+
+//     res.json({
+//       success: true,
+//       message: `Main entry and ${subEntries.length} sub-entry(ies) saved.`,
+//     });
+
+//   } catch (error) {
+//     console.error("Error in /customer:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error adding customer",
+//       error: error.message,
+//     });
+//   }
+// });
+
 router.post('/customer', async (req, res) => {
   try {
-    const customer = new Customer(req.body);
+    const {
+      custCode,
+      custName,
+      closingDate,
+      graphicsCount = 0,
+      videosCount = 0,
+      reelsCount = 0,
+      custBussiness,
+      salesPerson,
+      companyName,
+      priority,
+      ...restFields
+    } = req.body;
+
+    const baseCustCode = parseInt(custCode, 10);
+    if (isNaN(baseCustCode)) {
+      return res.status(400).json({ success: false, message: "Invalid custCode" });
+    }
+
+    let nextCustCode =  1;
+    const subEntries = [];
+
+    const createSubEntries = (count, type) => {
+      for (let i = 1; i <= count; i++) {
+        subEntries.push({
+          custCode: `${custCode}.${nextCustCode++}`,
+          custName: `${custName} (${type} ${i})`,
+          entryType: type,
+          custBussiness: custBussiness,
+          salesPerson: salesPerson,
+          companyName: companyName,
+          priority: priority
+        });
+      }
+    };
+
+    createSubEntries(graphicsCount, "Graphic");
+    createSubEntries(videosCount, "Video");
+    createSubEntries(reelsCount, "Reel");
+
+    const customerData = {
+      custCode: baseCustCode,
+      custName,
+      closingDate,
+      graphicsCount,
+      videosCount,
+      reelsCount,
+      entryType: "Main",
+      subEntries,
+      salesPerson,
+      companyName,
+      custBussiness,
+      priority,
+      ...restFields
+    };
+
+    const customer = new Customer(customerData);
     await customer.save();
 
     await appendToGoogleSheet(customer);
-    res.json({ success: true, message: "Customer Added and Google Sheet Updated" });
+
+    res.json({
+      success: true,
+      message: "Customer added with sub-entries.",
+      data: customer
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error adding Customer", error: error.message });
+    console.error("Error adding customer:", error);
+    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
   }
 });
+
+
 
 // Country State City
 
@@ -2659,7 +2897,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04ETEH1C-hFnDCgYIARAAGAQSNwF-L9IrGD9xcRXqwyQQSIIPFhoWDBMyy5gnsCGYGrvAPTWb0ZSHIIlB8CR_1mU0jHLz2psC_TA';
+const REFERESH_TOKEN = '1//04GV4Jdg4_HLYCgYIARAAGAQSNwF-L9IrykPV6wcID1jqEKIiMyWGqt97RHyHxg0Ts-5ybvt3lxo6v764uHGdy1KWdPBj6JgAktY';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3686,6 +3924,25 @@ router.post('/updateEditor', async (req, res) => {
   }
 });
 
+router.post('/updateSubEntry', async (req, res) => {
+  try {
+    const { parentId, subEntry } = req.body;
+    const customer = await Customer.findById(parentId);
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
+
+    const sub = customer.subEntries.find(entry => entry.custCode === subEntry.custCode);
+    if (!sub) return res.status(404).json({ message: 'Sub-entry not found' });
+
+    Object.assign(sub, subEntry); // Update only the given fields
+    await customer.save();
+
+    res.json({ message: 'Sub-entry updated' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 router.post('/updateB2bEditorname', async (req, res) => {
   try {
     const items = req.body.items;
@@ -3840,93 +4097,400 @@ router.get('/scriptCompleteList', async (req, res) => {
 
 //Editor Projects
 
+// router.get('/allEditorProjects', async (req, res) => {
+//   const allProjects = (await Customer.find({ editor: person }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+//   const allB2bProjects = (await B2bCustomer.find({ b2bEditor: person }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//   if (allProjects || allB2bProjects) {
+//     return res.json({ list: [...allProjects, ...allB2bProjects] });
+//   } else {
+//     res.send({ result: "No Data Found" })
+//   }
+// });
+
 router.get('/allEditorProjects', async (req, res) => {
-  const allProjects = (await Customer.find({ editor: person }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
-  const allB2bProjects = (await B2bCustomer.find({ b2bEditor: person }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-  if (allProjects || allB2bProjects) {
-    return res.json({ list: [...allProjects, ...allB2bProjects] });
-  } else {
-    res.send({ result: "No Data Found" })
+  try {
+    const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
+
+    const allProjects = [];
+    const allB2bProjects = [];
+
+    // Handle Customer entries
+    const customerDocs = await Customer.find({}).sort({ closingDate: -1 });
+
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allProjects.push({
+          ...item,
+          type: 'Customer',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allProjects.push({
+            ...sub,
+            type: 'Customer',
+            parentCustCode: item.custCode
+          });
+        });
+      }
+    });
+
+    // Handle B2B entries
+    const b2bDocs = await B2bCustomer.find({}).sort({ b2bEditorPassDate: -1 });
+
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allB2bProjects.push({
+          ...item,
+          type: 'b2b',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allB2bProjects.push({
+            ...sub,
+            type: 'b2b',
+            parentCustCode: item.custCode
+          });
+        });
+      }
+    });
+
+    if (allProjects.length || allB2bProjects.length) {
+      return res.json({ list: [...allProjects, ...allB2bProjects] });
+    } else {
+      res.send({ result: "No Data Found" });
+    }
+
+  } catch (error) {
+    console.error("Error Fetching All Editor Projects", error);
+    res.status(500).json({ error: 'Failed to Fetch All Projects' });
   }
 });
+
+
+// router.get('/editorProjects', async (req, res) => {
+//   try {
+//     //const currentMonth = new Date().getMonth() + 1;
+//     const now = new Date();
+//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+//     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+//     const allProjects = (await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: startOfMonth,
+//         $lte: endOfToday
+//       }
+//     }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer', subEntries: item.subEntries || [] }));
+
+//     const allB2bProjects = (await B2bCustomer.find({
+//       b2bEditor: person,
+//       b2bEditorPassDate: {
+//         $gte: startOfMonth,
+//         $lte: endOfToday
+//       }
+//     }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b',subEntries: item.subEntries || [] }));
+//     return res.json({ list: [...allProjects, ...allB2bProjects] })
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to Fetch Leads' })
+//   }
+// });
 
 router.get('/editorProjects', async (req, res) => {
   try {
-    //const currentMonth = new Date().getMonth() + 1;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const allProjects = (await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: startOfMonth,
-        $lte: endOfToday
-      }
-    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+    const endOfToday = new Date(now.getFullYear(), now.getDate(), 23, 59, 59, 999);
 
-    const allB2bProjects = (await B2bCustomer.find({
-      b2bEditor: person,
-      b2bEditorPassDate: {
-        $gte: startOfMonth,
-        $lte: endOfToday
+    const isValidDate = (d) => d && new Date(d) >= startOfMonth && new Date(d) <= endOfToday;
+
+    // Handle Customer Projects
+    const customerDocs = await Customer.find({}).sort({ editorPassDate: -1 });
+    const allProjects = [];
+
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        // Include full main entry with its valid sub-entries
+        allProjects.push({
+          ...item,
+          type: 'Customer',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        // Only push valid sub-entries individually
+        validSubEntries.forEach(sub => {
+          allProjects.push({
+            ...sub,
+            type: 'Customer',
+            parentCustCode: item.custCode // optional for context
+          });
+        });
       }
-    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-    return res.json({ list: [...allProjects, ...allB2bProjects] })
+    });
+
+    // Handle B2B Projects
+    const b2bDocs = await B2bCustomer.find({}).sort({ b2bEditorPassDate: -1 });
+    const allB2bProjects = [];
+
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allB2bProjects.push({
+          ...item,
+          type: 'b2b',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allB2bProjects.push({
+            ...sub,
+            type: 'b2b',
+            parentCustCode: item.custCode
+          });
+        });
+      }
+    });
+
+    return res.json({ list: [...allProjects, ...allB2bProjects] });
+
   } catch (error) {
     console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to Fetch Leads' })
+    res.status(500).json({ error: 'Failed to Fetch Leads' });
   }
 });
+
+// router.get('/editorPreviousProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const allProjects = (await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+//       }
+//     }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+
+//     const b2bProducts = (await B2bCustomer.find({
+//       b2bEditor: person,
+//       b2bEditorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+//       }
+//     }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//     return res.json({ list: [...allProjects, ...b2bProducts] })
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to Fetch Leads' })
+//   }
+// });
 
 router.get('/editorPreviousProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
-    const allProjects = (await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
-      }
-    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
 
-    const b2bProducts = (await B2bCustomer.find({
-      b2bEditor: person,
-      b2bEditorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+    const prevMonthStart = new Date(currentYear, currentMonth - 1, 1);
+    const prevMonthEnd = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999); // last day of previous month
+
+    const isValidDate = (d) => d && new Date(d) >= prevMonthStart && new Date(d) <= prevMonthEnd;
+
+    const allProjects = [];
+    const allB2bProjects = [];
+
+    // Customer Entries
+    const customerDocs = await Customer.find({}).sort({ editorPassDate: -1 });
+
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allProjects.push({
+          ...item,
+          type: 'Customer',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allProjects.push({
+            ...sub,
+            type: 'Customer',
+            parentCustCode: item.custCode
+          });
+        });
       }
-    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-    return res.json({ list: [...allProjects, ...b2bProducts] })
+    });
+
+    // B2B Entries
+    const b2bDocs = await B2bCustomer.find({}).sort({ b2bEditorPassDate: -1 });
+
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allB2bProjects.push({
+          ...item,
+          type: 'b2b',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allB2bProjects.push({
+            ...sub,
+            type: 'b2b',
+            parentCustCode: item.custCode
+          });
+        });
+      }
+    });
+
+    return res.json({ list: [...allProjects, ...allB2bProjects] });
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to Fetch Leads' })
+    console.error("Error Fetching Previous Projects", error);
+    res.status(500).json({ error: 'Failed to Fetch Previous Projects' });
   }
 });
+
+// router.get('/editorTwoPreviousProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const allProjects = (await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+//       }
+//     }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+
+//     const b2bProducts = (await B2bCustomer.find({
+//       b2bEditor: person,
+//       b2bEditorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+//       }
+//     }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//     return res.json({ list: [...allProjects, ...b2bProducts] })
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to Fetch Leads' })
+//   }
+// });
 
 router.get('/editorTwoPreviousProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
-    const allProjects = (await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
-      }
-    }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
 
-    const b2bProducts = (await B2bCustomer.find({
-      b2bEditor: person,
-      b2bEditorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+    const twoPrevMonthStart = new Date(currentYear, currentMonth - 2, 1);
+    const twoPrevMonthEnd = new Date(currentYear, currentMonth - 1, 0, 23, 59, 59, 999); // last day of 2nd previous month
+
+    const isValidDate = (d) => d && new Date(d) >= twoPrevMonthStart && new Date(d) <= twoPrevMonthEnd;
+
+    const allProjects = [];
+    const allB2bProjects = [];
+
+    // Customer Entries
+    const customerDocs = await Customer.find({}).sort({ editorPassDate: -1 });
+
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allProjects.push({
+          ...item,
+          type: 'Customer',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allProjects.push({
+            ...sub,
+            type: 'Customer',
+            parentCustCode: item.custCode
+          });
+        });
       }
-    }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-    return res.json({ list: [...allProjects, ...b2bProducts] })
+    });
+
+    // B2B Entries
+    const b2bDocs = await B2bCustomer.find({}).sort({ b2bEditorPassDate: -1 });
+
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        allB2bProjects.push({
+          ...item,
+          type: 'b2b',
+          subEntries: validSubEntries
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          allB2bProjects.push({
+            ...sub,
+            type: 'b2b',
+            parentCustCode: item.custCode
+          });
+        });
+      }
+    });
+
+    return res.json({ list: [...allProjects, ...allB2bProjects] });
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to Fetch Leads' })
+    console.error("Error Fetching Two-Previous Projects", error);
+    res.status(500).json({ error: 'Failed to Fetch Projects' });
   }
 });
+
 
 router.get('/dataByDatePassRangeEditor/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
@@ -5438,55 +6002,199 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
+// router.post('/estInvoice', async (req, res) => {
+//   try {
+//     const {
+//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg, customCateg,
+//       rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state, allowUpdate // Added to handle duplicate logic
+//     } = req.body;
+//     // Parse the invoiceDate to check for the current month and year
+//     const currentMonth = new Date(invoiceDate).getMonth();
+//     const currentYear = new Date(invoiceDate).getFullYear();
+//     // Check if an invoice exists for the current month
+//     const existingInvoice = await EstInvoice.findOne({
+//       custName,
+//       custNumb,
+//       $expr: {
+//         $and: [
+//           { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
+//           { $eq: [{ $year: "$date" }, currentYear] }
+//         ]
+//       }
+//     });
+//     if (existingInvoice && !allowUpdate) {
+//       // Send a response indicating data already exists
+//       return res.json({
+//         success: false,
+//         message: "Invoice of the User is already exists in this Month. Do you want to save this as a new entry?",
+//         dataExists: true
+//       });
+//     }
+//     if (existingInvoice && allowUpdate) {
+//       Object.assign(existingInvoice, {
+//         custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, invoiceCateg, customCateg, rows,
+//         //date: invoiceDate,
+//         GSTAmount, totalAmount, billFormat, discountValue, afterDiscountTotal, state
+//       });
+//       await existingInvoice.save();
+//       return res.json({ success: true, message: 'Invoice Updated Successfully' });
+//     }
+//     // Save the new invoice
+//     const estInvoice = new EstInvoice({
+//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
+//       customCateg, rows, date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
+//     });
+//     await estInvoice.save();
+//     res.json({ success: true, message: 'Invoice Created Successfully' });
+//   } catch (err) {
+//     console.error("Error saving/Updating Invoice Details", err);
+//     res.json({ success: false, message: "Error Saving Invoice" });
+//   }
+// });
+
+// router.post('/estInvoice', async (req, res) => {
+//   try {
+//     const {
+//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
+//       customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue,
+//       afterDiscountTotal, state, allowUpdate, allowNewDateEntry
+//     } = req.body;
+
+//     const date = new Date(invoiceDate);
+//     const currentMonth = date.getMonth() + 1;
+//     const currentYear = date.getFullYear();
+
+//     // Check if any invoice exists for same customer & month
+//     const existingInvoice = await EstInvoice.findOne({
+//       custName,
+//       custNumb,
+//       $expr: {
+//         $and: [
+//           { $eq: [{ $month: "$date" }, currentMonth] },
+//           { $eq: [{ $year: "$date" }, currentYear] }
+//         ]
+//       }
+//     });
+
+//     if (existingInvoice) {
+//       const sameDate = new Date(existingInvoice.date).toISOString().split('T')[0] === date.toISOString().split('T')[0];
+
+//       if (sameDate && !allowUpdate) {
+//         return res.json({
+//           success: false,
+//           sameDateExists: true,
+//           message: "An invoice with the same date already exists. Do you want to update it?"
+//         });
+//       }
+
+//       if (!sameDate && !allowNewDateEntry) {
+//         return res.json({
+//           success: false,
+//           differentDateExists: true,
+//           message: "An invoice already exists for this month. Do you want to save it as a new entry with a different date?"
+//         });
+//       }
+
+//       if (sameDate && allowUpdate) {
+//         Object.assign(existingInvoice, {
+//           custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, invoiceCateg, customCateg, rows,
+//           GSTAmount, totalAmount, billFormat, discountValue, afterDiscountTotal, state
+//         });
+//         await existingInvoice.save();
+//         return res.json({ success: true, message: 'Invoice Updated Successfully' });
+//       }
+//     }
+
+//     // Save new invoice
+//     const estInvoice = new EstInvoice({
+//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
+//       customCateg, rows, date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
+//     });
+//     await estInvoice.save();
+//     res.json({ success: true, message: 'Invoice Created Successfully' });
+
+//   } catch (err) {
+//     console.error("Error saving/updating invoice", err);
+//     res.json({ success: false, message: "Error saving invoice" });
+//   }
+// });
+
 router.post('/estInvoice', async (req, res) => {
   try {
     const {
-      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg, customCateg,
-      rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state, allowUpdate // Added to handle duplicate logic
+      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb,
+      invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear,
+      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry
     } = req.body;
-    // Parse the invoiceDate to check for the current month and year
-    const currentMonth = new Date(invoiceDate).getMonth();
-    const currentYear = new Date(invoiceDate).getFullYear();
-    // Check if an invoice exists for the current month
-    const existingInvoice = await EstInvoice.findOne({
+
+    const date = new Date(invoiceDate);
+    const currentMonth = date.getMonth() + 1;
+    const currentYear = date.getFullYear();
+    const dateString = date.toISOString().split('T')[0];
+
+    // Find all invoices for the same customer in the same month/year
+    const sameMonthInvoices = await EstInvoice.find({
       custName,
       custNumb,
       $expr: {
         $and: [
-          { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
+          { $eq: [{ $month: "$date" }, currentMonth] },
           { $eq: [{ $year: "$date" }, currentYear] }
         ]
       }
     });
-    if (existingInvoice && !allowUpdate) {
-      // Send a response indicating data already exists
+
+    // Check if any of those invoices is for the same exact date
+    const sameDateInvoice = sameMonthInvoices.find(inv =>
+      new Date(inv.date).toISOString().split('T')[0] === dateString
+    );
+
+    // Case 1: Same date exists, and update not allowed
+    if (sameDateInvoice && !allowUpdate) {
       return res.json({
         success: false,
-        message: "Invoice of the User is already exists in this Month. Do you want to save this as a new entry?",
-        dataExists: true
+        sameDateExists: true,
+        message: "An invoice with the same date already exists. Do you want to update it?"
       });
     }
-    if (existingInvoice && allowUpdate) {
-      Object.assign(existingInvoice, {
-        custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, invoiceCateg, customCateg, rows,
-        //date: invoiceDate,
-        GSTAmount, totalAmount, billFormat, discountValue, afterDiscountTotal, state
+
+    // Case 2: Same month exists but not same date, and save-new not allowed
+    if (!sameDateInvoice && sameMonthInvoices.length > 0 && !allowNewDateEntry) {
+      return res.json({
+        success: false,
+        differentDateExists: true,
+        message: "An invoice already exists for this month. Do you want to save this as a new entry with a different date?"
       });
-      await existingInvoice.save();
+    }
+
+    // Case 3: Same date & update allowed
+    if (sameDateInvoice && allowUpdate) {
+      Object.assign(sameDateInvoice, {
+        custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
+        invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
+        discountValue, afterDiscountTotal, state
+      });
+      await sameDateInvoice.save();
       return res.json({ success: true, message: 'Invoice Updated Successfully' });
     }
-    // Save the new invoice
+
+    // Case 4: New entry allowed (either first time or allowedNewDateEntry is true)
     const estInvoice = new EstInvoice({
-      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
-      customCateg, rows, date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
+      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
+      custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
+      billFormat, financialYear, discountValue, afterDiscountTotal, state
     });
+
     await estInvoice.save();
-    res.json({ success: true, message: 'Invoice Created Successfully' });
+    return res.json({ success: true, message: 'Invoice Created Successfully' });
+
   } catch (err) {
-    console.error("Error saving/Updating Invoice Details", err);
-    res.json({ success: false, message: "Error Saving Invoice" });
+    console.error("Error saving/updating invoice", err);
+    res.status(500).json({ success: false, message: "Error saving invoice" });
   }
 });
+
+
 
 //Update Invoice
 
@@ -6785,78 +7493,364 @@ router.get('/mediumScriptProjects', async (req, res) => {
 
 // Urgent Editor Projects
 
+// router.get('/urgentEditorProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const urgentProjects = await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//       },
+//       priority: 'Urgent',
+//       editorStatus: { $ne: 'Completed' }
+//     }).sort({ editorPassDate: -1 });
+//     return res.json(urgentProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
+
+// router.get('/urgentEditorProjects', async (req, res) => {
+//   try {
+//     const now = new Date();
+//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+//     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+//     const isValidDate = (d) => d && new Date(d) >= startOfMonth && new Date(d) <= endOfMonth;
+
+//     const urgentDocs = await Customer.find({
+//       priority: 'Urgent',
+//       editorStatus: { $ne: 'Completed' }
+//     }).sort({ editorPassDate: -1 });
+
+//     const urgentProjects = [];
+
+//     urgentDocs.forEach(doc => {
+//       const item = doc.toObject();
+
+//       const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+
+//       const validSubEntries = (item.subEntries || []).filter(sub =>
+//         sub.editor === person && isValidDate(sub.editorPassDate)
+//       );
+
+//       if (mainValid) {
+//         urgentProjects.push({
+//           ...item,
+//           subEntries: validSubEntries,
+//           type: 'Customer'
+//         });
+//       } else if (validSubEntries.length > 0) {
+//         validSubEntries.forEach(sub => {
+//           urgentProjects.push({
+//             ...sub,
+//             parentCustCode: item.custCode,
+//             type: 'Customer'
+//           });
+//         });
+//       }
+//     });
+
+//     return res.json(urgentProjects);
+//   } catch (error) {
+//     console.error("Error Fetching Urgent Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' });
+//   }
+// });
+
 router.get('/urgentEditorProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
-    const urgentProjects = await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-      },
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    const urgentCustomers = await Customer.find({
       priority: 'Urgent',
       editorStatus: { $ne: 'Completed' }
     }).sort({ editorPassDate: -1 });
-    return res.json(urgentProjects)
+
+    const urgentB2bCustomers = await B2bCustomer.find({
+      priority: 'Urgent',
+      editorStatus: { $ne: 'Completed' }
+    }).sort({ b2bEditorPassDate: -1 });
+
+    const urgentProjects = [];
+
+    urgentCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        urgentProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          urgentProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    urgentB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        urgentProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          urgentProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(urgentProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Urgent Projects", error);
+    res.status(500).json({ error: 'Failed to fetch urgent projects' });
   }
 });
+
+// router.get('/highEditorProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const urgentProjects = await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//       },
+//       priority: 'High',
+//       editorStatus: { $ne: 'Completed' }
+//     }).sort({ editorPassDate: -1 });
+//     return res.json(urgentProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
 
 router.get('/highEditorProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
-    const urgentProjects = await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-      },
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    const highCustomers = await Customer.find({
       priority: 'High',
       editorStatus: { $ne: 'Completed' }
     }).sort({ editorPassDate: -1 });
-    return res.json(urgentProjects)
+
+    const highB2bCustomers = await B2bCustomer.find({
+      priority: 'High',
+      editorStatus: { $ne: 'Completed' }
+    }).sort({ b2bEditorPassDate: -1 });
+
+    const highProjects = [];
+
+    highCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        highProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          highProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    highB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        highProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          highProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(highProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching High Priority Projects", error);
+    res.status(500).json({ error: 'Failed to fetch high priority projects' });
   }
 });
+
+// router.get('/mediumEditorProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const urgentProjects = await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//       },
+//       priority: 'Medium',
+//       editorStatus: { $ne: 'Completed' }
+//     }).sort({ editorPassDate: -1 });
+//     return res.json(urgentProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
 
 router.get('/mediumEditorProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
-    const urgentProjects = await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-      },
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    const mediumCustomers = await Customer.find({
       priority: 'Medium',
       editorStatus: { $ne: 'Completed' }
     }).sort({ editorPassDate: -1 });
-    return res.json(urgentProjects)
+
+    const mediumB2bCustomers = await B2bCustomer.find({
+      priority: 'Medium',
+      editorStatus: { $ne: 'Completed' }
+    }).sort({ b2bEditorPassDate: -1 });
+
+    const mediumProjects = [];
+
+    mediumCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        mediumProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          mediumProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    mediumB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person && isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        mediumProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          mediumProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(mediumProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Medium Priority Projects", error);
+    res.status(500).json({ error: 'Failed to fetch medium priority projects' });
   }
 });
 
+// router.get('/changesEditorProjects', async (req, res) => {
+//   const currentMonth = new Date().getMonth() + 1;
+//   try {
+//     const changesProjects = await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth)
+//       },
+//       projectStatus: { $eq: 'Video Changes' }
+//     }).sort({ editorPassDate: -1 });
+//     return res.json(changesProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
+
 router.get('/changesEditorProjects', async (req, res) => {
-  const currentMonth = new Date().getMonth() + 1;
   try {
-    const changesProjects = await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth)
-      },
-      projectStatus: { $eq: 'Video Changes' }
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    const changesCustomers = await Customer.find({
+      projectStatus: 'Video Changes'
     }).sort({ editorPassDate: -1 });
-    return res.json(changesProjects)
+
+    const changesB2bCustomers = await B2bCustomer.find({
+      projectStatus: 'Video Changes'
+    }).sort({ b2bEditorPassDate: -1 });
+
+    const changesProjects = [];
+
+    changesCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person &&
+        sub.projectStatus === 'Video Changes' &&
+        isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        changesProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          changesProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    changesB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person &&
+        sub.projectStatus === 'Video Changes' &&
+        isValidDate(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        changesProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          changesProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(changesProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Changes Projects", error);
+    res.status(500).json({ error: 'Failed to fetch changes projects' });
   }
 });
 
@@ -6921,69 +7915,293 @@ router.get('/mediumVoProjects', async (req, res) => {
 
 // Urgent Graphic Projects
 
+// router.get('/urgentGraphicProjects', async (req, res) => {
+//   try {
+//     const currentMonth = new Date().getMonth() + 1;
+//     const urgentProjects = await Customer.find({
+//       graphicDesigner: person,
+//       graphicPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
+//       },
+//       priority: 'Urgent',
+//       graphicStatus: { $ne: 'Complete' }
+//     }).sort({ graphicPassDate: -1 });
+//     return res.json(urgentProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
+
 router.get('/urgentGraphicProjects', async (req, res) => {
   try {
-    const currentMonth = new Date().getMonth() + 1;
-    const urgentProjects = await Customer.find({
-      graphicDesigner: person,
-      graphicPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-      },
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    const urgentCustomers = await Customer.find({
       priority: 'Urgent',
-      graphicStatus: { $ne: 'Complete' }
+      graphicStatus: { $ne: 'Completed' }
     }).sort({ graphicPassDate: -1 });
-    return res.json(urgentProjects)
+
+    const urgentB2bCustomers = await B2bCustomer.find({
+      priority: 'Urgent',
+      graphicStatus: { $ne: 'Completed' }
+    }).sort({ b2bGraphicPassDate: -1 });
+
+    const urgentProjects = [];
+
+    urgentCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.graphicDesigner === person && isValidDate(item.graphicPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person && isValidDate(sub.graphicPassDate)
+      );
+
+      if (mainValid) {
+        urgentProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          urgentProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    urgentB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bGraphicDesigner === person && isValidDate(item.b2bGraphicPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person && isValidDate(sub.graphicPassDate)
+      );
+
+      if (mainValid) {
+        urgentProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          urgentProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(urgentProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Urgent Projects", error);
+    res.status(500).json({ error: 'Failed to fetch urgent projects' });
   }
 });
+
+// router.get('/pendingGraphicProjects', async (req, res) => {
+//   try {
+//     const startOfDay = new Date();
+//     startOfDay.setHours(0, 0, 0, 0);
+//     const pendingProjects = await Customer.find({
+//       graphicDesigner: person,
+//       graphicPassDate: { $lt: startOfDay },
+//       graphicStatus: { $ne: 'Complete' }
+//     }).sort({ graphicPassDate: -1 });
+//     return res.json(pendingProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
 
 router.get('/pendingGraphicProjects', async (req, res) => {
   try {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const pendingProjects = await Customer.find({
-      graphicDesigner: person,
-      graphicPassDate: { $lt: startOfDay },
-      graphicStatus: { $ne: 'Complete' }
+
+    const isValidPendingDate = (date) => date && new Date(date) < startOfDay;
+
+    const pendingCustomers = await Customer.find({
+      graphicStatus: { $ne: 'Completed' }
     }).sort({ graphicPassDate: -1 });
-    return res.json(pendingProjects)
+
+    const pendingB2bCustomers = await B2bCustomer.find({
+      graphicStatus: { $ne: 'Completed' }
+    }).sort({ b2bGraphicPassDate: -1 });
+
+    const pendingProjects = [];
+
+    pendingCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.graphicDesigner === person && isValidPendingDate(item.graphicPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person && isValidPendingDate(sub.graphicPassDate)
+      );
+
+      if (mainValid) {
+        pendingProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          pendingProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    pendingB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bGraphicDesigner === person && isValidPendingDate(item.b2bGraphicPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person && isValidPendingDate(sub.graphicPassDate)
+      );
+
+      if (mainValid) {
+        pendingProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          pendingProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(pendingProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Pending Projects", error);
+    res.status(500).json({ error: 'Failed to fetch pending projects' });
   }
 });
+
+
+// router.get('/todayGraphicProjects', async (req, res) => {
+//   try {
+//     const today = new Date();
+//     const todayProjects = await Customer.find({
+//       graphicDesigner: person,
+//       graphicPassDate: {
+//         $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
+//         $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+//       },
+//       graphicStatus: { $ne: 'Complete' }
+//     }).sort({ graphicPassDate: -1 });
+//     return res.json(todayProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
 
 router.get('/todayGraphicProjects', async (req, res) => {
   try {
     const today = new Date();
-    const todayProjects = await Customer.find({
-      graphicDesigner: person,
-      graphicPassDate: {
-        $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
-        $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
-      },
-      graphicStatus: { $ne: 'Complete' }
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+    const isToday = (date) => date && new Date(date) >= startOfDay && new Date(date) <= endOfDay;
+
+    const todayCustomers = await Customer.find({
+      graphicStatus: { $ne: 'Completed' }
     }).sort({ graphicPassDate: -1 });
-    return res.json(todayProjects)
+
+    const todayB2bCustomers = await B2bCustomer.find({
+      graphicStatus: { $ne: 'Completed' }
+    }).sort({ b2bGraphicPassDate: -1 });
+
+    const todayProjects = [];
+
+    todayCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.graphicDesigner === person && isToday(item.graphicPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person && isToday(sub.graphicPassDate)
+      );
+
+      if (mainValid) {
+        todayProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          todayProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    todayB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bGraphicDesigner === person && isToday(item.b2bGraphicPassDate);
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person && isToday(sub.graphicPassDate)
+      );
+
+      if (mainValid) {
+        todayProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          todayProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(todayProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Today's Projects", error);
+    res.status(500).json({ error: "Failed to fetch today's projects" });
   }
 });
 
+// router.get('/changesGraphicProjects', async (req, res) => {
+//   try {
+//     const changesProjects = await Customer.find({
+//       graphicDesigner: person,
+//       graphicStatus: { $eq: 'Graphic Designing Changes' }
+//     }).sort({ graphicPassDate: -1 });
+//     return res.json(changesProjects)
+//   } catch (error) {
+//     console.error("Error Fetching Leads", error);
+//     res.status(500).json({ error: 'Failed to fetch Leads' })
+//   }
+// });
+
 router.get('/changesGraphicProjects', async (req, res) => {
   try {
-    const changesProjects = await Customer.find({
-      graphicDesigner: person,
-      graphicStatus: { $eq: 'Graphic Designing Changes' }
+    const changesCustomers = await Customer.find({
+      graphicStatus: 'Graphic Designing Changes'
     }).sort({ graphicPassDate: -1 });
-    return res.json(changesProjects)
+
+    const changesB2bCustomers = await B2bCustomer.find({
+      graphicStatus: 'Graphic Designing Changes'
+    }).sort({ b2bGraphicPassDate: -1 });
+
+    const changesProjects = [];
+
+    changesCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.graphicDesigner === person;
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person
+      );
+
+      if (mainValid) {
+        changesProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          changesProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    changesB2bCustomers.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bGraphicDesigner === person;
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.graphicDesigner === person
+      );
+
+      if (mainValid) {
+        changesProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          changesProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
+    return res.json(changesProjects);
   } catch (error) {
-    console.error("Error Fetching Leads", error);
-    res.status(500).json({ error: 'Failed to fetch Leads' })
+    console.error("Error Fetching Changes Projects", error);
+    res.status(500).json({ error: 'Failed to fetch changes projects' });
   }
 });
 
@@ -7452,6 +8670,33 @@ router.put('/addIncentive', async (req, res) => {
     res.status(500).json({ success: false, message: "Error Adding/Updating Incentive" });
   }
 });
+
+router.put('/addPoint', async (req, res) => {
+  try {
+    const { points } = req.body;
+
+    if (!Array.isArray(points) || points.length === 0) {
+      return res.status(400).json({ success: false, message: 'Points array is required' });
+    }
+
+    // You could use a fixed ID if this is a global singleton document
+    let existing = await point.findOne();
+    let result;
+
+    if (existing) {
+      existing.points = points;
+      result = await existing.save();
+    } else {
+      result = await new point({ points }).save();
+    }
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('Error saving points:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
 
 router.get('/allIncentive', async (req, res) => {
   try {
