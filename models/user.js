@@ -46,7 +46,38 @@ const registerSchema = new mongoose.Schema({
   subsidiaryName: {type: String},
   incentivePassword: {type: String},
   lastOTPLogin: {type: Date},
-  lastOTPSent: {type: Date}
+  lastOTPSent: {type: Date},
+
+   // ➕ ADDED FIELDS FOR EDITOR POINT TRACKING
+
+  // Store total points per month (e.g., "2025-07": 12.5)
+  monthlyEditorPoints: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+
+  // Lifetime points across all months
+  totalEditorPoints: {
+    type: Number,
+    default: 0
+  },
+
+  // Work logs (project-based tracking)
+  workLogs: [
+    {
+      projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
+      date: { type: Date },
+      duration: { type: Number }, // Total seconds
+      pointsEarned: { type: Number }
+    }
+  ],
+
+  // Timestamp for last project point update (used to optimize recalculations)
+  lastProjectUpdated: { type: Date },
+
+  // Soft delete flag
+  isActive: { type: Boolean, default: true }
 });
 
 module.exports = mongoose.model('User', registerSchema);

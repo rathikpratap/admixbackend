@@ -4,7 +4,7 @@ const pointSchema = new mongoose.Schema({
     // employeeName: String,
     points: [
         {
-            minute: {type: Number},
+            second: {type: Number},
             points: {type: Number}
         }
     ]

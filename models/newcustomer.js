@@ -91,6 +91,7 @@ const customerSchema = new mongoose.Schema({
     videosCount: { type: Number },
     reelsCount: { type: Number },
     pointsEarned: {type: Number},
+    pointsCalculated: { type: Boolean},
     // entryType: { type: String, enum: ['Main', 'Graphic', 'Video', 'Reel'], default: 'Main' },
     entryType: { type: String, default: 'Main' },
     subEntries: [
@@ -146,6 +147,7 @@ const customerSchema = new mongoose.Schema({
             totalVoicePayment: { type: Number },
             numberOfVideos: { type: String },
             pointsEarned: {type: Number},
+            pointsCalculated: { type: Boolean},
             companyName: { type: String },
             salesPerson: {type: String}
         }

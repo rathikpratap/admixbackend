@@ -2897,7 +2897,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04GV4Jdg4_HLYCgYIARAAGAQSNwF-L9IrykPV6wcID1jqEKIiMyWGqt97RHyHxg0Ts-5ybvt3lxo6v764uHGdy1KWdPBj6JgAktY';
+const REFERESH_TOKEN = '1//043IxGvKSd9OwCgYIARAAGAQSNwF-L9IrBUzIVKnt8-oFs3ddzDHHZvAQMtAhVkL9IRKKFNqIfTepZvnBZ1sHJ3Ylfh-DTm59IfY';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4531,56 +4531,230 @@ router.get('/todayEntriesEditor', async (req, res) => {
   }
 });
 
-router.get('/editorActiveList', async (req, res) => {
-  const currentMonth = new Date().getMonth() + 1;
-  try {
-    const products = (await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-      },
-      editorStatus: { $ne: 'Completed' }
-    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+// router.get('/editorActiveList', async (req, res) => {
+//   const currentMonth = new Date().getMonth() + 1;
+//   try {
+//     const products = (await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+//       },
+//       editorStatus: { $ne: 'Completed' }
+//     }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
 
-    const b2bProducts = (await B2bCustomer.find({
-      b2bEditor: person,
-      b2bProjectDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-      },
-      projectStatus: { $ne: 'Completed' }
-    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//     const b2bProducts = (await B2bCustomer.find({
+//       b2bEditor: person,
+//       b2bProjectDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+//       },
+//       projectStatus: { $ne: 'Completed' }
+//     }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//     res.json({ products, b2bProducts });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
+router.get('/editorActiveList', async (req, res) => {
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const isWithinRange = (date) =>
+    date && new Date(date) >= startDate && new Date(date) <= endDate;
+
+  try {
+    // Get customers where either main or any subEntry is not completed
+    const customerDocs = await Customer.find({
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
+    }).sort({ closingDate: -1 });
+
+    const b2bDocs = await B2bCustomer.find({
+      $or: [
+        { projectStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
+    }).sort({ closingDate: -1 });
+
+    const products = [];
+    const b2bProducts = [];
+
+    // Process Customer documents
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid =
+        item.editor === person &&
+        item.editorStatus !== 'Completed' &&
+        isWithinRange(item.editorPassDate);
+
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isWithinRange(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        products.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'Customer'
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          products.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'Customer'
+          });
+        });
+      }
+    });
+
+    // Process B2bCustomer documents
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      const mainValid =
+        item.b2bEditor === person &&
+        item.projectStatus !== 'Completed' &&
+        isWithinRange(item.b2bProjectDate);
+
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isWithinRange(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        b2bProducts.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'b2b'
+        });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          b2bProducts.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'b2b'
+          });
+        });
+      }
+    });
+
     res.json({ products, b2bProducts });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching editor active list:", error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/editorCompleteList', async (req, res) => {
-  const currentMonth = new Date().getMonth() + 1;
-  try {
-    const products = (await Customer.find({
-      editor: person,
-      editorPassDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-      },
-      editorStatus: { $regex: /^Completed$/i }
-    }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
+// router.get('/editorCompleteList', async (req, res) => {
+//   const currentMonth = new Date().getMonth() + 1;
+//   try {
+//     const products = (await Customer.find({
+//       editor: person,
+//       editorPassDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+//       },
+//       editorStatus: { $regex: /^Completed$/i }
+//     }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
 
-    const b2bProducts = (await B2bCustomer.find({
-      b2bEditor: person,
-      b2bProjectDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-      },
-      projectStatus: { $regex: /^Completed$/i }
-    }).sort({ b2bProjectDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//     const b2bProducts = (await B2bCustomer.find({
+//       b2bEditor: person,
+//       b2bProjectDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
+//       },
+//       projectStatus: { $regex: /^Completed$/i }
+//     }).sort({ b2bProjectDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
+//     res.json({ products, b2bProducts });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
+router.get('/editorCompleteList', async (req, res) => {
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const isWithinRange = (date) => date && new Date(date) >= startDate && new Date(date) <= endDate;
+
+  try {
+    const customerDocs = await Customer.find({
+      $or: [
+        { editorStatus: { $regex: /^Completed$/i } },
+        { subEntries: { $elemMatch: { editorStatus: { $regex: /^Completed$/i } } } }
+      ]
+    }).sort({ closingDate: -1 });
+
+    const b2bDocs = await B2bCustomer.find({
+      $or: [
+        { projectStatus: { $regex: /^Completed$/i } },
+        { subEntries: { $elemMatch: { editorStatus: { $regex: /^Completed$/i } } } }
+      ]
+    }).sort({ b2bProjectDate: -1 });
+
+    const products = [];
+    const b2bProducts = [];
+
+    // Customer documents
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.editor === person &&
+                        /^Completed$/i.test(item.editorStatus) &&
+                        isWithinRange(item.editorPassDate);
+
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person &&
+        /^Completed$/i.test(sub.editorStatus) &&
+        isWithinRange(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        products.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          products.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+        });
+      }
+    });
+
+    // B2B documents
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+      const mainValid = item.b2bEditor === person &&
+                        /^Completed$/i.test(item.projectStatus) &&
+                        isWithinRange(item.b2bProjectDate);
+
+      const validSubEntries = (item.subEntries || []).filter(sub =>
+        sub.editor === person &&
+        /^Completed$/i.test(sub.editorStatus) &&
+        isWithinRange(sub.editorPassDate)
+      );
+
+      if (mainValid) {
+        b2bProducts.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+      } else if (validSubEntries.length > 0) {
+        validSubEntries.forEach(sub => {
+          b2bProducts.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+        });
+      }
+    });
+
     res.json({ products, b2bProducts });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching editor complete list:", error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
@@ -7566,48 +7740,84 @@ router.get('/urgentEditorProjects', async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+    const isValidDate = (date) => {
+      return date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+    };
 
     const urgentCustomers = await Customer.find({
       priority: 'Urgent',
-      editorStatus: { $ne: 'Completed' }
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
     }).sort({ editorPassDate: -1 });
 
     const urgentB2bCustomers = await B2bCustomer.find({
       priority: 'Urgent',
-      editorStatus: { $ne: 'Completed' }
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
     }).sort({ b2bEditorPassDate: -1 });
 
     const urgentProjects = [];
 
     urgentCustomers.forEach(doc => {
       const item = doc.toObject();
-      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+      const mainValid =
+        item.editor === person &&
+        item.editorStatus !== 'Completed' &&
+        isValidDate(item.editorPassDate);
+
       const validSubEntries = (item.subEntries || []).filter(sub =>
-        sub.editor === person && isValidDate(sub.editorPassDate)
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isValidDate(sub.editorPassDate)
       );
 
       if (mainValid) {
-        urgentProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+        urgentProjects.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'Customer'
+        });
       } else if (validSubEntries.length > 0) {
         validSubEntries.forEach(sub => {
-          urgentProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+          urgentProjects.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'Customer'
+          });
         });
       }
     });
 
     urgentB2bCustomers.forEach(doc => {
       const item = doc.toObject();
-      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+      const mainValid =
+        item.b2bEditor === person &&
+        item.editorStatus !== 'Completed' &&
+        isValidDate(item.b2bEditorPassDate);
+
       const validSubEntries = (item.subEntries || []).filter(sub =>
-        sub.editor === person && isValidDate(sub.editorPassDate)
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isValidDate(sub.editorPassDate)
       );
 
       if (mainValid) {
-        urgentProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+        urgentProjects.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'b2b'
+        });
       } else if (validSubEntries.length > 0) {
         validSubEntries.forEach(sub => {
-          urgentProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+          urgentProjects.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'b2b'
+          });
         });
       }
     });
@@ -7618,6 +7828,7 @@ router.get('/urgentEditorProjects', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch urgent projects' });
   }
 });
+
 
 // router.get('/highEditorProjects', async (req, res) => {
 //   try {
@@ -7644,58 +7855,104 @@ router.get('/highEditorProjects', async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+    const isValidDate = (date) =>
+      date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    // Define 'person' (should come from auth or query)
+    // const person = req.user?.username || req.query.person;
+    // if (!person) {
+    //   return res.status(400).json({ error: 'Missing editor identity' });
+    // }
 
     const highCustomers = await Customer.find({
       priority: 'High',
-      editorStatus: { $ne: 'Completed' }
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
     }).sort({ editorPassDate: -1 });
 
     const highB2bCustomers = await B2bCustomer.find({
       priority: 'High',
-      editorStatus: { $ne: 'Completed' }
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
     }).sort({ b2bEditorPassDate: -1 });
 
     const highProjects = [];
 
+    // Process Customer documents
     highCustomers.forEach(doc => {
       const item = doc.toObject();
-      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+
+      const mainValid =
+        item.editor === person &&
+        item.editorStatus !== 'Completed' &&
+        isValidDate(item.editorPassDate);
+
       const validSubEntries = (item.subEntries || []).filter(sub =>
-        sub.editor === person && isValidDate(sub.editorPassDate)
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isValidDate(sub.editorPassDate)
       );
 
       if (mainValid) {
-        highProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+        highProjects.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'Customer'
+        });
       } else if (validSubEntries.length > 0) {
         validSubEntries.forEach(sub => {
-          highProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+          highProjects.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'Customer'
+          });
         });
       }
     });
 
+    // Process B2B documents
     highB2bCustomers.forEach(doc => {
       const item = doc.toObject();
-      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+
+      const mainValid =
+        item.b2bEditor === person &&
+        item.editorStatus !== 'Completed' &&
+        isValidDate(item.b2bEditorPassDate);
+
       const validSubEntries = (item.subEntries || []).filter(sub =>
-        sub.editor === person && isValidDate(sub.editorPassDate)
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isValidDate(sub.editorPassDate)
       );
 
       if (mainValid) {
-        highProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+        highProjects.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'b2b'
+        });
       } else if (validSubEntries.length > 0) {
         validSubEntries.forEach(sub => {
-          highProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+          highProjects.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'b2b'
+          });
         });
       }
     });
 
     return res.json(highProjects);
   } catch (error) {
-    console.error("Error Fetching High Priority Projects", error);
+    console.error("Error Fetching High Priority Projects:", error);
     res.status(500).json({ error: 'Failed to fetch high priority projects' });
   }
 });
+
 
 // router.get('/mediumEditorProjects', async (req, res) => {
 //   try {
@@ -7722,55 +7979,100 @@ router.get('/mediumEditorProjects', async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const isValidDate = (date) => date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+    const isValidDate = (date) =>
+      date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
+
+    // Define 'person' (should be passed via auth or query param)
+    // const person = req.user?.username || req.query.person;
+    // if (!person) {
+    //   return res.status(400).json({ error: 'Missing editor identity' });
+    // }
 
     const mediumCustomers = await Customer.find({
       priority: 'Medium',
-      editorStatus: { $ne: 'Completed' }
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
     }).sort({ editorPassDate: -1 });
 
     const mediumB2bCustomers = await B2bCustomer.find({
       priority: 'Medium',
-      editorStatus: { $ne: 'Completed' }
+      $or: [
+        { editorStatus: { $ne: 'Completed' } },
+        { subEntries: { $elemMatch: { editorStatus: { $ne: 'Completed' } } } }
+      ]
     }).sort({ b2bEditorPassDate: -1 });
 
     const mediumProjects = [];
 
+    // Process Customer documents
     mediumCustomers.forEach(doc => {
       const item = doc.toObject();
-      const mainValid = item.editor === person && isValidDate(item.editorPassDate);
+
+      const mainValid =
+        item.editor === person &&
+        item.editorStatus !== 'Completed' &&
+        isValidDate(item.editorPassDate);
+
       const validSubEntries = (item.subEntries || []).filter(sub =>
-        sub.editor === person && isValidDate(sub.editorPassDate)
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isValidDate(sub.editorPassDate)
       );
 
       if (mainValid) {
-        mediumProjects.push({ ...item, subEntries: validSubEntries, type: 'Customer' });
+        mediumProjects.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'Customer'
+        });
       } else if (validSubEntries.length > 0) {
         validSubEntries.forEach(sub => {
-          mediumProjects.push({ ...sub, parentCustCode: item.custCode, type: 'Customer' });
+          mediumProjects.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'Customer'
+          });
         });
       }
     });
 
+    // Process B2B documents
     mediumB2bCustomers.forEach(doc => {
       const item = doc.toObject();
-      const mainValid = item.b2bEditor === person && isValidDate(item.b2bEditorPassDate);
+
+      const mainValid =
+        item.b2bEditor === person &&
+        item.editorStatus !== 'Completed' &&
+        isValidDate(item.b2bEditorPassDate);
+
       const validSubEntries = (item.subEntries || []).filter(sub =>
-        sub.editor === person && isValidDate(sub.editorPassDate)
+        sub.editor === person &&
+        sub.editorStatus !== 'Completed' &&
+        isValidDate(sub.editorPassDate)
       );
 
       if (mainValid) {
-        mediumProjects.push({ ...item, subEntries: validSubEntries, type: 'b2b' });
+        mediumProjects.push({
+          ...item,
+          subEntries: validSubEntries,
+          type: 'b2b'
+        });
       } else if (validSubEntries.length > 0) {
         validSubEntries.forEach(sub => {
-          mediumProjects.push({ ...sub, parentCustCode: item.custCode, type: 'b2b' });
+          mediumProjects.push({
+            ...sub,
+            parentCustCode: item.custCode,
+            type: 'b2b'
+          });
         });
       }
     });
 
     return res.json(mediumProjects);
   } catch (error) {
-    console.error("Error Fetching Medium Priority Projects", error);
+    console.error("Error Fetching Medium Priority Projects:", error);
     res.status(500).json({ error: 'Failed to fetch medium priority projects' });
   }
 });
@@ -8694,6 +8996,203 @@ router.put('/addPoint', async (req, res) => {
   } catch (err) {
     console.error('Error saving points:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+router.get('/getPoints', async(req, res)=>{
+  try{
+    const points = await point.findOne();
+    res.json({ success: true, data: points.points });
+  } catch(err){
+    res.status(500).json({ success: false, message: 'Error fetching points' });
+  }
+});
+
+// const updateEditorMonthlyPoints = async (editorName) => {
+//   console.log("EDITOR NAME==========>>", editorName);
+//   const projects = await Customer.find({
+//     signupUsername: editorName,
+//     pointsCalculated: true, // ✅ Only pick processed ones
+//     editorStatus: 'Completed'
+//   });
+
+//   const monthMap = {};
+
+//   for (const project of projects) {
+//     const monthKey = new Date(project.editorPassDate).toISOString().slice(0, 7); // "YYYY-MM"
+//     const points = project.pointsEarned || 0;
+
+//     if (!monthMap[monthKey]) {
+//       monthMap[monthKey] = 0;
+//     }
+
+//     monthMap[monthKey] += points;
+//   }
+
+//   // Save per month
+//   for (const [month, points] of Object.entries(monthMap)) {
+//     await User.findOneAndUpdate(
+//       { editor: editorName},
+//       { $set: {
+//   [`monthlyEditorPoints.${month}`]: points
+// } },
+//       { upsert: true }
+//     );
+//   }
+
+//   return { monthsUpdated: Object.keys(monthMap).length };
+// };
+
+// const updateEditorMonthlyPoints = async (editorName) => {
+//   console.log("EDITOR NAME==========>>", editorName);
+
+//   const projects = await Customer.find({
+//     editor: editorName,
+//     pointsCalculated: true,
+//     editorStatus: 'Completed'
+//   });
+
+//   const monthMap = {};
+//   let totalPoints = 0;
+
+//   for (const project of projects) {
+//     const monthKey = new Date(project.editorPassDate).toISOString().slice(0, 7); // "YYYY-MM"
+//     const points = project.pointsEarned || 0;
+
+//     if (!monthMap[monthKey]) {
+//       monthMap[monthKey] = 0;
+//     }
+
+//     monthMap[monthKey] += points;
+//     totalPoints += points;
+//   }
+
+//   // Update monthly points
+//   const updateObject = {};
+//   for (const [month, points] of Object.entries(monthMap)) {
+//     updateObject[`monthlyEditorPoints.${month}`] = points;
+//   }
+
+//   // Add total points
+//   updateObject.totalEditorPoints = totalPoints;
+//   updateObject.lastProjectUpdated = new Date();
+
+//   // ✅ Fix: Use correct filter & update object
+//   await User.findOneAndUpdate(
+//     { signupUsername: editorName }, // ✅ Correct field
+//     { $set: updateObject },         // ✅ Set multiple fields
+//     { new: true }
+//   );
+
+//   return {
+//     monthsUpdated: Object.keys(monthMap).length,
+//     totalPoints
+//   };
+// };
+
+const updateEditorMonthlyPoints = async (editorName) => {
+  console.log("Updating monthly points for editor:", editorName);
+
+  const projects = await Customer.find({
+    $or: [
+      { editor: editorName, editorStatus: 'Completed', pointsCalculated: true },
+      { subEntries: { $elemMatch: { editor: editorName, editorStatus: 'Completed', pointsCalculated: true } } }
+    ]
+  });
+
+  const monthMap = {};
+  let totalPoints = 0;
+
+  for (const project of projects) {
+    const mainMatches = project.editor === editorName &&
+                        project.editorStatus === 'Completed' &&
+                        project.pointsCalculated;
+
+    if (mainMatches) {
+      const monthKey = new Date(project.editorPassDate).toISOString().slice(0, 7); // "YYYY-MM"
+      const points = project.pointsEarned || 0;
+      monthMap[monthKey] = (monthMap[monthKey] || 0) + points;
+      totalPoints += points;
+    }
+
+    const subEntries = project.subEntries || [];
+    for (const sub of subEntries) {
+      const subMatches = sub.editor === editorName &&
+                         sub.editorStatus === 'Completed' &&
+                         sub.pointsCalculated;
+
+      if (subMatches) {
+        const monthKey = new Date(sub.editorPassDate).toISOString().slice(0, 7);
+        const points = sub.pointsEarned || 0;
+        monthMap[monthKey] = (monthMap[monthKey] || 0) + points;
+        totalPoints += points;
+      }
+    }
+  }
+
+  // Build update object for User
+  const updateObject = {
+    totalEditorPoints: totalPoints,
+    lastProjectUpdated: new Date()
+  };
+
+  for (const [month, points] of Object.entries(monthMap)) {
+    updateObject[`monthlyEditorPoints.${month}`] = points;
+  }
+
+  // Update the User document
+  await User.findOneAndUpdate(
+    { signupUsername: editorName },
+    { $set: updateObject },
+    { new: true }
+  );
+
+  return {
+    monthsUpdated: Object.keys(monthMap).length,
+    totalPoints
+  };
+};
+
+
+router.post('/update-editor-monthly-points', async (req, res) => {
+  try {
+    const { editorName } = req.body;
+    console.log("EDITOR-========----->>", editorName);
+    if (!editorName) {
+      return res.status(400).json({ message: 'Editor name is required' });
+    }
+
+    const result = await updateEditorMonthlyPoints(editorName);
+    res.status(200).json({
+      message: `Monthly points updated for ${editorName}`,
+      ...result
+    });
+  } catch (err) {
+    console.error('Error updating monthly points:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// routes/editor.js (or wherever your routes are defined)
+
+router.get('/all-editor-monthly-points', async (req, res) => {
+  try {
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7); // "YYYY-MM"
+
+    const editors = await User.find({
+      signupRole: { $in: ['Editor'] }
+    }).select('signupUsername monthlyEditorPoints');
+
+    const formatted = editors.map(editor => ({
+      username: editor.signupUsername,
+      points: editor.monthlyEditorPoints?.get(currentMonth) || 0
+    }));
+
+    res.status(200).json({ editors: formatted });
+  } catch (err) {
+    console.error('Error fetching editor points:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
