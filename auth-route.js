@@ -2897,7 +2897,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//043IxGvKSd9OwCgYIARAAGAQSNwF-L9IrBUzIVKnt8-oFs3ddzDHHZvAQMtAhVkL9IRKKFNqIfTepZvnBZ1sHJ3Ylfh-DTm59IfY';
+const REFERESH_TOKEN = '1//04DK5QNf7VwvSCgYIARAAGAQSNwF-L9Irval3hCo3J9j3btA-wYYtp05bBPZ0yG7RyneFcR89NyFNkuRlenluyvOHroaShpVXImA';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4215,7 +4215,7 @@ router.get('/editorProjects', async (req, res) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfToday = new Date(now.getFullYear(), now.getDate(), 23, 59, 59, 999);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth() ,now.getDate(), 23, 59, 59, 999);
 
     const isValidDate = (d) => d && new Date(d) >= startOfMonth && new Date(d) <= endOfToday;
 
