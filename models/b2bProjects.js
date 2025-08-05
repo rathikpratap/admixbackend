@@ -30,6 +30,8 @@ const b2bProjectSchema = new mongoose.Schema({
     editorPaymentDate:{type:Date},
     EditorCNR:{type:String},
     totalEditorPayment: {type:Number},
-    b2bEditorPassDate: {type:Date}
+    b2bEditorPassDate: {type:Date},
+    pointsEarned: {type: Number},
+    pointsCalculated: { type: Boolean},
 });
 module.exports = mongoose.model('B2bProjects', b2bProjectSchema);

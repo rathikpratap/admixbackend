@@ -8975,21 +8975,21 @@ router.put('/addIncentive', async (req, res) => {
 
 router.put('/addPoint', async (req, res) => {
   try {
-    const { points } = req.body;
+    const { videoType, points } = req.body;
 
     if (!Array.isArray(points) || points.length === 0) {
       return res.status(400).json({ success: false, message: 'Points array is required' });
     }
 
     // You could use a fixed ID if this is a global singleton document
-    let existing = await point.findOne();
+    let existing = await point.findOne({ videoType });
     let result;
 
     if (existing) {
       existing.points = points;
       result = await existing.save();
     } else {
-      result = await new point({ points }).save();
+      result = await new point({ videoType, points }).save();
     }
 
     res.json({ success: true, data: result });
@@ -9007,6 +9007,23 @@ router.get('/getPoints', async(req, res)=>{
     res.status(500).json({ success: false, message: 'Error fetching points' });
   }
 });
+
+router.get('/getPoint/:videoType', async (req, res) => {
+  try {
+    const { videoType } = req.params;
+    const existing = await point.findOne({ videoType });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'No points found' });
+    }
+
+    res.json({ success: true, data: existing });
+  } catch (err) {
+    console.error('Error fetching points:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
 
 // const updateEditorMonthlyPoints = async (editorName) => {
 //   console.log("EDITOR NAME==========>>", editorName);

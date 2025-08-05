@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const pointSchema = new mongoose.Schema({
-    // employeeName: String,
+    videoType: String,
     points: [
         {
             second: {type: Number},
