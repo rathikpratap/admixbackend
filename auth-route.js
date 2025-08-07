@@ -38,6 +38,7 @@ const crypto = require('crypto');
 //const {io} = require('./server');
 const io = global.io;
 const path = require('path');
+const {format} = require('date-fns');
 
 const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 const SCOPES = [MESSAGING_SCOPE];
@@ -90,7 +91,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'admixmediaindia@gmail.com',
-    pass: 'ddvu kfjl anyo tcnr'
+    pass: 'ivtc wcre rieh lwzh'
   }
 });
 
@@ -10359,6 +10360,193 @@ router.get('/closingTwoPrevMonth/:name', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
+//Video Google Drive Upload
+
+// function extractFileId(link) {
+//   const match = link.match(/\/d\/(.+?)\//);
+//   return match ? match[1] : null;
+// }
+
+// const GOOGLE_CLIENT_ID = '411883461726-s0d90tdetfmo9ff5lgpeie81opgn95ht.apps.googleusercontent.com';
+// const GOOGLE_CLIENT_SECRET= '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';
+// const GOOGLE_REDIRECT_URI='http://localhost:5000/auth/oauth2callback';
+
+// const oauth2ClientVideo = new google.auth.OAuth2(
+//   GOOGLE_CLIENT_ID,
+//   GOOGLE_CLIENT_SECRET,
+//   GOOGLE_REDIRECT_URI
+// );
+// const SCOPESVIDEO = ['https://www.googleapis.com/auth/drive.file'];
+// const TOKEN_PATH = path.join(__dirname, 'token.json');
+
+// // --------- Step 1: Redirect to Google Auth ---------
+// router.get('/gAuth', (req,res)=>{
+//   const url = oauth2ClientVideo.generateAuthUrl({
+//     access_type: 'offline',
+//     scope: SCOPESVIDEO,
+//     prompt: 'consent'
+//   });
+//   res.redirect(url);
+// });
+
+// // --------- Step 2: Google redirects here with code ---------
+// router.get('/oauth2callback', async(req,res)=>{
+//   const code = req.query.code;
+//   try{
+//     const { tokens } = await oauth2ClientVideo.getToken(code);
+//     oauth2ClientVideo.setCredentials(tokens);
+//     fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
+//     res.send('Authentication successful! You can now upload files.');
+//   }catch(err){
+//     console.error('Auth error:', err);
+//     res.status(500).send('Authentication failed');
+//   }
+// });
+
+// // --------- Step 3: Upload File to Drive ---------
+// const videoUpload = multer({dest: 'uploads/'})
+
+// router.post('/uploadToDrive', videoUpload.single('file'), async (req,res) => {
+//   try{
+//     if(!fs.existsSync(TOKEN_PATH)){
+//       return res.status(401).send('Please authenticate at /gAuth first');
+//     }
+//     const token = fs.readFileSync(TOKEN_PATH);
+//     oauth2ClientVideo.setCredentials(JSON.parse(token));
+
+//     const drive = google.drive({version: 'v3', auth: oauth2ClientVideo});
+
+//     // Step 1: Delete old file if exists
+//     const existingLink = req.body.existingLink;
+//     if (existingLink) {
+//       const match = existingLink.match(/\/d\/(.+?)\//);
+//       const fileId = match ? match[1] : null;
+//       if (fileId) {
+//         await drive.files.delete({ fileId });
+//         console.log('Old file deleted.');
+//       }
+//     }
+
+//     //Get Month Name
+//     const folderName = format(new Date(), 'MMMM yyyy');
+
+//     const folderList = await drive.files.list({
+//        q: `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`,
+//       fields: 'files(id, name)',
+//     });
+//     let folderId;
+
+//     if (folderList.data.files.length > 0) {
+//       // Folder exists
+//       folderId = folderList.data.files[0].id;
+//     } else {
+//       // Folder doesn't exist, create it
+//       const folderMetadata = {
+//         name: folderName,
+//         mimeType: 'application/vnd.google-apps.folder',
+//       };
+
+//       const folder = await drive.files.create({
+//         resource: folderMetadata,
+//         fields: 'id',
+//       });
+
+//       folderId = folder.data.id;
+//     }
+
+//     const fileMetadata = {
+//       name: req.file.originalname,
+//       parents: [folderId]
+//     };
+//     const media = {
+//       mimeType: req.file.mimetype,
+//       body: fs.createReadStream(req.file.path)
+//     };
+//     const response = await drive.files.create({
+//       resource: fileMetadata,
+//       media: media,
+//       fields: 'id'
+//     });
+
+//     const fileId = response.data.id;
+
+//     //Make file public
+//     await drive.permissions.create({
+//       fileId,
+//       requestBody:{
+//         role: 'reader',
+//         type: 'anyone'
+//       }
+//     });
+
+//     //Get shareable link
+//     const result = await drive.files.get({
+//       fileId,
+//       fields: 'webViewLink, webContentLink'
+//     });
+
+//     //Clean up Local file
+//     fs.unlinkSync(req.file.path);
+
+//     res.json({
+//       success: true,
+//       webViewLink: result.data.webViewLink,
+//       webContentLink: result.data.webContentLink,
+//       oldFileDeleted: !!existingLink
+//     });
+//   }catch(err){
+//     console.error('Upload error:', err);
+//     res.status(500).json({success: false, error: err.message});
+//   }
+// });
+
+// const videoAuth = new google.auth.GoogleAuth({
+//   keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS,
+//   scopes: ['https://www.googleapis.com/auth/drive'],
+// });
+// const videoDrive = google.drive({version: 'v3', auth: videoAuth});
+
+// router.post('/uploadToDrive', videoUpload.single('file'), async(req,res) =>{
+//   try{
+//     const fileMetadata = {
+//       name: req.file.originalname,
+//       parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+//     };
+//     const media = {
+//       mimeType: req.file.mimetype,
+//       body: fs.createReadStream(req.file.path),
+//     };
+
+//     const file = await videoDrive.files.create({
+//       resource: fileMetadata,
+//       media,
+//       fields: 'id',
+//     });
+
+//     //make file public
+
+//     await videoDrive.permissions.create({
+//       fileId: file.data.id,
+//       requestBody: {
+//         role: 'reader',
+//         type: 'anyone',
+//       },
+//     });
+
+//     //Generate public link
+//     const result = await videoDrive.files.get({
+//       fileId: file.data.id,
+//       fields: 'webViewLink, webContentLink',
+//     });
+
+//     fs.unlinkSync(req.file.path);
+//     return res.json({ success: true, link: result.data.webViewLink});
+//   }catch(error){
+//     console.error('upload error: ', error);
+//     res.status(500).json({success: false, error: error.message});
+//   }
+// });
 
 // router.get('/getDateWhatsAppCampaign/:name', async(req,res)=>{
 //   const name = req.params.name;
