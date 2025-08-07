@@ -10369,7 +10369,7 @@ function extractFileId(link) {
 
 const GOOGLE_CLIENT_ID = '947642384135-m7sp5gqqnbceffs8nm4brsggr1qc9dol.apps.googleusercontent.com';
 const GOOGLE_CLIENT_SECRET = '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';
-const GOOGLE_REDIRECT_URI = 'http://localhost:5000/auth/oauth2callback';
+const GOOGLE_REDIRECT_URI = 'https://login.admixmedia.in:5000/auth/oauth2callback';
 
 const oauth2ClientVideo = new google.auth.OAuth2(
   GOOGLE_CLIENT_ID,
