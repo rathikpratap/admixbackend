@@ -3043,14 +3043,39 @@ const fetchAndSaveFacebookLeads = async () => {
           const fieldName = field.name.toLowerCase().replace('_', ' ');
           const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : '';
 
-          if (fieldName === 'full name') leadObj.custName = value;
+          if (fieldName === 'full name' || fieldName === 'name') leadObj.custName = value;
           else if (fieldName === 'email') leadObj.custEmail = value;
           else if (fieldName === 'company name') leadObj.custBussiness = value;
-          else if (fieldName === 'phone number') leadObj.custNumb = value;
+          else if (fieldName === 'phone number' || fieldName === 'phone no.') leadObj.custNumb = value;
           else if (fieldName === 'state') leadObj.state = value;
           else leadObj.additionalFields[fieldName] = value;
         }
       }
+
+      // let assignedSalesperson =[];
+      // const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name});
+      // if(assignedCampaign && Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0){
+      //   assignedSalesperson = assignedCampaign.employees;
+      // }
+
+      // // Agar koi salesperson assign nahi hai, skip
+      // if (assignedSalesperson.length === 0) {
+      //   console.warn(`⚠️ No salesperson assigned for campaign: ${campaign_Name}`);
+      //   continue; // ya default salesperson set karo
+      // }
+
+      // // 🔹 Count today's leads for this campaign
+      // const todayStart = new Date();
+      // todayStart.setHours(0, 0, 0, 0);
+
+      // const todayLeadCount = await salesLead.countDocuments({
+      //   campaign_Name: campaign_Name,
+      //   leadsCreatedDate: { $gte: todayStart }
+      // });
+
+      // // 🔹 Round-robin index
+      // const salespersonIndex = todayLeadCount % assignedSalesperson.length;
+      // const selectedSalesperson = assignedSalesperson[salespersonIndex];
 
       let existingLead = await salesLead.findOne({
         closingDate: createdTime
@@ -3070,7 +3095,8 @@ const fetchAndSaveFacebookLeads = async () => {
           salesTeam: 'Sales Team 1',
           leadsCreatedDate: new Date(createdTime),
           subsidiaryName: 'AdmixMedia',
-          additionalFields: leadObj.additionalFields
+          additionalFields: leadObj.additionalFields,
+          //salesPerson: selectedSalesperson
         });
 
         await newLead.save();
