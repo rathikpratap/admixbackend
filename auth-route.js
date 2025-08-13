@@ -3052,30 +3052,39 @@ const fetchAndSaveFacebookLeads = async () => {
         }
       }
 
-      // let assignedSalesperson =[];
-      // const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name});
-      // if(assignedCampaign && Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0){
-      //   assignedSalesperson = assignedCampaign.employees;
-      // }
+      let assignedSalesperson =[];
+      const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name});
+      if(assignedCampaign && Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0){
+        assignedSalesperson = assignedCampaign.employees;
+      }
 
-      // // Agar koi salesperson assign nahi hai, skip
+      // 🔹 Count today's leads for this campaign
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const todayLeadCount = await salesLead.countDocuments({
+        campaign_Name: campaign_Name,
+        leadsCreatedDate: { $gte: todayStart }
+      });
+
+      // Select salesperson (round-robin if assigned, otherwise Unassigned)
+      let selectedSalesperson;
+      if (assignedSalesperson.length > 0) {
+        const salespersonIndex = todayLeadCount % assignedSalesperson.length;
+        selectedSalesperson = assignedSalesperson[salespersonIndex];
+      } else {
+        selectedSalesperson = 'Unassigned';
+      }
+
+      // Agar koi salesperson assign nahi hai, skip
       // if (assignedSalesperson.length === 0) {
-      //   console.warn(`⚠️ No salesperson assigned for campaign: ${campaign_Name}`);
-      //   continue; // ya default salesperson set karo
+      //   //console.warn(`⚠️ No salesperson assigned for campaign: ${campaign_Name}`);
+      //   selectedSalesperson = 'Unassigned';
       // }
 
-      // // 🔹 Count today's leads for this campaign
-      // const todayStart = new Date();
-      // todayStart.setHours(0, 0, 0, 0);
-
-      // const todayLeadCount = await salesLead.countDocuments({
-      //   campaign_Name: campaign_Name,
-      //   leadsCreatedDate: { $gte: todayStart }
-      // });
-
-      // // 🔹 Round-robin index
+      // 🔹 Round-robin index
       // const salespersonIndex = todayLeadCount % assignedSalesperson.length;
-      // const selectedSalesperson = assignedSalesperson[salespersonIndex];
+      // selectedSalesperson = assignedSalesperson[salespersonIndex];
 
       let existingLead = await salesLead.findOne({
         closingDate: createdTime
@@ -3096,7 +3105,8 @@ const fetchAndSaveFacebookLeads = async () => {
           leadsCreatedDate: new Date(createdTime),
           subsidiaryName: 'AdmixMedia',
           additionalFields: leadObj.additionalFields,
-          //salesPerson: selectedSalesperson
+          salesPerson: selectedSalesperson,
+          projectStatus: 'New Lead'
         });
 
         await newLead.save();
@@ -10720,6 +10730,74 @@ router.post('/cancelUpload', (req, res) => {
 
   return res.json({ success: true, message: 'Upload cancelled, temp file deleted' });
 
+});
+
+router.post('/filter', async(req,res)=>{
+  try{
+    const { startDate, endDate, campaign, salesPerson, projectStatus} = req.body;
+    let query = {};
+    if(startDate && endDate){
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.closingDate = { $gte: start, $lte: end };
+    }
+    //Campaign filter
+    if(campaign){
+      query.campaign_Name = campaign;
+    }
+    //Salesperson filter
+    if(salesPerson){
+      query.salesPerson = salesPerson;
+    }
+
+    if(projectStatus){
+      query.projectStatus = projectStatus;
+    }
+
+    const leads = await salesLead.find(query);
+    console.log("LEADS=======**",leads);
+    res.json(leads);
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ message: 'Server Error'});
+  }
+});
+
+router.get('/allSalesLeads', async(req,res) => {
+  const currentMonth = new Date().getMonth() + 1;
+  try{
+    const products = await salesLead.find({
+      closingDate: {
+        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+        $lte: new Date(new Date().getFullYear(), currentMonth + 2, 0)
+      }
+    }).sort({ closingDate: -1});
+
+    if(products.length > 0){
+      res.json(products);
+    } else {
+      res.json({ result: "No data found"});
+    }
+  } catch (error){
+    console.error(error);
+    res.status(500).json({ message: 'Server Error'});
+  }
+});
+
+router.post('/transferLeadtoSalesPerson', async(req,res)=>{
+  try{
+    const {leadIds, transferTo} = req.body;
+
+    await salesLead.updateMany(
+      { _id: { $in: leadIds}},
+      { $set: { salesPerson: transferTo}}
+    );
+    res.json({message: 'Transfer Succesful'});
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ message: 'Server Error'});
+  }
 });
 
 // const videoAuth = new google.auth.GoogleAuth({
