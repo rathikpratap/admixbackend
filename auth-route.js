@@ -9,6 +9,7 @@ const Customer = require('./models/newcustomer');
 const WhatsAppCategory = require('./models/whatsAppCategory');
 const Subsidiary = require('./models/subsidiary');
 const ClosingCategory = require('./models/closingCategory');
+const NewTag = require('./models/tag');
 const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
 const Task = require('./models/task');
@@ -2916,7 +2917,7 @@ const people = google.people({
 
 router.put("/assign-campaign", async (req, res) => {
   try {
-    const { campaignName, employees } = req.body;
+    const { campaignName, employees, tag } = req.body;
 
     if (!campaignName || !Array.isArray(employees) || employees.length === 0) {
       return res.status(400).json({ error: "Invalid campaign or employees list" });
@@ -2924,7 +2925,7 @@ router.put("/assign-campaign", async (req, res) => {
 
     await CampaignAssignment.findOneAndUpdate(
       { campaignName },
-      { employees },
+      { employees, tag },
       { upsert: true, new: true }
     );
 
@@ -3052,9 +3053,9 @@ const fetchAndSaveFacebookLeads = async () => {
         }
       }
 
-      let assignedSalesperson =[];
-      const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name});
-      if(assignedCampaign && Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0){
+      let assignedSalesperson = [];
+      const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name });
+      if (assignedCampaign && Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
         assignedSalesperson = assignedCampaign.employees;
       }
 
@@ -3456,8 +3457,9 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
 
 //get Teams Leads
 
-router.get('/getTeams-leads/:name', async (req, res) => {
+router.get('/getTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
@@ -3467,12 +3469,12 @@ router.get('/getTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const todayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfToday,
         $lt: endOfToday
       },
-      campaign_Name: { $regex: new RegExp(escapedName, 'i') }
+      tag: { $regex: new RegExp(escapedName, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(todayLeads);
   } catch (error) {
@@ -3501,8 +3503,9 @@ router.get('/getSalesTeamWork', async (req, res) => {
 
 //get Yesterday Team Leads
 
-router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
+router.get('/getYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -3514,6 +3517,7 @@ router.get('/getYesterdayTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const yesterdayLeads = await salesLead.find({
+      salesPerson: person1,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3548,8 +3552,9 @@ router.get('/getSalesYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
+router.get('/getOneYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const today = new Date();
     const yesterday = new Date(today);
@@ -3561,7 +3566,7 @@ router.get('/getOneYesterdayTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3595,8 +3600,9 @@ router.get('/getSalesOneYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
+router.get('/getTwoYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const today = new Date();
     const yesterday = new Date(today);
@@ -3608,7 +3614,7 @@ router.get('/getTwoYesterdayTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3642,8 +3648,9 @@ router.get('/getSalesTwoYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
+router.get('/getThreeYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const today = new Date();
     const yesterday = new Date(today);
@@ -3655,7 +3662,7 @@ router.get('/getThreeYesterdayTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3689,8 +3696,9 @@ router.get('/getSalesThreeYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
+router.get('/getFourYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const today = new Date();
     const yesterday = new Date(today);
@@ -3702,7 +3710,7 @@ router.get('/getFourYesterdayTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -3736,8 +3744,9 @@ router.get('/getSalesFourYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
+router.get('/getFiveYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
   const name = req.params.name;
+  const person1 = req.userData.name;
   try {
     const today = new Date();
     const yesterday = new Date(today);
@@ -3749,7 +3758,7 @@ router.get('/getFiveYesterdayTeams-leads/:name', async (req, res) => {
     const escapedName = escapeRegex(name);
 
     const yesterdayLeads = await salesLead.find({
-      //salesTeam: personTeam,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfYesterday,
         $lte: endOfYesterday
@@ -10306,16 +10315,20 @@ router.post('/uploadLead', upload.single('file'), checkAuth, async (req, res) =>
 
 //date wise leads Data
 
-router.get('/getDateCampaign/:name', async (req, res) => {
+router.get('/getDateCampaign/:name',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
   const name = req.params.name;
   const selectedDate = req.query.selectDate; // Get selected date and WhatsApp campaign from the query string
 
   try {
     const selectedDateObj = new Date(selectedDate); // Convert the date to a Date object
-    const startOfDay = new Date(selectedDateObj.setHours(0, 0, 0, 0)); // Set to the start of the selected date
-    const endOfDay = new Date(selectedDateObj.setHours(23, 59, 59, 999)); // Set to the end of the selected date
+    const startOfDay = new Date(selectedDateObj);
+    startOfDay.setHours(0, 0, 0, 0); // Set to the start of the selected date
+    const endOfDay = new Date(selectedDateObj);
+    endOfDay.setHours(23, 59, 59, 999); // Set to the end of the selected date
 
     const leads = await salesLead.find({
+      salesPerson: person1,
       campaign_Name: { $regex: new RegExp(name, 'i') }, // Filter by campaign name
       closingDate: {
         $gte: startOfDay, // Date range filter
@@ -10732,74 +10745,399 @@ router.post('/cancelUpload', (req, res) => {
 
 });
 
-router.post('/filter', async(req,res)=>{
-  try{
-    const { startDate, endDate, campaign, salesPerson, projectStatus} = req.body;
+router.post('/filter', async (req, res) => {
+  try {
+    const { startDate, endDate, campaign, salesPerson, projectStatus } = req.body;
     let query = {};
-    if(startDate && endDate){
+    if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
       query.closingDate = { $gte: start, $lte: end };
     }
     //Campaign filter
-    if(campaign){
+    if (campaign) {
       query.campaign_Name = campaign;
     }
     //Salesperson filter
-    if(salesPerson){
+    if (salesPerson) {
       query.salesPerson = salesPerson;
     }
 
-    if(projectStatus){
+    if (projectStatus) {
       query.projectStatus = projectStatus;
     }
 
     const leads = await salesLead.find(query);
-    console.log("LEADS=======**",leads);
+    console.log("LEADS=======**", leads);
     res.json(leads);
-  }catch(err){
+  } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.get('/allSalesLeads', async(req,res) => {
+router.get('/allSalesLeads', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
-  try{
+  try {
     const products = await salesLead.find({
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth + 2, 0)
       }
-    }).sort({ closingDate: -1});
+    }).sort({ closingDate: -1 });
 
-    if(products.length > 0){
+    if (products.length > 0) {
       res.json(products);
     } else {
-      res.json({ result: "No data found"});
+      res.json({ result: "No data found" });
     }
-  } catch (error){
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
-router.post('/transferLeadtoSalesPerson', async(req,res)=>{
-  try{
-    const {leadIds, transferTo} = req.body;
+router.post('/transferLeadtoSalesPerson', async (req, res) => {
+  try {
+    const { leadIds, transferTo } = req.body;
 
     await salesLead.updateMany(
-      { _id: { $in: leadIds}},
-      { $set: { salesPerson: transferTo}}
+      { _id: { $in: leadIds } },
+      { $set: { salesPerson: transferTo } }
     );
-    res.json({message: 'Transfer Succesful'});
-  }catch(err){
+    res.json({ message: 'Transfer Succesful' });
+  } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server Error'});
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
+function normalizePhone(phone) {
+  if (!phone) return "";
+  const digits = phone.toString().replace(/\D/g, "");
+  return digits.slice(-10); // last 10 digits
+}
+
+const upload1 = multer({ dest: "uploads1/" });
+// 🔹 API: Upload & Process Excel
+router.post("/upload-excel", upload1.single("file"), async (req, res) => {
+  try {
+    const filePath = req.file.path;
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    let unmatchedLeads = [];
+
+    for (const row of sheet) {
+      const phone = normalizePhone(row["PRIMARY PHONE"]);
+      const dateCreated = row["DATE CREATED"];
+      const assignedTo = row["ASSIGNED TO"];
+      const leadStage = row["LEAD STAGE"];
+      const tag = row["TAGS"];
+      const note = row["NOTES"];
+
+      if (!phone || !dateCreated) continue;
+
+      const excelDate = new Date(dateCreated);
+      excelDate.setHours(0, 0, 0, 0);
+
+      const nextDay = new Date(excelDate);
+      nextDay.setDate(excelDate.getDate() + 1);
+
+      const lead = await salesLead.findOne({
+        $expr: {
+          $eq: [
+            {
+              $substrBytes: [
+                { $toString: { $ifNull: ["$custNumb", ""] } },
+                {
+                  $cond: {
+                    if: { $gte: [{ $strLenBytes: { $toString: { $ifNull: ["$custNumb", ""] } } }, 10] },
+                    then: { $subtract: [{ $strLenBytes: { $toString: { $ifNull: ["$custNumb", ""] } } }, 10] },
+                    else: 0
+                  }
+                },
+                10
+              ]
+            },
+            phone
+          ]
+        },
+        closingDate: { $gte: excelDate, $lt: nextDay }
+      });
+
+      if (lead) {
+        lead.salesPerson = assignedTo;
+        lead.projectStatus = leadStage;
+        lead.tag = tag;
+        lead.remark = note;
+        await lead.save();
+      } else {
+        const newLead = new salesLead({
+          custName: row["FIRST NAME"] || "",
+          custNumb: phone,
+          custBussiness: row["BUSINESS NAME"] || "",
+          state: row["CITY"] || "",
+          custEmail: row["EMAIL"] || "",
+          salesPerson: assignedTo || "",
+          projectStatus: leadStage || "",
+          leadsCreatedDate: excelDate,
+          tag: tag,
+          closingDate: excelDate,
+          additionalFields: {
+            additionalInfo: row["ADDITIONAL INFO"] || "",
+            requirements: row["Requirements"] || "",
+          }
+        });
+        await newLead.save();
+        unmatchedLeads.push(newLead);
+      }
+    }
+
+    // Agar unmatched leads hain to Excel file banao
+    if (unmatchedLeads.length > 0) {
+      const ws = XLSX.utils.json_to_sheet(unmatchedLeads);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Unmatched Leads");
+
+      const outputFile = path.join(__dirname, "unmatched_leads.xlsx");
+      XLSX.writeFile(wb, outputFile);
+
+      // File return kare frontend ko
+      res.download(outputFile, "unmatched_leads.xlsx", (err) => {
+        if (err) console.error("❌ Download error:", err);
+        fs.unlinkSync(filePath); // uploaded file cleanup
+        fs.unlinkSync(outputFile); // delete generated file after sending
+      });
+    } else {
+      fs.unlinkSync(filePath); // uploaded file cleanup
+      res.json({ message: "✅ All leads matched and updated!" });
+    }
+  } catch (err) {
+    console.error("❌ Error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post('/newTag',async(req,res)=>{
+  try{
+    const tag = new NewTag({
+      tagName: req.body.tagName
+    })
+    await tag.save().then((_) => {
+      res.json({ success: true, message: "New Tag Added"})
+    }).catch((err) => {
+      if(err.code === 11000){
+        return res.json({ success: false, message: 'Tag Already Stored'})
+      }
+    });
+  }catch(error){
+    console.error('Error Adding Tag', error);
+    res.status(500).json({ error: 'Failed to add Category'});
+  }
+});
+
+router.get('/getTagNames', async (req, res) => {
+  try {
+    const allTag = await NewTag.find();
+    return res.json(allTag)
+  } catch (error) {
+    console.log("Error Fetching Tags:", error);
+    res.status(500).json({ error: 'Failed to fetch Tags' });
+  }
+});
+
+router.get('/getTeams-leadsWo',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
+  try {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+    const todayLeads = await salesLead.find({
+      salesPerson: person1,
+      closingDate: {
+        $gte: startOfToday,
+        $lt: endOfToday
+      }
+    }).sort({ closingDate: -1 });
+    return res.json(todayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getTeams-leadsWoYes',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const yesterdayLeads = await salesLead.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getTeams-leadsWoOne',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 2);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const yesterdayLeads = await salesLead.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getTeams-leadsWoTwo',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 3);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const yesterdayLeads = await salesLead.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getTeams-leadsWoThree',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 4);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const yesterdayLeads = await salesLead.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getTeams-leadsWoFour',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 5);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const yesterdayLeads = await salesLead.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getTeams-leadsWoFive',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 6);
+
+    const startOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0));
+    const endOfYesterday = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59));
+
+    const yesterdayLeads = await salesLead.find({
+      salesPerson: name,
+      closingDate: {
+        $gte: startOfYesterday,
+        $lte: endOfYesterday
+      }
+    }).sort({ closingDate: -1 });
+
+    return res.json(yesterdayLeads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getDateCampaignWo',checkAuth, async (req, res) => {
+  const name = req.userData.name;
+  const selectedDate = req.query.selectDate; // Get selected date and WhatsApp campaign from the query string
+
+  try {
+    const selectedDateObj = new Date(selectedDate); // Convert the date to a Date object
+    const startOfDay = new Date(selectedDateObj)
+    startOfDay.setHours(0, 0, 0, 0); // Set to the start of the selected date
+    const endOfDay = new Date(selectedDateObj)
+    endOfDay.setHours(23, 59, 59, 999); // Set to the end of the selected date
+
+    const leads = await salesLead.find({
+      salesPerson: name, // Filter by campaign name
+      closingDate: {
+        $gte: startOfDay, // Date range filter
+        $lte: endOfDay
+      }
+    }).sort({ closingDate: -1 });
+    return res.json(leads);
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
 // const videoAuth = new google.auth.GoogleAuth({
 //   keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS,
 //   scopes: ['https://www.googleapis.com/auth/drive'],
