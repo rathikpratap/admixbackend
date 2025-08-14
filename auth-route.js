@@ -3054,9 +3054,13 @@ const fetchAndSaveFacebookLeads = async () => {
       }
 
       let assignedSalesperson = [];
+      let campaignTag = '';
       const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name });
-      if (assignedCampaign && Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
-        assignedSalesperson = assignedCampaign.employees;
+      if(assignedCampaign){
+        if (Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
+          assignedSalesperson = assignedCampaign.employees;
+        }
+        campaignTag = assignedCampaign.tag || "";
       }
 
       // 🔹 Count today's leads for this campaign
@@ -3107,7 +3111,8 @@ const fetchAndSaveFacebookLeads = async () => {
           subsidiaryName: 'AdmixMedia',
           additionalFields: leadObj.additionalFields,
           salesPerson: selectedSalesperson,
-          projectStatus: 'New Lead'
+          projectStatus: 'New Lead',
+          tag: campaignTag
         });
 
         await newLead.save();
