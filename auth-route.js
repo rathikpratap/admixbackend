@@ -696,6 +696,11 @@ router.get('/read-cust/:id', async (req, res) => {
       return res.json(customerDetails);
     }
 
+    const task = await Task.findById(id);
+    if(task){
+      return res.json(task);
+    }
+
     // Try to find in salesLead collection
     const otherDetails = await salesLead.findById(id);
     if (otherDetails) {
@@ -898,6 +903,18 @@ router.delete('/delete-sales/:id', async (req, res) => {
 
 router.put('/updateEditor/:id', async (req, res) => {
   try {
+
+    // 🔹 1. Try to update Task (Task has no subEntries)
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+
+    if (updatedTask) {
+      return res.json({ updated: 'task', data: updatedTask });
+    }
+
     // First try to update main document (if ID matches _id of a main entry)
     const updatedMain = await Customer.findByIdAndUpdate(req.params.id, {
       $set: req.body
@@ -939,6 +956,111 @@ router.put('/updateEditor/:id', async (req, res) => {
 
 // Edit Customer Details
 
+// router.put('/update/:id', checkAuth, async (req, res) => {
+//   try {
+//     const person1 = req.userData.name;
+//     const personTeam1 = req.userData.Saleteam;
+
+//     let custDet = await Customer.findById(req.params.id);
+//     let leadDet = await salesLead.findById(req.params.id);
+
+//     if (custDet) {
+//       custDet = await Customer.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+
+//       // Update in Google Sheets
+//       const sheetUpdated = await updateCustomerInGoogleSheet(custDet);
+
+//       return res.json({ custDet, sheetUpdated });
+//     }
+//     else if (leadDet) {
+//       if (req.body.projectStatus === 'Not Interested') {
+//         leadDet = await salesLead.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+//         return res.json(leadDet);
+//       } else {
+//         // Convert lead to customer
+//         const newCustomer = new Customer({
+//           _id: leadDet._id,
+//           custCode: req.body.custCode,
+//           custName: leadDet.custName,
+//           custNumb: leadDet.custNumb,
+//           custNumb2: req.body.custNumb2,
+//           custEmail: leadDet.custEmail,
+//           custBussiness: leadDet.custBussiness,
+//           closingDate: req.body.closingDate,
+//           leadsCreatedDate: leadDet.closingDate,
+//           closingPrice: req.body.closingPrice,
+//           closingCateg: req.body.closingCateg,
+//           billType: req.body.billType,
+//           AdvPay: req.body.AdvPay,
+//           remainingAmount: req.body.remainingAmount,
+//           custCountry: req.body.custCountry,
+//           custCity: req.body.custCity,
+//           custState: req.body.custState,
+//           projectStatus: req.body.projectStatus,
+//           youtubeLink: req.body.youtubeLink,
+//           restAmount: req.body.restAmount,
+//           restPaymentDate: req.body.restPaymentDate,
+//           remark: req.body.remark,
+//           salesPerson: person1,
+//           salesTeam: personTeam1,
+//           graphicDesigner: req.body.graphicDesigner,
+//           editor: req.body.editor,
+//           scriptWriter: req.body.scriptWriter,
+//           voiceOver: req.body.voiceOver,
+//           wordsCount: req.body.wordsCount,
+//           scriptDuration: req.body.scriptDuration,
+//           script: req.body.script,
+//           scriptDeliveryDate: req.body.scriptDeliveryDate,
+//           scriptStatus: req.body.scriptStatus,
+//           scriptPayment: req.body.scriptPayment,
+//           scriptOtherChanges: req.body.scriptOtherChanges,
+//           scriptChangesPayment: req.body.scriptChangesPayment,
+//           videoDuration: req.body.videoDuration,
+//           videoDeliveryDate: req.body.videoDeliveryDate,
+//           videoType: req.body.videoType,
+//           editorStatus: req.body.editorStatus,
+//           editorPayment: req.body.editorPayment,
+//           editorOtherChanges: req.body.editorOtherChanges,
+//           editorChangesPayment: req.body.editorChangesPayment,
+//           voiceDuration: req.body.voiceDuration,
+//           voiceDeliveryDate: req.body.voiceDeliveryDate,
+//           voiceOverType: req.body.voiceOverType,
+//           voiceOverStatus: req.body.voiceOverStatus,
+//           voicePayment: req.body.voicePayment,
+//           voiceOtherChanges: req.body.voiceOtherChanges,
+//           voiceChangesPayment: req.body.voiceChangesPayment,
+//           totalEditorPayment: req.body.totalEditorPayment,
+//           totalScriptPayment: req.body.totalScriptPayment,
+//           totalVoicePayment: req.body.totalVoicePayment,
+//           videoDurationMinutes: req.body.videoDurationMinutes,
+//           videoDurationSeconds: req.body.videoDurationSeconds,
+//           voiceDurationMinutes: req.body.voiceDurationMinutes,
+//           voiceDurationSeconds: req.body.voiceDurationSeconds,
+//           scriptDurationMinutes: req.body.scriptDurationMinutes,
+//           scriptDurationSeconds: req.body.scriptDurationSeconds,
+//           numberOfVideos: req.body.numberOfVideos,
+//           companyName: req.body.companyName,
+//           scriptPassDate: req.body.scriptPassDate,
+//           Qr: req.body.Qr,
+//           customerType: req.body.customerType
+//         });
+
+//         await newCustomer.save();
+//         await salesLead.findByIdAndDelete(req.params.id);
+
+//         // Add new customer to Google Sheets
+//         const sheetUpdated = await updateCustomerInGoogleSheet(newCustomer);
+
+//         return res.json({ newCustomer, sheetUpdated });
+//       }
+//     } else {
+//       return res.json({ result: "No Data" });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// });
+
 router.put('/update/:id', checkAuth, async (req, res) => {
   try {
     const person1 = req.userData.name;
@@ -948,98 +1070,78 @@ router.put('/update/:id', checkAuth, async (req, res) => {
     let leadDet = await salesLead.findById(req.params.id);
 
     if (custDet) {
-      custDet = await Customer.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+      const {
+        custCode,
+        custName,
+        graphicsCount,
+        videosCount,
+        reelsCount,
+        custBussiness,
+        salesPerson,
+        companyName,
+        priority,
+        ...restFields
+      } = req.body;
 
-      // Update in Google Sheets
+      let updateData = {
+        custCode,
+        custName,
+        custBussiness,
+        salesPerson,
+        companyName,
+        priority,
+        ...restFields
+      };
+
+      // ✅ Only regenerate subEntries if counts provided
+      if (
+        graphicsCount !== undefined ||
+        videosCount !== undefined ||
+        reelsCount !== undefined
+      ) {
+        let nextCustCode = 1;
+        const subEntries = [];
+
+        const createSubEntries = (count = 0, type) => {
+          for (let i = 1; i <= count; i++) {
+            subEntries.push({
+              custCode: `${custCode}.${nextCustCode++}`,
+              custName: `${custName} (${type} ${i})`,
+              entryType: type,
+              custBussiness,
+              salesPerson,
+              companyName,
+              priority
+            });
+          }
+        };
+
+        createSubEntries(graphicsCount, "Graphic");
+        createSubEntries(videosCount, "Video");
+        createSubEntries(reelsCount, "Reel");
+
+        updateData.graphicsCount = graphicsCount || 0;
+        updateData.videosCount = videosCount || 0;
+        updateData.reelsCount = reelsCount || 0;
+        updateData.subEntries = subEntries;
+      }
+
+      custDet = await Customer.findByIdAndUpdate(
+        req.params.id,
+        { $set: updateData },
+        { new: true }
+      );
+
       const sheetUpdated = await updateCustomerInGoogleSheet(custDet);
 
       return res.json({ custDet, sheetUpdated });
     }
-    else if (leadDet) {
-      if (req.body.projectStatus === 'Not Interested') {
-        leadDet = await salesLead.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
-        return res.json(leadDet);
-      } else {
-        // Convert lead to customer
-        const newCustomer = new Customer({
-          _id: leadDet._id,
-          custCode: req.body.custCode,
-          custName: leadDet.custName,
-          custNumb: leadDet.custNumb,
-          custNumb2: req.body.custNumb2,
-          custEmail: leadDet.custEmail,
-          custBussiness: leadDet.custBussiness,
-          closingDate: req.body.closingDate,
-          leadsCreatedDate: leadDet.closingDate,
-          closingPrice: req.body.closingPrice,
-          closingCateg: req.body.closingCateg,
-          billType: req.body.billType,
-          AdvPay: req.body.AdvPay,
-          remainingAmount: req.body.remainingAmount,
-          custCountry: req.body.custCountry,
-          custCity: req.body.custCity,
-          custState: req.body.custState,
-          projectStatus: req.body.projectStatus,
-          youtubeLink: req.body.youtubeLink,
-          restAmount: req.body.restAmount,
-          restPaymentDate: req.body.restPaymentDate,
-          remark: req.body.remark,
-          salesPerson: person1,
-          salesTeam: personTeam1,
-          graphicDesigner: req.body.graphicDesigner,
-          editor: req.body.editor,
-          scriptWriter: req.body.scriptWriter,
-          voiceOver: req.body.voiceOver,
-          wordsCount: req.body.wordsCount,
-          scriptDuration: req.body.scriptDuration,
-          script: req.body.script,
-          scriptDeliveryDate: req.body.scriptDeliveryDate,
-          scriptStatus: req.body.scriptStatus,
-          scriptPayment: req.body.scriptPayment,
-          scriptOtherChanges: req.body.scriptOtherChanges,
-          scriptChangesPayment: req.body.scriptChangesPayment,
-          videoDuration: req.body.videoDuration,
-          videoDeliveryDate: req.body.videoDeliveryDate,
-          videoType: req.body.videoType,
-          editorStatus: req.body.editorStatus,
-          editorPayment: req.body.editorPayment,
-          editorOtherChanges: req.body.editorOtherChanges,
-          editorChangesPayment: req.body.editorChangesPayment,
-          voiceDuration: req.body.voiceDuration,
-          voiceDeliveryDate: req.body.voiceDeliveryDate,
-          voiceOverType: req.body.voiceOverType,
-          voiceOverStatus: req.body.voiceOverStatus,
-          voicePayment: req.body.voicePayment,
-          voiceOtherChanges: req.body.voiceOtherChanges,
-          voiceChangesPayment: req.body.voiceChangesPayment,
-          totalEditorPayment: req.body.totalEditorPayment,
-          totalScriptPayment: req.body.totalScriptPayment,
-          totalVoicePayment: req.body.totalVoicePayment,
-          videoDurationMinutes: req.body.videoDurationMinutes,
-          videoDurationSeconds: req.body.videoDurationSeconds,
-          voiceDurationMinutes: req.body.voiceDurationMinutes,
-          voiceDurationSeconds: req.body.voiceDurationSeconds,
-          scriptDurationMinutes: req.body.scriptDurationMinutes,
-          scriptDurationSeconds: req.body.scriptDurationSeconds,
-          numberOfVideos: req.body.numberOfVideos,
-          companyName: req.body.companyName,
-          scriptPassDate: req.body.scriptPassDate,
-          Qr: req.body.Qr,
-          customerType: req.body.customerType
-        });
 
-        await newCustomer.save();
-        await salesLead.findByIdAndDelete(req.params.id);
+    // leadDet logic same as before ...
 
-        // Add new customer to Google Sheets
-        const sheetUpdated = await updateCustomerInGoogleSheet(newCustomer);
-
-        return res.json({ newCustomer, sheetUpdated });
-      }
-    } else {
-      return res.json({ result: "No Data" });
-    }
+    return res.json({ result: "No Data" });
   } catch (error) {
+    console.error("Error updating customer:", error);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -2899,7 +3001,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04MFvM0--jHxmCgYIARAAGAQSNwF-L9IrlPh8xJZ-erjRW02XpmEaXvGCzTO53hCPz1vVLvzEr4UZvMJ-PU4diPIGTVXf06_5pb0';
+const REFERESH_TOKEN = '1//04ZG3Bqv4dP6SCgYIARAAGAQSNwF-L9IrUCpm9KPGX0Y3FyBNuAonG6diUJfqrBUa4U3Wa56F-Mbc3_uMXUaUDxyXdOgUyJ-0vVM';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4221,8 +4323,10 @@ router.get('/allEditorProjects', async (req, res) => {
       }
     });
 
-    if (allProjects.length || allB2bProjects.length) {
-      return res.json({ list: [...allProjects, ...allB2bProjects] });
+    const task = await Task.find({}).sort({ assignedDate: -1});
+
+    if (allProjects.length || allB2bProjects.length || task.length) {
+      return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
     } else {
       res.send({ result: "No Data Found" });
     }
@@ -4330,7 +4434,11 @@ router.get('/editorProjects', async (req, res) => {
       }
     });
 
-    return res.json({ list: [...allProjects, ...allB2bProjects] });
+    const task = await Task.find({
+        assignedDate: { $gte: startOfMonth, $lte: endOfToday}
+    }).sort({ assignedDate: -1});
+
+    return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
 
   } catch (error) {
     console.error("Error Fetching Leads", error);
@@ -4433,7 +4541,11 @@ router.get('/editorPreviousProjects', async (req, res) => {
       }
     });
 
-    return res.json({ list: [...allProjects, ...allB2bProjects] });
+    const task = await Task.find({
+        assignedDate: { $gte: prevMonthStart, $lte: prevMonthEnd}
+    }).sort({ assignedDate: -1});
+
+    return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
   } catch (error) {
     console.error("Error Fetching Previous Projects", error);
     res.status(500).json({ error: 'Failed to Fetch Previous Projects' });
@@ -4535,7 +4647,11 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
       }
     });
 
-    return res.json({ list: [...allProjects, ...allB2bProjects] });
+    const task = await Task.find({
+        assignedDate: { $gte: twoPrevMonthStart, $lte: twoPrevMonthEnd}
+    }).sort({ assignedDate: -1});
+
+    return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
   } catch (error) {
     console.error("Error Fetching Two-Previous Projects", error);
     res.status(500).json({ error: 'Failed to Fetch Projects' });
@@ -4633,6 +4749,11 @@ router.get('/editorActiveList', async (req, res) => {
       ]
     }).sort({ closingDate: -1 });
 
+    const task = await Task.find({
+        graphicStatus: { $ne: 'Completed' } ,
+        assignedDate: { $gte: startDate, $lte: endDate}
+    }).sort({ assignedDate: -1});
+
     const products = [];
     const b2bProducts = [];
 
@@ -4700,7 +4821,7 @@ router.get('/editorActiveList', async (req, res) => {
       }
     });
 
-    res.json({ products, b2bProducts });
+    res.json({ products, b2bProducts, task });
   } catch (error) {
     console.error("Error fetching editor active list:", error);
     res.status(500).json({ message: 'Server Error' });
@@ -4756,6 +4877,11 @@ router.get('/editorCompleteList', async (req, res) => {
       ]
     }).sort({ b2bProjectDate: -1 });
 
+    const task = await Task.find({
+      graphicStatus: {$eq: 'Completed'},
+      assignedDate: {$gte: startDate, $lte: endDate}
+    }).sort({assignedDate: -1});
+
     const products = [];
     const b2bProducts = [];
 
@@ -4803,7 +4929,7 @@ router.get('/editorCompleteList', async (req, res) => {
       }
     });
 
-    res.json({ products, b2bProducts });
+    res.json({ products, b2bProducts, task });
   } catch (error) {
     console.error("Error fetching editor complete list:", error);
     res.status(500).json({ message: 'Server Error' });
@@ -5096,6 +5222,7 @@ router.post('/update-projectStatus', checkAuth, async (req, res) => {
     const person1 = req.userData?.name;
     const items = req.body.items;
     for (const item of items) {
+      console.log("Processing item:", item);
       let existingItem = await salesLead.findById(item._id);
       if (existingItem) {
         existingItem.projectStatus = item.projectStatus;
@@ -8162,6 +8289,11 @@ router.get('/changesEditorProjects', async (req, res) => {
       projectStatus: 'Video Changes'
     }).sort({ b2bEditorPassDate: -1 });
 
+    const task = await Task.find({
+        graphicStatus: { $eq: 'Video Changes' } ,
+        assignedDate: { $gte: startOfMonth, $lte: endOfMonth}
+    }).sort({ assignedDate: -1});
+
     const changesProjects = [];
 
     changesCustomers.forEach(doc => {
@@ -8200,7 +8332,7 @@ router.get('/changesEditorProjects', async (req, res) => {
       }
     });
 
-    return res.json(changesProjects);
+    return res.json({changesProjects, task});
   } catch (error) {
     console.error("Error Fetching Changes Projects", error);
     res.status(500).json({ error: 'Failed to fetch changes projects' });
@@ -9168,6 +9300,13 @@ const updateEditorMonthlyPoints = async (editorName) => {
     ]
   });
 
+   // 2️⃣ Task collection projects
+  const tasks = await Task.find({
+    graphicDesigner: editorName,
+    graphicStatus: 'Completed',
+    pointsCalculated: true
+  });
+
   const monthMap = {};
   let totalPoints = 0;
 
@@ -9195,6 +9334,20 @@ const updateEditorMonthlyPoints = async (editorName) => {
         monthMap[monthKey] = (monthMap[monthKey] || 0) + points;
         totalPoints += points;
       }
+    }
+  }
+
+   // ➤ Loop over Task collection
+  for (const task of tasks) {
+    const matches = task.graphicDesigner === editorName &&
+      task.graphicStatus === 'Completed' &&
+      task.pointsCalculated;
+
+    if (matches) {
+      const monthKey = new Date(task.taskDeliveryDate).toISOString().slice(0, 7);
+      const points = task.pointsEarned || 0;
+      monthMap[monthKey] = (monthMap[monthKey] || 0) + points;
+      totalPoints += points;
     }
   }
 
