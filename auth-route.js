@@ -10577,7 +10577,7 @@ function extractFileId(link) {
 // Admix
 const GOOGLE_CLIENT_ID = '947642384135-n1dqjvbtp6nb2e1a8drmvfj2gvbmfv8m.apps.googleusercontent.com';
 const GOOGLE_CLIENT_SECRET = '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';
-const GOOGLE_REDIRECT_URI = 'https://login.admixmedia.in:5000/auth/oauth2callback';
+const GOOGLE_REDIRECT_URI = 'https://login.admixmedia.in/auth/oauth2callback';
 
 //IT WEB
 // const GOOGLE_CLIENT_ID = '411883461726-s0d90tdetfmo9ff5lgpeie81opgn95ht.apps.googleusercontent.com';
