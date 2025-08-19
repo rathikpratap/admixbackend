@@ -10574,9 +10574,15 @@ function extractFileId(link) {
   return match ? match[1] : null;
 }
 
-const GOOGLE_CLIENT_ID = '947642384135-m7sp5gqqnbceffs8nm4brsggr1qc9dol.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = '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';
+// Admix
+const GOOGLE_CLIENT_ID = '947642384135-n1dqjvbtp6nb2e1a8drmvfj2gvbmfv8m.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = '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';
 const GOOGLE_REDIRECT_URI = 'https://login.admixmedia.in:5000/auth/oauth2callback';
+
+//IT WEB
+// const GOOGLE_CLIENT_ID = '411883461726-s0d90tdetfmo9ff5lgpeie81opgn95ht.apps.googleusercontent.com';
+// const GOOGLE_CLIENT_SECRET = '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';
+// const GOOGLE_REDIRECT_URI = 'http://localhost:5000/auth/oauth2callback';
 
 const oauth2ClientVideo = new google.auth.OAuth2(
   GOOGLE_CLIENT_ID,
@@ -10613,143 +10619,6 @@ router.get('/oauth2callback', async (req, res) => {
 // --------- Step 3: Upload File to Drive ---------
 const videoUpload = multer({ dest: 'uploads/' });
 const cancelledUploads = new Set(); // Track cancelled uploads by temp file path
-
-// router.post('/uploadToDrive', videoUpload.single('file'), async (req, res) => {
-//   try {
-//     const uploadId = req.body.uploadId;
-
-//     if (!uploadId) {
-//       return res.status(400).json({ success: false, error: 'Missing uploadId' });
-//     }
-//     if (cancelledUploads.has(uploadId)) {
-//       console.log('Upload was cancelled before processing');
-//       return res.status(499).json({ success: false, message: 'Upload cancelled by user' });
-//     }
-//     if (!fs.existsSync(TOKEN_PATH)) {
-//       return res.status(401).send('Please authenticate at /gAuth first');
-//     }
-//     const token = fs.readFileSync(TOKEN_PATH);
-//     oauth2ClientVideo.setCredentials(JSON.parse(token));
-
-//     const drive = google.drive({ version: 'v3', auth: oauth2ClientVideo });
-
-//     const tempFilePath = req.file.path;
-//     const existingLink = req.body.existingLink;
-
-//     // 🔴 If upload is cancelled, stop here
-//     if (cancelledUploads.has(uploadId)) {
-//       cancelledUploads.delete(uploadId);
-//       if (fs.existsSync(tempFilePath)) {
-//         fs.unlinkSync(tempFilePath);
-//       }
-//       return res.status(499).json({ success: false, message: 'Upload cancelled by user' });
-//     }
-
-//     //Get Month Name
-//     const folderName = format(new Date(), 'MMMM yyyy');
-
-//     const folderList = await drive.files.list({
-//       q: `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`,
-//       fields: 'files(id, name)',
-//     });
-//     let folderId;
-
-//     if (folderList.data.files.length > 0) {
-//       // Folder exists
-//       folderId = folderList.data.files[0].id;
-//     } else {
-//       // Folder doesn't exist, create it
-//       const folderMetadata = {
-//         name: folderName,
-//         mimeType: 'application/vnd.google-apps.folder',
-//       };
-
-//       const folder = await drive.files.create({
-//         resource: folderMetadata,
-//         fields: 'id',
-//       });
-
-//       folderId = folder.data.id;
-//     }
-
-//     const fileMetadata = {
-//       name: req.file.originalname,
-//       parents: [folderId]
-//     };
-
-//     const cancellableStream = new Readable({
-//       read(size) {
-//         if (cancelledUploads.has(uploadId)) {
-//           console.log('Aborting stream due to cancellation');
-//           this.destroy(new Error('Upload cancelled by user'));
-//         } else {
-//           const buffer = fs.readFileSync(tempFilePath);
-//           this.push(buffer);
-//           this.push(null); // Signal end of stream
-//         }
-//       }
-//     });
-
-//     const media = {
-//       mimeType: req.file.mimetype,
-//       body: cancellableStream
-//     };
-//     const response = await drive.files.create({
-//       resource: fileMetadata,
-//       media: media,
-//       fields: 'id'
-//     });
-
-//     const fileId = response.data.id;
-
-//     //Make file public
-//     await drive.permissions.create({
-//       fileId,
-//       requestBody: {
-//         role: 'reader',
-//         type: 'anyone'
-//       }
-//     });
-
-//     //Get shareable link
-//     const result = await drive.files.get({
-//       fileId,
-//       fields: 'webViewLink, webContentLink'
-//     });
-//     // Delete old file only after successful upload
-//     let oldFileDeleted = false;
-//     if (existingLink) {
-//       const match = existingLink.match(/\/d\/(.+?)\//);
-//       const oldFileId = match ? match[1] : null;
-//       if (oldFileId) {
-//         try {
-//           await drive.files.delete({ fileId: oldFileId });
-//           console.log('Old file deleted');
-//           oldFileDeleted = true;
-//         } catch (err) {
-//           console.warn('Failed to delete old file:', err.message);
-//         }
-//       }
-//     }
-
-//     //Clean up Local file
-//     if (fs.existsSync(tempFilePath)) {
-//       fs.unlinkSync(tempFilePath);
-//     }
-//     cancelledUploads.delete(uploadId);
-
-//     res.json({
-//       success: true,
-//       webViewLink: result.data.webViewLink,
-//       webContentLink: result.data.webContentLink,
-//       oldFileDeleted,
-//       tempFilePath
-//     });
-//   } catch (err) {
-//     console.error('Upload error:', err);
-//     res.status(500).json({ success: false, error: err.message });
-//   }
-// });
 
 router.post('/uploadToDrive', videoUpload.single('file'), async (req, res) => {
   const uploadId = req.body.uploadId;
