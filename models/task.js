@@ -17,10 +17,13 @@ const taskSchema = new mongoose.Schema({
     taskEditorChangesPayment: {type: Number},
     taskTotalEditorPayment: {type: Number},
     taskYoutubeLink: {type: String},
+    taskYoutubeLink2: {type: String},
+    taskYoutubeLink3: {type: String},
     taskNumberOfVideos: {type: String},
     taskCompanyName: {type: String},
     pointsEarned: {type: Number, default: 0},
-    pointsCalculated: {type: Boolean, default: false}
+    pointsCalculated: {type: Boolean, default: false},
+    updateMorePoints: {type: Boolean, default: false}
 });
 
 module.exports = mongoose.model('tasks', taskSchema);

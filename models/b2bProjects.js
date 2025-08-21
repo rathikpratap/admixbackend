@@ -17,6 +17,8 @@ const b2bProjectSchema = new mongoose.Schema({
     b2bVideoDurationSeconds:{type:Number},
     b2bEditor:{type:String},
     youtubeLink:{type:String},
+    youtubeLink2:{type:String},
+    youtubeLink3:{type:String},
     b2bRemark:{type:String},
     salesPerson: {type:String},
     salesTeam: {type: String},
@@ -32,6 +34,7 @@ const b2bProjectSchema = new mongoose.Schema({
     totalEditorPayment: {type:Number},
     b2bEditorPassDate: {type:Date},
     pointsEarned: {type: Number},
-    pointsCalculated: { type: Boolean},
+    pointsCalculated: { type: Boolean, default: false},
+    updateMorePoints: {type: Boolean, default: false}
 });
 module.exports = mongoose.model('B2bProjects', b2bProjectSchema);

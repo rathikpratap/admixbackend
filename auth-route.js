@@ -4323,7 +4323,7 @@ router.get('/allEditorProjects', async (req, res) => {
       }
     });
 
-    const task = await Task.find({}).sort({ assignedDate: -1});
+    const task = await Task.find({graphicDesigner: person}).sort({ assignedDate: -1});
 
     if (allProjects.length || allB2bProjects.length || task.length) {
       return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
@@ -4435,7 +4435,8 @@ router.get('/editorProjects', async (req, res) => {
     });
 
     const task = await Task.find({
-        assignedDate: { $gte: startOfMonth, $lte: endOfToday}
+        assignedDate: { $gte: startOfMonth, $lte: endOfToday},
+        graphicDesigner: person
     }).sort({ assignedDate: -1});
 
     return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
@@ -4542,7 +4543,8 @@ router.get('/editorPreviousProjects', async (req, res) => {
     });
 
     const task = await Task.find({
-        assignedDate: { $gte: prevMonthStart, $lte: prevMonthEnd}
+        assignedDate: { $gte: prevMonthStart, $lte: prevMonthEnd},
+        graphicDesigner: person
     }).sort({ assignedDate: -1});
 
     return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
@@ -4648,7 +4650,8 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
     });
 
     const task = await Task.find({
-        assignedDate: { $gte: twoPrevMonthStart, $lte: twoPrevMonthEnd}
+        assignedDate: { $gte: twoPrevMonthStart, $lte: twoPrevMonthEnd},
+        graphicDesigner: person
     }).sort({ assignedDate: -1});
 
     return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
@@ -4751,7 +4754,8 @@ router.get('/editorActiveList', async (req, res) => {
 
     const task = await Task.find({
         graphicStatus: { $ne: 'Completed' } ,
-        assignedDate: { $gte: startDate, $lte: endDate}
+        assignedDate: { $gte: startDate, $lte: endDate},
+        graphicDesigner: person
     }).sort({ assignedDate: -1});
 
     const products = [];
@@ -4856,6 +4860,7 @@ router.get('/editorActiveList', async (req, res) => {
 // });
 
 router.get('/editorCompleteList', async (req, res) => {
+  console.log("EDITOR PWEAON========>>", person);
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -4879,7 +4884,8 @@ router.get('/editorCompleteList', async (req, res) => {
 
     const task = await Task.find({
       graphicStatus: {$eq: 'Completed'},
-      assignedDate: {$gte: startDate, $lte: endDate}
+      assignedDate: {$gte: startDate, $lte: endDate},
+      graphicDesigner: person
     }).sort({assignedDate: -1});
 
     const products = [];
@@ -8291,7 +8297,8 @@ router.get('/changesEditorProjects', async (req, res) => {
 
     const task = await Task.find({
         graphicStatus: { $eq: 'Video Changes' } ,
-        assignedDate: { $gte: startOfMonth, $lte: endOfMonth}
+        assignedDate: { $gte: startOfMonth, $lte: endOfMonth},
+        graphicDesigner: person
     }).sort({ assignedDate: -1});
 
     const changesProjects = [];
@@ -11163,6 +11170,77 @@ router.get('/getDateCampaignWo',checkAuth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching leads:', error);
     res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+router.get('/getPointsUpdate', async(req,res)=>{
+  try {
+    console.log("HAHAHAHAHAHAHAHA");
+    const allProjects = [];
+    const allB2bProjects = [];
+
+    // Handle Customer entries
+    const customerDocs = await Customer.find({updateMorePoints: true}).sort({ closingDate: -1 });
+
+    customerDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      
+        allProjects.push({
+          ...item,
+          type: 'Customer',
+          subEntries: item.subEntries || []
+        });
+      
+    });
+
+    // Handle B2B entries
+    const b2bDocs = await B2bCustomer.find({updateMorePoints: true}).sort({ b2bEditorPassDate: -1 });
+
+    b2bDocs.forEach(doc => {
+      const item = doc.toObject();
+
+      
+        allB2bProjects.push({
+          ...item,
+          type: 'b2b',
+          subEntries: item.subEntries || []
+        });
+      
+    });
+
+    const task = await Task.find({updateMorePoints: true}).sort({ assignedDate: -1});
+
+    if (allProjects.length || allB2bProjects.length || task.length) {
+      console.log("LALALALALALA")
+      return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
+    } else {
+      res.send({ result: "No Data Found" });
+    }
+
+  } catch (error) {
+    console.error("Error Fetching All Editor Projects", error);
+    res.status(500).json({ error: 'Failed to Fetch All Projects' });
+  }
+});
+
+router.post('/update-point', async (req, res) => {
+  try {
+    const item = req.body.item;  // ✅ singular
+    console.log("POINT PAYLOAD ===>", item);
+
+    let existingItem = await Customer.findById(item._id);
+    if (existingItem) {
+      existingItem.pointsEarned = item.pointsEarned;
+      existingItem.updateMorePoints = false; // optional
+      existingItem.pointsCalculated = true;
+      await existingItem.save();
+    }
+
+    return res.json(item);
+  } catch (error) {
+    console.error("Update Point Error:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 // const videoAuth = new google.auth.GoogleAuth({

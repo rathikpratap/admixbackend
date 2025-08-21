@@ -21,6 +21,8 @@ const customerSchema = new mongoose.Schema({
     projectStatus: { type: String },
     salesPerson: { type: String },
     youtubeLink: { type: String },
+    youtubeLink2: { type: String },
+    youtubeLink3: { type: String },
     remark: { type: String },
     restAmount: { type: Number },
     restPaymentDate: { type: Date },
@@ -91,7 +93,8 @@ const customerSchema = new mongoose.Schema({
     videosCount: { type: Number },
     reelsCount: { type: Number },
     pointsEarned: {type: Number},
-    pointsCalculated: { type: Boolean},
+    pointsCalculated: { type: Boolean, default: false},
+    updateMorePoints: {type: Boolean, default: false},
     // entryType: { type: String, enum: ['Main', 'Graphic', 'Video', 'Reel'], default: 'Main' },
     entryType: { type: String, default: 'Main' },
     subEntries: [
@@ -147,9 +150,14 @@ const customerSchema = new mongoose.Schema({
             totalVoicePayment: { type: Number },
             numberOfVideos: { type: String },
             pointsEarned: {type: Number},
-            pointsCalculated: { type: Boolean},
+            pointsCalculated: { type: Boolean, default: false},
+            updateMorePoints: {type: Boolean, default: false},
             companyName: { type: String },
-            salesPerson: {type: String}
+            salesPerson: {type: String},
+            youtubeLink: { type: String },
+            youtubeLink2: { type: String },
+            youtubeLink3: { type: String },
+            
         }
     ]
 });
