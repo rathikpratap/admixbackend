@@ -157,6 +157,11 @@ const customerSchema = new mongoose.Schema({
             youtubeLink: { type: String },
             youtubeLink2: { type: String },
             youtubeLink3: { type: String },
+            closingPrice: {type: Number},
+            advPay: {type: Number},
+            remainingAmount: {type: Number},
+            restAmount: {type: Number},
+            restAmountDate: {type: Date}
             
         }
     ]

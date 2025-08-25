@@ -3001,7 +3001,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04ZG3Bqv4dP6SCgYIARAAGAQSNwF-L9IrUCpm9KPGX0Y3FyBNuAonG6diUJfqrBUa4U3Wa56F-Mbc3_uMXUaUDxyXdOgUyJ-0vVM';
+const REFERESH_TOKEN = '1//04AM1-0sPp-LICgYIARAAGAQSNwF-L9IrMeSUarj3tAT8lmUN3QPT5_8zeljMwK78GnvGPPdcWty2Ez4P4dQrc6j9OYIdc2vfLpw';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3934,21 +3934,26 @@ router.get('/getSales-Leads', async (req, res) => {
 
 // SalesLead by Range
 
-router.get('/salesleadsByRange/:startDate/:endDate/:categ', async (req, res) => {
-  const startDate = new Date(req.params.startDate);
-  const endDate = new Date(req.params.endDate);
-  const categ = req.params.categ;
-  endDate.setDate(endDate.getDate() + 1);
+router.post('/salesleadsByRange',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
   try {
-    let query = {
-      //salesTeam: personTeam,
-      campaign_Name: categ,
-      closingDate: {
-        $gte: startDate, $lte: endDate
-      }
-    };
+    const {startDate, endDate, categ, projectStatus} = req.body;
+    let query = {salesPerson : person1};
+     if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.closingDate = { $gte: start, $lte: end };
+    }
+    //Campaign filter
+    if (categ) {
+      query.campaign_Name = campaign;
+    }
+    if (projectStatus) {
+      query.projectStatus = projectStatus;
+    }
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    res.json({ rangeTotalData: rangeTotalData });
+    res.json( rangeTotalData);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
