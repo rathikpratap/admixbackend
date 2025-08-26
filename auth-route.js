@@ -9018,7 +9018,7 @@ router.get('/downloadCampaignLead/:startDate/:endDate/:campaign', async (req, re
 });
 // Data By Closing Campaign
 
-router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async (req, res) => {
+router.get('/dataByClosingCamp/:startDate/:endDate/:campaign(*)', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const campaign = req.params.campaign;
@@ -9039,7 +9039,7 @@ router.get('/dataByClosingCamp/:startDate/:endDate/:campaign', async (req, res) 
 });
 //download Category Campaign
 
-router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign', async (req, res) => {
+router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign(*)', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   const campaign = req.params.campaign;
@@ -9218,89 +9218,6 @@ router.get('/getPoint/:videoType', async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
-
-
-// const updateEditorMonthlyPoints = async (editorName) => {
-//   console.log("EDITOR NAME==========>>", editorName);
-//   const projects = await Customer.find({
-//     signupUsername: editorName,
-//     pointsCalculated: true, // ✅ Only pick processed ones
-//     editorStatus: 'Completed'
-//   });
-
-//   const monthMap = {};
-
-//   for (const project of projects) {
-//     const monthKey = new Date(project.editorPassDate).toISOString().slice(0, 7); // "YYYY-MM"
-//     const points = project.pointsEarned || 0;
-
-//     if (!monthMap[monthKey]) {
-//       monthMap[monthKey] = 0;
-//     }
-
-//     monthMap[monthKey] += points;
-//   }
-
-//   // Save per month
-//   for (const [month, points] of Object.entries(monthMap)) {
-//     await User.findOneAndUpdate(
-//       { editor: editorName},
-//       { $set: {
-//   [`monthlyEditorPoints.${month}`]: points
-// } },
-//       { upsert: true }
-//     );
-//   }
-
-//   return { monthsUpdated: Object.keys(monthMap).length };
-// };
-
-// const updateEditorMonthlyPoints = async (editorName) => {
-//   console.log("EDITOR NAME==========>>", editorName);
-
-//   const projects = await Customer.find({
-//     editor: editorName,
-//     pointsCalculated: true,
-//     editorStatus: 'Completed'
-//   });
-
-//   const monthMap = {};
-//   let totalPoints = 0;
-
-//   for (const project of projects) {
-//     const monthKey = new Date(project.editorPassDate).toISOString().slice(0, 7); // "YYYY-MM"
-//     const points = project.pointsEarned || 0;
-
-//     if (!monthMap[monthKey]) {
-//       monthMap[monthKey] = 0;
-//     }
-
-//     monthMap[monthKey] += points;
-//     totalPoints += points;
-//   }
-
-//   // Update monthly points
-//   const updateObject = {};
-//   for (const [month, points] of Object.entries(monthMap)) {
-//     updateObject[`monthlyEditorPoints.${month}`] = points;
-//   }
-
-//   // Add total points
-//   updateObject.totalEditorPoints = totalPoints;
-//   updateObject.lastProjectUpdated = new Date();
-
-//   // ✅ Fix: Use correct filter & update object
-//   await User.findOneAndUpdate(
-//     { signupUsername: editorName }, // ✅ Correct field
-//     { $set: updateObject },         // ✅ Set multiple fields
-//     { new: true }
-//   );
-
-//   return {
-//     monthsUpdated: Object.keys(monthMap).length,
-//     totalPoints
-//   };
-// };
 
 const updateEditorMonthlyPoints = async (editorName) => {
   console.log("Updating monthly points for editor:", editorName);
@@ -9819,7 +9736,7 @@ router.get('/empProjects/:name', async (req, res) => {
   }
 });
 
-router.get('/sales_closing/:closing/:name', async (req, res) => {
+router.get('/sales_closing/:closing(*)/:name', async (req, res) => {
   const closing = req.params.closing;
   const name = req.params.name;
   try {
@@ -9835,7 +9752,7 @@ router.get('/sales_closing/:closing/:name', async (req, res) => {
   }
 });
 
-router.get('/closing_status/:closing/:status', async (req, res) => {
+router.get('/closing_status/:closing(*)/:status', async (req, res) => {
   const closing = req.params.closing;
   const status = req.params.status;
   try {
@@ -9867,7 +9784,7 @@ router.get('/sales_status/:person/:status', async (req, res) => {
   }
 });
 
-router.get('/sales_statusClosing/:closing/:name/:status', async (req, res) => {
+router.get('/sales_statusClosing/:closing(*)/:name/:status', async (req, res) => {
   const closing = req.params.closing;
   const name = req.params.name;
   const status = req.params.status;
@@ -9934,7 +9851,7 @@ router.get('/empAllTwoPrevProjects/:name', async (req, res) => {
   }
 });
 
-router.get('/allCategProjects/:name', async (req, res) => {
+router.get('/allCategProjects/:name(*)', async (req, res) => {
   const name = req.params.name;
   try {
     const projects = await Customer.find({
@@ -9952,7 +9869,7 @@ router.get('/allCategProjects/:name', async (req, res) => {
   }
 });
 
-router.get('/searchCategProjects/:name/:mobile', async (req, res) => {
+router.get('/searchCategProjects/:name(*)/:mobile', async (req, res) => {
   const name = req.params.name;
   const mobile = req.params.mobile;
 
@@ -10512,7 +10429,7 @@ router.get('/getDateCampaign/:name',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/closingCurrentMonth/:name', async (req, res) => {
+router.get('/closingCurrentMonth/:name(*)', async (req, res) => {
   const name = req.params.name;
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -10536,7 +10453,7 @@ router.get('/closingCurrentMonth/:name', async (req, res) => {
   }
 });
 
-router.get('/closingPrevMonth/:name', async (req, res) => {
+router.get('/closingPrevMonth/:name(*)', async (req, res) => {
   const name = req.params.name;
   const currentMonth = new Date().getMonth() + 1;
   try {
@@ -10558,7 +10475,7 @@ router.get('/closingPrevMonth/:name', async (req, res) => {
   }
 });
 
-router.get('/closingTwoPrevMonth/:name', async (req, res) => {
+router.get('/closingTwoPrevMonth/:name(*)', async (req, res) => {
   const name = req.params.name;
   const currentMonth = new Date().getMonth() + 1;
   try {
