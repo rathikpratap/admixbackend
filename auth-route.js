@@ -400,11 +400,12 @@ router.get('/allListAdmin', async (req, res) => {
 
 // Table Database Closed
 
-router.get('/completeProject', async (req, res) => {
+router.get('/completeProject', checkAuth, async (req, res) => {
+  const person1 = req.userData?.name;
   const currentMonth = new Date().getMonth() + 1;
   try {
     const completeProducts = await Customer.find({
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
@@ -423,14 +424,15 @@ router.get('/completeProject', async (req, res) => {
   }
 });
 
-router.get('/allProjects', async (req, res) => {
+router.get('/allProjects',checkAuth, async (req, res) => {
+  const person1 = req.userData?.name;
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
     const fetchedLeads = await Customer.find({
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: startOfMonth,
         $lte: endOfToday
@@ -447,14 +449,15 @@ router.get('/allProjects', async (req, res) => {
 
 // all previous Month projects
 
-router.get('/allPreviousProjects', async (req, res) => {
+router.get('/allPreviousProjects',checkAuth, async (req, res) => {
+  const person1 = req.userData?.name;
   try {
     const currentMonth = new Date().getMonth() + 1;
     const previousMonthData = await Customer.find({
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
+        $lte: new Date(new Date().getFullYear(), currentMonth - 1, 0, 23, 59, 59, 999)
       }
     }).sort({ closingDate: -1 });
     return res.json(previousMonthData);
@@ -466,14 +469,15 @@ router.get('/allPreviousProjects', async (req, res) => {
 
 //all Previous Two Month Data
 
-router.get('/allTwoPreviousProjects', async (req, res) => {
+router.get('/allTwoPreviousProjects',checkAuth, async (req, res) => {
+  const person1 = req.userData?.name;
   try {
     const currentMonth = new Date().getMonth() + 1;
     const previousTwoMonthData = await Customer.find({
-      salesPerson: person,
+      salesPerson: person1,
       closingDate: {
         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
+        $lte: new Date(new Date().getFullYear(), currentMonth - 2, 0, 23, 59, 59, 999)
       }
     }).sort({ closingDate: -1 });
     return res.json(previousTwoMonthData);
