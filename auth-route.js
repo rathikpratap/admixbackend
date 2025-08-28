@@ -97,11 +97,16 @@ const transporter = nodemailer.createTransport({
 });
 
 router.post('/send-otp', async (req, res) => {
-  const { username } = req.body;
+  const { username, password } = req.body;
   const user = await User.findOne({ signupUsername: username });
 
   if (!user) {
     return res.json({ success: false, message: "User not found!" });
+  }
+
+   // 🔑 Plain password check
+  if (user.signupPassword !== password) {
+    return res.json({ success: false, message: "Invalid username or password!" });
   }
 
   const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
@@ -185,10 +190,15 @@ router.post('/send-otp', async (req, res) => {
 // Login Bellow
 
 router.post('/login', async (req, res) => {
-  const { username, otp } = req.body;
+  const { username, password, otp } = req.body;
 
   const user = await User.findOne({ signupUsername: username });
   if (!user) return res.json({ success: false, message: "User not found!" });
+
+  // 🔑 Plain password check
+  if (user.signupPassword !== password) {
+    return res.json({ success: false, message: "Invalid username or password!" });
+  }
 
   const isAdmin = Array.isArray(user.signupRole) && user.signupRole.includes("Admin");
 
@@ -6567,31 +6577,29 @@ router.post('/estInvoice', async (req, res) => {
 //       custGST, custAddLine1, custAddLine2, custAddLine3,
 //       billNumber, billType, gstType, custName, custNumb,
 //       invoiceCateg, customCateg, rows, invoiceDate,
-//       GSTAmount, totalAmount, billFormat, allowUpdate
+//       GSTAmount, totalAmount, billFormat, allowUpdate, financialYear, discountValue, afterDiscountTotal, state
 //     } = req.body;
 
-//     Validate invoiceDate
 //     if (!invoiceDate || isNaN(new Date(invoiceDate).getTime())) {
 //       return res.status(400).json({ success: false, message: "Invalid invoice date" });
 //     }
 
-//     const currentMonth = new Date(invoiceDate).getMonth(); // 0-based
+//     const currentMonth = new Date(invoiceDate).getMonth();
 //     const currentYear = new Date(invoiceDate).getFullYear();
 
-//     Find existing invoice for same customer & format in same month/year
 //     const existingInvoice = await EstInvoice.findOne({
 //       custName,
 //       custNumb,
-//       billFormat,
+//       billNumber,
+//       //billFormat,
 //       $expr: {
 //         $and: [
-//           { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
+//           { $eq: [{ $month: "$date" }, currentMonth + 1] },
 //           { $eq: [{ $year: "$date" }, currentYear] }
 //         ]
 //       }
 //     });
 
-//     If invoice exists but allowUpdate is false
 //     if (existingInvoice && !allowUpdate) {
 //       return res.json({
 //         success: false,
@@ -6600,24 +6608,26 @@ router.post('/estInvoice', async (req, res) => {
 //       });
 //     }
 
-//     If invoice exists and allowUpdate is true
 //     if (existingInvoice && allowUpdate) {
 //       const updates = {};
-//       const fieldsToCompare = {
+//       const scalarFields = {
 //         custGST, custAddLine1, custAddLine2, custAddLine3,
-//         billNumber, billType, gstType, invoiceCateg,
-//         customCateg, GSTAmount, totalAmount, rows
+//         billNumber, billType, gstType,
+//         invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state
 //       };
 
-//       Compare each field — only add to updates if changed
-//       for (const [key, newVal] of Object.entries(fieldsToCompare)) {
-//         const existingVal = existingInvoice[key];
-//         if (JSON.stringify(existingVal) !== JSON.stringify(newVal)) {
+//       for (const [key, newVal] of Object.entries(scalarFields)) {
+//         const oldVal = existingInvoice[key];
+//         if (oldVal !== newVal) {
 //           updates[key] = newVal;
 //         }
 //       }
 
-//       If there are changes, update only those
+//       // Compare rows (deep comparison)
+//       if (JSON.stringify(existingInvoice.rows) !== JSON.stringify(rows)) {
+//         updates.rows = rows;
+//       }
+
 //       if (Object.keys(updates).length > 0) {
 //         await EstInvoice.updateOne(
 //           { _id: existingInvoice._id },
@@ -6629,12 +6639,12 @@ router.post('/estInvoice', async (req, res) => {
 //       }
 //     }
 
-//     No existing invoice — create new
+//     // Create new invoice
 //     const estInvoice = new EstInvoice({
 //       custGST, custAddLine1, custAddLine2, custAddLine3,
 //       billNumber, billType, gstType, custName, custNumb,
 //       invoiceCateg, customCateg, rows,
-//       date: invoiceDate, GSTAmount, totalAmount, billFormat
+//       date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
 //     });
 
 //     await estInvoice.save();
@@ -6649,6 +6659,7 @@ router.post('/estInvoice', async (req, res) => {
 router.post('/updateInvoice', async (req, res) => {
   try {
     const {
+      _id,  // <- optional, existing invoice ka id
       custGST, custAddLine1, custAddLine2, custAddLine3,
       billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate,
@@ -6659,21 +6670,30 @@ router.post('/updateInvoice', async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid invoice date" });
     }
 
-    const currentMonth = new Date(invoiceDate).getMonth();
-    const currentYear = new Date(invoiceDate).getFullYear();
+    const invoiceDt = new Date(invoiceDate);
 
-    const existingInvoice = await EstInvoice.findOne({
-      custName,
-      custNumb,
-      //billFormat,
-      $expr: {
-        $and: [
-          { $eq: [{ $month: "$date" }, currentMonth + 1] },
-          { $eq: [{ $year: "$date" }, currentYear] }
-        ]
-      }
-    });
+    let existingInvoice;
 
+    if (_id) {
+      // If _id provided, directly find by id
+      existingInvoice = await EstInvoice.findById(_id);
+    } else {
+      // Otherwise, try to find invoice by cust, billNumber & month/year of invoiceDate
+      const currentMonth = invoiceDt.getMonth();
+      const currentYear = invoiceDt.getFullYear();
+
+      existingInvoice = await EstInvoice.findOne({
+        custName,
+        custNumb,
+        billNumber,
+        date: {
+          $gte: new Date(currentYear, currentMonth, 1),
+          $lte: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
+        }
+      });
+    }
+
+    // Invoice exists
     if (existingInvoice && !allowUpdate) {
       return res.json({
         success: false,
@@ -6682,31 +6702,34 @@ router.post('/updateInvoice', async (req, res) => {
       });
     }
 
+    // Update existing invoice
     if (existingInvoice && allowUpdate) {
       const updates = {};
+
       const scalarFields = {
         custGST, custAddLine1, custAddLine2, custAddLine3,
         billNumber, billType, gstType,
-        invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state
+        invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state, financialYear, billFormat
       };
 
       for (const [key, newVal] of Object.entries(scalarFields)) {
-        const oldVal = existingInvoice[key];
-        if (oldVal !== newVal) {
+        if (existingInvoice[key] !== newVal) {
           updates[key] = newVal;
         }
       }
 
-      // Compare rows (deep comparison)
+      // Deep compare rows
       if (JSON.stringify(existingInvoice.rows) !== JSON.stringify(rows)) {
         updates.rows = rows;
       }
 
+      // Update date if changed
+      if (existingInvoice.date?.toISOString() !== invoiceDt.toISOString()) {
+        updates.date = invoiceDt;
+      }
+
       if (Object.keys(updates).length > 0) {
-        await EstInvoice.updateOne(
-          { _id: existingInvoice._id },
-          { $set: updates }
-        );
+        await EstInvoice.updateOne({ _id: existingInvoice._id }, { $set: updates });
         return res.json({ success: true, message: 'Invoice Updated Successfully (only changed fields)' });
       } else {
         return res.json({ success: true, message: 'No changes detected — invoice already up to date' });
@@ -6714,21 +6737,29 @@ router.post('/updateInvoice', async (req, res) => {
     }
 
     // Create new invoice
-    const estInvoice = new EstInvoice({
+    const newInvoice = new EstInvoice({
       custGST, custAddLine1, custAddLine2, custAddLine3,
       billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows,
-      date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
+      date: invoiceDt,
+      GSTAmount,
+      totalAmount,
+      billFormat,
+      financialYear,
+      discountValue,
+      afterDiscountTotal,
+      state
     });
 
-    await estInvoice.save();
-    res.json({ success: true, message: 'Invoice Created Successfully' });
+    await newInvoice.save();
+    res.json({ success: true, message: 'Invoice Created Successfully', _id: newInvoice._id });
 
   } catch (err) {
     console.error("Error saving/updating invoice:", err);
     res.status(500).json({ success: false, message: "Error Saving Invoice" });
   }
 });
+
 
 // Estimate Invoice Count
 
