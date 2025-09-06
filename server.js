@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json());
+//app.use(express.json());
 
 const salesLead = require('./models/salesLead');
 app.use(cors({
