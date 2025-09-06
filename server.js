@@ -92,8 +92,8 @@ app.get('/', (req, res) => {
 
 // Run the job every 1 minute
 
-cron.schedule('* * * * *', async () => {
-    console.log('⏳ Running Scheduled Task: Fetching Facebook Leads');
+cron.schedule('*/5 * * * *', async () => {
+    console.log('⏳ Running Scheduled Task: Fetching Facebook Leads (every 5 min');
     await fetchAndSaveFacebookLeads();
 });
 
