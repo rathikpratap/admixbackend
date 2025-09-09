@@ -3275,7 +3275,7 @@ const fetchLeadsFromFacebook = async (accessToken) => {
 
   try {
     // STEP 1: Get ACTIVE campaigns
-    let nextPage = `https://graph.facebook.com/v22.0/${adAccountId}/campaigns?effective_status=["ACTIVE"]&fields=id,name&limit=50&access_token=${accessToken}`;
+    let nextPage = `https://graph.facebook.com/v22.0/${adAccountId}/campaigns?effective_status=["ACTIVE"]&fields=id,name&limit=20&access_token=${accessToken}`;
     while (nextPage) {
       const campaignRes = await axios.get(nextPage);
       const campaigns = campaignRes.data?.data || [];
@@ -3284,7 +3284,7 @@ const fetchLeadsFromFacebook = async (accessToken) => {
         console.log(`📢 Campaign: ${campaign.name} (${campaign.id})`);
 
         // STEP 2: Get ACTIVE ads for campaign
-        let adsPage = `https://graph.facebook.com/v22.0/${campaign.id}/ads?effective_status=["ACTIVE"]&fields=id,name&limit=50&access_token=${accessToken}`;
+        let adsPage = `https://graph.facebook.com/v22.0/${campaign.id}/ads?effective_status=["ACTIVE"]&fields=id,name&limit=20&access_token=${accessToken}`;
         while (adsPage) {
           const adsRes = await axios.get(adsPage);
           const ads = adsRes.data?.data || [];
@@ -3293,7 +3293,7 @@ const fetchLeadsFromFacebook = async (accessToken) => {
             console.log(`   🎯 Ad: ${ad.name} (${ad.id})`);
 
             // STEP 3: Get leads for this ad
-            let leadsPage = `https://graph.facebook.com/v22.0/${ad.id}/leads?fields=id,created_time,field_data&limit=500&access_token=${accessToken}`;
+            let leadsPage = `https://graph.facebook.com/v22.0/${ad.id}/leads?fields=id,created_time,field_data&limit=200&access_token=${accessToken}`;
             while (leadsPage) {
               const leadsRes = await axios.get(leadsPage);
               const leads = leadsRes.data?.data || [];
