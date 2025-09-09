@@ -3275,7 +3275,7 @@ const fetchLeadsFromFacebook = async (accessToken) => {
 
   try {
     // STEP 1: Get ACTIVE campaigns
-    let nextPage = `https://graph.facebook.com/v22.0/${adAccountId}/campaigns?effective_status=["ACTIVE"]&fields=id,name&limit=10&access_token=${accessToken}`;
+    let nextPage = `https://graph.facebook.com/v22.0/${adAccountId}/campaigns?effective_status=["ACTIVE"]&fields=id,name&limit=50&access_token=${accessToken}`;
     while (nextPage) {
       const campaignRes = await axios.get(nextPage);
       const campaigns = campaignRes.data?.data || [];
@@ -3284,7 +3284,7 @@ const fetchLeadsFromFacebook = async (accessToken) => {
         console.log(`📢 Campaign: ${campaign.name} (${campaign.id})`);
 
         // STEP 2: Get ACTIVE ads for campaign
-        let adsPage = `https://graph.facebook.com/v22.0/${campaign.id}/ads?effective_status=["ACTIVE"]&fields=id,name&limit=10&access_token=${accessToken}`;
+        let adsPage = `https://graph.facebook.com/v22.0/${campaign.id}/ads?effective_status=["ACTIVE"]&fields=id,name&limit=50&access_token=${accessToken}`;
         while (adsPage) {
           const adsRes = await axios.get(adsPage);
           const ads = adsRes.data?.data || [];
@@ -3293,7 +3293,7 @@ const fetchLeadsFromFacebook = async (accessToken) => {
             console.log(`   🎯 Ad: ${ad.name} (${ad.id})`);
 
             // STEP 3: Get leads for this ad
-            let leadsPage = `https://graph.facebook.com/v22.0/${ad.id}/leads?fields=id,created_time,field_data&limit=100&access_token=${accessToken}`;
+            let leadsPage = `https://graph.facebook.com/v22.0/${ad.id}/leads?fields=id,created_time,field_data&limit=500&access_token=${accessToken}`;
             while (leadsPage) {
               const leadsRes = await axios.get(leadsPage);
               const leads = leadsRes.data?.data || [];
@@ -10731,14 +10731,14 @@ function extractFileId(link) {
 }
 
 // Admix
-// const GOOGLE_CLIENT_ID = '947642384135-n1dqjvbtp6nb2e1a8drmvfj2gvbmfv8m.apps.googleusercontent.com';
-// const GOOGLE_CLIENT_SECRET = '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';
-// const GOOGLE_REDIRECT_URI = 'https://login.admixmedia.in/api/auth/oauth2callback';
+const GOOGLE_CLIENT_ID = '947642384135-n1dqjvbtp6nb2e1a8drmvfj2gvbmfv8m.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = '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';
+const GOOGLE_REDIRECT_URI = 'https://login.admixmedia.in/api/auth/oauth2callback';
 
 //IT WEB
-const GOOGLE_CLIENT_ID = '411883461726-s0d90tdetfmo9ff5lgpeie81opgn95ht.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = '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';
-const GOOGLE_REDIRECT_URI = 'http://localhost:5000/auth/oauth2callback';
+// const GOOGLE_CLIENT_ID = '411883461726-s0d90tdetfmo9ff5lgpeie81opgn95ht.apps.googleusercontent.com';
+// const GOOGLE_CLIENT_SECRET = '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';
+// const GOOGLE_REDIRECT_URI = 'http://localhost:5000/auth/oauth2callback';
 
 const oauth2ClientVideo = new google.auth.OAuth2(
   GOOGLE_CLIENT_ID,
