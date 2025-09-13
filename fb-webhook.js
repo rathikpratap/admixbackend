@@ -96,7 +96,7 @@ router.post(
 
             // fetch PAGE_ACCESS_TOKEN from DB/env
             const tokenRecord = await FbAccessToken.findOne();
-            const PAGE_ACCESS_TOKEN = tokenRecord?.newAccessToken || process.env.PAGE_ACCESS_TOKEN;
+            const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
             if (!PAGE_ACCESS_TOKEN) {
               console.error('❌ PAGE_ACCESS_TOKEN missing. Cannot fetch lead details.');
               continue;
