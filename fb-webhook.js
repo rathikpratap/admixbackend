@@ -74,6 +74,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
     // req.body should be a Buffer because of express.raw
     const rawBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from('');
+    console.log('👉 rawBuffer.length=', rawBuffer.length);
+console.log('👉 rawBuffer hex (first 1000 chars)=', rawBuffer.toString('hex').slice(0,1000));
 
     // Verify signature
     if (!DISABLE_FB_SIGNATURE) {
