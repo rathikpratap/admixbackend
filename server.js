@@ -17,9 +17,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // IMPORTANT: keep raw body for signature verification. Save raw into req.rawBody
 app.use(express.json({
-  verify: (req, res, buf) => {
-    req.rawBody = buf ? buf.toString() : '';
-  }
+  // store raw body as Buffer so webhook signature verification can use exact bytes
+  verify: (req, res, buf, encoding) => {
+    // Save as Buffer (not toString) for exact bytes
+    if (buf && buf.length) {
+      req.rawBody = Buffer.from(buf);
+    } else {
+      req.rawBody = Buffer.alloc(0);
+    }
+  },
+  limit: '5mb'
 }));
 
 // Mount facebook webhook router

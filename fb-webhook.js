@@ -13,11 +13,15 @@ const VERIFY_TOKEN = 'my_secret_token_hulalala';
 const APP_SECRET = process.env.APP_SECRET || ''; // set in env for signature verification
 const DISABLE_FB_SIGNATURE = (process.env.DISABLE_FB_SIGNATURE === 'true');
 
-function verifySignatureFromBuffer(rawBuffer, header) {
-  if (!header) return false;
-  const [algo, signature] = header.split('=');
-  const digestMethod = algo === 'sha256' ? 'sha256' : 'sha1';
-  const expected = crypto.createHmac(digestMethod, APP_SECRET).update(rawBuffer || Buffer.from('')).digest('hex');
+function verifySignatureBuffer(buffer, signatureHeader) {
+  if (!APP_SECRET) return true; // only for dev if secret not set
+  if (!signatureHeader) return false;
+  const parts = signatureHeader.split('=');
+  if (parts.length !== 2) return false;
+  const algo = parts[0];            // should be 'sha256'
+  const signature = parts[1];
+  const digestAlgo = (algo === 'sha256') ? 'sha256' : 'sha1';
+  const expected = crypto.createHmac(digestAlgo, APP_SECRET).update(buffer).digest('hex');
   console.log('👉 DEBUG expected HMAC:', expected);
   return signature === expected;
 }
@@ -53,9 +57,7 @@ router.get('/webhook', (req, res) => {
 //   return signature === expected;
 // }
 
-router.post(
-  '/webhook',
-  express.raw({ type: 'application/json' }), // <- important: captures raw bytes into req.body (Buffer)
+router.post('/webhook',express.raw({ type: 'application/json' }), // <- important: captures raw bytes into req.body (Buffer)
   async (req, res) => {
     // send 200 immediately
     res.sendStatus(200);
@@ -67,8 +69,11 @@ router.post(
       const signatureHeader = req.headers['x-hub-signature-256'] || req.headers['x-hub-signature'];
       console.log('➡️ FB POST received: headers:', { sig: signatureHeader });
 
+      // ensure we have the raw buffer
+    const rawBuffer = req.rawBody instanceof Buffer ? req.rawBody : Buffer.from('');
+
       if (!DISABLE_FB_SIGNATURE) {
-        const ok = verifySignatureFromBuffer(req.body, signatureHeader);
+        const ok = verifySignatureBuffer(req.body, signatureHeader);
         if (!ok) {
           console.warn('⚠️ FB signature verification failed');
           return;
@@ -80,7 +85,7 @@ router.post(
       // parse JSON from the raw buffer
       let body;
       try {
-        body = JSON.parse(req.body.toString('utf8'));
+        body = JSON.parse(rawBuffer.toString('utf8'));
       } catch (err) {
         console.error('❌ Failed to parse JSON from raw body:', err.message);
         return;
@@ -95,7 +100,7 @@ router.post(
             console.log('📬 Received leadgen id:', leadId);
 
             // fetch PAGE_ACCESS_TOKEN from DB/env
-            const tokenRecord = await FbAccessToken.findOne();
+            // const tokenRecord = await FbAccessToken.findOne();
             const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
             if (!PAGE_ACCESS_TOKEN) {
               console.error('❌ PAGE_ACCESS_TOKEN missing. Cannot fetch lead details.');
