@@ -11,13 +11,13 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 // const fetchAndSaveFacebookLeads = require('./auth-route');
 
-app.use(bodyParser.json({ limit: '100mb' }));
-app.use(bodyParser.urlencoded({ extended: true }));
-//app.use(express.json());
-
 // Mount facebook webhook router
 const fbWebhook = require('./fb-webhook');
 app.use('/auth', fbWebhook);
+
+app.use(bodyParser.json({ limit: '100mb' }));
+app.use(bodyParser.urlencoded({ extended: true }));
+//app.use(express.json());
 
 const salesLead = require('./models/salesLead');
 app.use(cors({
