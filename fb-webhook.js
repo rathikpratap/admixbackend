@@ -11,9 +11,10 @@ const FbAccessToken = require('./models/accessToken'); // adjust path to your mo
 
 const VERIFY_TOKEN = 'my_secret_token_hulalala';
 const APP_SECRET = process.env.APP_SECRET || ''; // set in env for signature verification
+const DISABLE_FB_SIGNATURE = (process.env.DISABLE_FB_SIGNATURE === 'true');
 
 // GET: verification endpoint used by Facebook when you click "Verify and save"
-router.get('/webhook', (req, res) => {
+router.get('/auth/webhook', (req, res) => {
     console.log('➡️ FB verify request received from:', req.ip, 'query:', req.query);
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -31,6 +32,7 @@ router.get('/webhook', (req, res) => {
 // helper: signature verification (recommended)
 function verifySignature(req) {
   if (!APP_SECRET) return true; // allow if not configured (not recommended for prod)
+  if (DISABLE_FB_SIGNATURE) return true;
   const signatureHeader = req.headers['x-hub-signature-256'] || req.headers['x-hub-signature'];
   if (!signatureHeader) return false;
   const [algo, signature] = signatureHeader.split('=');
@@ -40,7 +42,7 @@ function verifySignature(req) {
 }
 
 // POST: receive events
-router.post('/webhook', async (req, res) => {
+router.post('/auth/webhook', async (req, res) => {
     console.log('➡️ FB POST received: headers:', {
     sig: req.headers['x-hub-signature-256'] || req.headers['x-hub-signature']
   });

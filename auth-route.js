@@ -3282,7 +3282,7 @@ async function processAndSaveLead(leadData, meta = {}) {
     const campaign_Name = meta.campaign_Name || meta.campaignName || '';
     const ad_Name = meta.ad_Name || meta.adName || leadData.ad_name || '';
 
-    const createdTime = leadData.created_time;
+    const createdTime = leadData.created_time || new Date().toISOString();
     const field_data = leadData.field_data || [];
 
     const formattedDate = new Date(createdTime || Date.now()).toISOString().slice(0, 10).split('-').reverse().join('');
@@ -3358,7 +3358,7 @@ async function processAndSaveLead(leadData, meta = {}) {
       custNumb: leadObj.custNumb,
       state: leadObj.state,
       salesTeam: 'Sales Team 1',
-      leadsCreatedDate: new Date(createdTime || Date.now()),
+      leadsCreatedDate: new Date(createdTime),
       subsidiaryName: 'AdmixMedia',
       additionalFields: leadObj.additionalFields,
       salesPerson: selectedSalesperson,
