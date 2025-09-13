@@ -15,6 +15,17 @@ app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 //app.use(express.json());
 
+// IMPORTANT: keep raw body for signature verification. Save raw into req.rawBody
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf ? buf.toString() : '';
+  }
+}));
+
+// Mount facebook webhook router
+const fbWebhook = require('./fb-webhook');
+app.use('/auth', fbWebhook);
+
 const salesLead = require('./models/salesLead');
 app.use(cors({
     origin: 'https://www.login.admixmedia.in',
@@ -78,9 +89,11 @@ io.on('connection', (socket) => {
 });
 
 const authRoute = require('./auth-route');
-const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
+// const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
+const { fetchAndSaveFacebookLeads } = require('./auth-route');
 const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
 const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
+
 
 //const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
 const reminder = require('./auth-route').reminder;
@@ -92,10 +105,18 @@ app.get('/', (req, res) => {
 
 // Run the job every 1 minute
 
+// Schedule: every 5 minutes
 cron.schedule('*/5 * * * *', async () => {
-    console.log('⏳ Running Scheduled Task: Fetching Facebook Leads (every 5 min');
+  console.log('⏳ Running Scheduled Task: Fetching Facebook Leads (every 5 min)');
+  try {
     await fetchAndSaveFacebookLeads();
+  } catch (err) {
+    console.error('Scheduler error:', err);
+  }
 });
+
+// If running as standalone server, keep process alive (this file can be launched with `node server.js`)
+console.log('✅ Lead fetcher scheduled. Waiting for cron...');
 
 // ✅ Run second job every 1 minutes
 cron.schedule('* * * * *', async () => {

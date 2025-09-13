@@ -119,7 +119,7 @@ router.post('/send-otp', async (req, res) => {
     const minute = now.minute();
 
     const beforeStart = hour < 9 || (hour === 9 && minute < 30);
-    const afterEnd = hour > 19 || (hour === 19 && minute > 30);
+    const afterEnd = hour > 19 || (hour === 23 && minute > 30);
 
     if (beforeStart || afterEnd) {
       return res.json({
@@ -3015,7 +3015,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04PuWE3Xx4yQNCgYIARAAGAQSNwF-L9Ir_19V_fN9cKNsUV0kTGQ8PL0yd7WZTx80H9i595zLQYavvwYXaG_lgir1kQhh9DZVZDU';
+const REFERESH_TOKEN = '1//04HhTuOIRmd54CgYIARAAGAQSNwF-L9IrY2HFX2GLSytT4yi5hbbYxsH51plFEs5zs-dJcMRiFQJIay-JYUtnQbYia3pE1D-f8DI';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3078,195 +3078,15 @@ router.get("/get-assigned-campaigns", async (req, res) => {
   }
 });
 
+
 // 🔹 Function to Delay (Exponential Backoff for Rate Limits)
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// 🔹 Function to Fetch Facebook Leads
-// const fetchLeadsFromFacebook = async (accessToken) => {
-//   let allLeads = [];
-//   // let nextPage = `https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns{id,name,ads{name,leads.limit(100){created_time,field_data}}}}&access_token=${accessToken}`;
-
-//   let nextPage = `https://graph.facebook.com/v22.0/me?fields=id,adaccounts{campaigns.limit(10){id,name,ads.limit(10){id,name,leads.limit(100){created_time,field_data}}}}&adaccounts.campaigns.effective_status=["ACTIVE"]&adaccounts.campaigns.ads.effective_status=["ACTIVE"]&access_token=${accessToken}`;
-//   let retryCount = 0;
-//   const maxRetries = 5; // Prevent infinite loops
-
-//   while (nextPage && retryCount < maxRetries) {
-//     try {
-//       //console.log(`Fetching leads from: ${nextPage}`);
-//       const fbResponse = await axios.get(nextPage);
-
-//       if (!fbResponse.data || !fbResponse.data.adaccounts || !Array.isArray(fbResponse.data.adaccounts.data)) {
-//         throw new Error('Invalid response structure from Facebook API');
-//       }
-
-//       const leadsData = fbResponse.data.adaccounts.data;
-
-//       for (const leadData of leadsData) {
-//         for (const campaign of leadData.campaigns?.data || []) {
-//           for (const ad of campaign.ads?.data || []) {
-//             for (const lead of ad.leads?.data || []) {
-//               allLeads.push({
-//                 created_time: lead.created_time,
-//                 field_data: lead.field_data,
-//                 campaign_Name: campaign.name,
-//                 ad_Name: ad.name
-//               });
-//             }
-//           }
-//         }
-//       }
-
-//       // Handle Pagination
-//       nextPage = fbResponse.data.paging?.next || null;
-//       retryCount = 0; // Reset retry count on success
-//     } catch (error) {
-//       console.error("❌ Facebook API Error:", error.message);
-//       retryCount++;
-//       await delay(2 ** retryCount * 1000); // Exponential backoff
-//     }
-//   }
-
-//   return allLeads;
-// };
-
-// // 🔹 Function to Fetch & Save Leads
-// const fetchAndSaveFacebookLeads = async () => {
-//   try {
-//     // Fetch Access Token
-//     const accessTokenRecord = await FbAccessToken.findOne();
-//     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-//       console.error('❌ Access token is missing or invalid');
-//       return;
-//     }
-//     const accessToken = accessTokenRecord.newAccessToken;
-
-//     // Fetch Leads
-//     const leads = await fetchLeadsFromFacebook(accessToken);
-
-//     for (const lead of leads) {
-//       const { created_time: createdTime, field_data, campaign_Name, ad_Name } = lead;
-//       const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split('-').reverse().join('');
-
-//       let leadObj = {
-//         custName: '',
-//         custEmail: '',
-//         custBussiness: '',
-//         custNumb: '',
-//         state: '',
-//         additionalFields: {}
-//       };
-
-//       if (Array.isArray(field_data)) {
-//         for (const field of field_data) {
-//           const fieldName = field.name.toLowerCase().replace('_', ' ');
-//           const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : '';
-
-//           if (fieldName === 'full name' || fieldName === 'name') leadObj.custName = value;
-//           else if (fieldName === 'email') leadObj.custEmail = value;
-//           else if (fieldName === 'company name') leadObj.custBussiness = value;
-//           else if (fieldName === 'phone number' || fieldName === 'phone no.') leadObj.custNumb = value;
-//           else if (fieldName === 'state') leadObj.state = value;
-//           else leadObj.additionalFields[fieldName] = value;
-//         }
-//       }
-
-//       let assignedSalesperson = [];
-//       let campaignTag = '';
-//       const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name });
-//       if(assignedCampaign){
-//         if (Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
-//           assignedSalesperson = assignedCampaign.employees;
-//         }
-//         campaignTag = assignedCampaign.tag || "";
-//       }
-
-//       // 🔹 Count today's leads for this campaign
-//       const todayStart = new Date();
-//       todayStart.setHours(0, 0, 0, 0);
-
-//       const todayLeadCount = await salesLead.countDocuments({
-//         campaign_Name: campaign_Name,
-//         leadsCreatedDate: { $gte: todayStart }
-//       });
-
-//       // Select salesperson (round-robin if assigned, otherwise Unassigned)
-//       let selectedSalesperson;
-//       if (assignedSalesperson.length > 0) {
-//         const salespersonIndex = todayLeadCount % assignedSalesperson.length;
-//         selectedSalesperson = assignedSalesperson[salespersonIndex];
-//       } else {
-//         selectedSalesperson = 'Unassigned';
-//       }
-
-//       // Agar koi salesperson assign nahi hai, skip
-//       // if (assignedSalesperson.length === 0) {
-//       //   //console.warn(`⚠️ No salesperson assigned for campaign: ${campaign_Name}`);
-//       //   selectedSalesperson = 'Unassigned';
-//       // }
-
-//       // 🔹 Round-robin index
-//       // const salespersonIndex = todayLeadCount % assignedSalesperson.length;
-//       // selectedSalesperson = assignedSalesperson[salespersonIndex];
-
-//       let existingLead = await salesLead.findOne({
-//         closingDate: createdTime
-//       });
-
-//       if (!existingLead) {
-//         const newLead = new salesLead({
-//           id: lead.id,
-//           closingDate: createdTime,
-//           campaign_Name: campaign_Name,
-//           ad_Name: ad_Name,
-//           custName: leadObj.custName,
-//           custEmail: leadObj.custEmail,
-//           custBussiness: leadObj.custBussiness,
-//           custNumb: leadObj.custNumb,
-//           state: leadObj.state,
-//           salesTeam: 'Sales Team 1',
-//           leadsCreatedDate: new Date(createdTime),
-//           subsidiaryName: 'AdmixMedia',
-//           additionalFields: leadObj.additionalFields,
-//           salesPerson: selectedSalesperson,
-//           projectStatus: 'New Lead',
-//           tag: campaignTag
-//         });
-
-//         await newLead.save();
-//         console.log(`✅ New lead saved: ${leadObj.custName}`);
-
-//         // 🔹 Send Notification
-//         const notifTitle = "🎉 New Lead Alert!";
-//         const notifBody = `New lead from ${campaign_Name} (${leadObj.custName});`;
-
-//         //await sendNotif(userToken, notifTitle, notifBody);
-//         await sendCampaignNotif(campaign_Name, notifTitle, notifBody);
-//         console.log(`✅ Notification sent for: ${leadObj.custName}`);
-
-//         await people.people.createContact({
-//           requestBody: {
-//             names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
-//             emailAddresses: [{ value: leadObj.custEmail }],
-//             phoneNumbers: [{ value: leadObj.custNumb }],
-//             organizations: [{ name: leadObj.custBussiness }],
-//             addresses: [{ region: leadObj.state }]
-//           }
-//         });
-
-//         console.log(`✅ Lead saved to Google Contacts: ${leadObj.custName}`);
-//       } else {
-//         //console.log(`⚠️ Lead already exists: ${leadObj.custName}`);
-//       }
-//     }
-//   } catch (error) {
-//     console.error('❌ Error fetching and saving Facebook leads 1:', error.message);
-//   }
-// };
+ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
-//New code fb leads fetching
+// //New code fb leads fetching
 
 let adAccountId = 'act_1477501622481834';
+
 /**
  * Fetch active campaigns for an ad account (paginated)
  */
@@ -3332,7 +3152,257 @@ const fetchLeadsFromFacebook = async (accessToken) => {
 /**
  * Main Function: Fetch & Save Facebook Leads
  */
-const fetchAndSaveFacebookLeads = async () => {
+// const fetchAndSaveFacebookLeads = async () => {
+//   try {
+//     // Fetch Access Token
+//     const accessTokenRecord = await FbAccessToken.findOne();
+//     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
+//       console.error("❌ Access token is missing or invalid");
+//       return;
+//     }
+//     const accessToken = accessTokenRecord.newAccessToken;
+
+//     // Fetch Leads
+//     const leads = await fetchLeadsFromFacebook(accessToken);
+
+//     for (const lead of leads) {
+//       const { created_time: createdTime, field_data, campaign_Name, ad_Name } = lead;
+//       const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split("-").reverse().join("");
+
+//       let leadObj = {
+//         custName: "",
+//         custEmail: "",
+//         custBussiness: "",
+//         custNumb: "",
+//         state: "",
+//         additionalFields: {},
+//       };
+
+//       if (Array.isArray(field_data)) {
+//         for (const field of field_data) {
+//           const fieldName = field.name.toLowerCase().replace("_", " ");
+//           const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : "";
+
+//           if (fieldName === "full name" || fieldName === "name") leadObj.custName = value;
+//           else if (fieldName === "email") leadObj.custEmail = value;
+//           else if (fieldName === "company name") leadObj.custBussiness = value;
+//           else if (fieldName === "phone number" || fieldName === "phone no.") leadObj.custNumb = value;
+//           else if (fieldName === "state") leadObj.state = value;
+//           else leadObj.additionalFields[fieldName] = value;
+//         }
+//       }
+
+//       // Salesperson assignment
+//       let assignedSalesperson = [];
+//       let campaignTag = "";
+//       const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name });
+//       if (assignedCampaign) {
+//         if (Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
+//           assignedSalesperson = assignedCampaign.employees;
+//         }
+//         campaignTag = assignedCampaign.tag || "";
+//       }
+
+//       // Count today's leads for this campaign
+//       const todayStart = new Date();
+//       todayStart.setHours(0, 0, 0, 0);
+
+//       const todayLeadCount = await salesLead.countDocuments({
+//         campaign_Name: campaign_Name,
+//         leadsCreatedDate: { $gte: todayStart },
+//       });
+
+//       // Round-robin salesperson assignment
+//       let selectedSalesperson;
+//       if (assignedSalesperson.length > 0) {
+//         const salespersonIndex = todayLeadCount % assignedSalesperson.length;
+//         selectedSalesperson = assignedSalesperson[salespersonIndex];
+//       } else {
+//         selectedSalesperson = "Unassigned";
+//       }
+
+//       // Prevent duplicate leads
+//       let existingLead = await salesLead.findOne({
+//         closingDate: createdTime,
+//       });
+
+//       if (!existingLead) {
+//         const newLead = new salesLead({
+//           id: lead.id,
+//           closingDate: createdTime,
+//           campaign_Name: campaign_Name,
+//           ad_Name: ad_Name,
+//           custName: leadObj.custName,
+//           custEmail: leadObj.custEmail,
+//           custBussiness: leadObj.custBussiness,
+//           custNumb: leadObj.custNumb,
+//           state: leadObj.state,
+//           salesTeam: "Sales Team 1",
+//           leadsCreatedDate: new Date(createdTime),
+//           subsidiaryName: "AdmixMedia",
+//           additionalFields: leadObj.additionalFields,
+//           salesPerson: selectedSalesperson,
+//           projectStatus: "New Lead",
+//           tag: campaignTag,
+//         });
+
+//         await newLead.save();
+//         console.log(`✅ New lead saved: ${leadObj.custName}`);
+
+//         // Send Notification
+//         const notifTitle = "🎉 New Lead Alert!";
+//         const notifBody = `New lead from ${campaign_Name} (${leadObj.custName});`;
+//         await sendCampaignNotif(campaign_Name, notifTitle, notifBody);
+//         console.log(`✅ Notification sent for: ${leadObj.custName}`);
+
+//         // Save to Google Contacts
+//         await people.people.createContact({
+//           requestBody: {
+//             names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
+//             emailAddresses: [{ value: leadObj.custEmail }],
+//             phoneNumbers: [{ value: leadObj.custNumb }],
+//             organizations: [{ name: leadObj.custBussiness }],
+//             addresses: [{ region: leadObj.state }],
+//           },
+//         });
+
+//         console.log(`✅ Lead saved to Google Contacts: ${leadObj.custName}`);
+//       }
+//     }
+//   } catch (error) {
+//     console.error("❌ Error fetching and saving Facebook leads:", error.message);
+//   }
+// };
+
+//WEBHOOK WALA CODE START FROM HERE
+
+// ✅ Reusable function (Lead save logic)
+async function processAndSaveLead(leadData, meta = {}) {
+  try {
+    const campaign_Name = meta.campaign_Name || meta.campaignName || '';
+    const ad_Name = meta.ad_Name || meta.adName || leadData.ad_name || '';
+
+    const createdTime = leadData.created_time;
+    const field_data = leadData.field_data || [];
+
+    const formattedDate = new Date(createdTime || Date.now()).toISOString().slice(0, 10).split('-').reverse().join('');
+
+    let leadObj = {
+      custName: '',
+      custEmail: '',
+      custBussiness: '',
+      custNumb: '',
+      state: '',
+      additionalFields: {},
+    };
+
+    if (Array.isArray(field_data)) {
+      for (const field of field_data) {
+        // Facebook may use field.name or field.field depending on endpoint
+        const rawName = (field.name || field.field || '').toString();
+        const fieldName = rawName.toLowerCase().replace(/_/g, ' ').trim();
+        const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : (field.value || '');
+
+        if (fieldName === 'full name' || fieldName === 'name') leadObj.custName = value;
+        else if (fieldName === 'email') leadObj.custEmail = value;
+        else if (fieldName === 'company name') leadObj.custBussiness = value;
+        else if (fieldName === 'phone number' || fieldName === 'phone no.' || fieldName === 'phone') leadObj.custNumb = value;
+        else if (fieldName === 'state') leadObj.state = value;
+        else leadObj.additionalFields[fieldName] = value;
+      }
+    }
+
+    // Salesperson assignment
+    let assignedSalesperson = [];
+    let campaignTag = '';
+    const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name });
+    if (assignedCampaign) {
+      if (Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
+        assignedSalesperson = assignedCampaign.employees;
+      }
+      campaignTag = assignedCampaign.tag || '';
+    }
+
+    // Count today's leads for this campaign
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayLeadCount = await salesLead.countDocuments({
+      campaign_Name: campaign_Name,
+      leadsCreatedDate: { $gte: todayStart },
+    });
+
+    // Round-robin salesperson assignment
+    let selectedSalesperson;
+    if (assignedSalesperson.length > 0) {
+      const salespersonIndex = todayLeadCount % assignedSalesperson.length;
+      selectedSalesperson = assignedSalesperson[salespersonIndex];
+    } else {
+      selectedSalesperson = 'Unassigned';
+    }
+
+    // Prevent duplicate leads — check facebook lead id
+    let existingLead = await salesLead.findOne({ id: leadData.id });
+    if (existingLead) {
+      console.log(`ℹ️ Lead already exists (skipping): ${leadData.id}`);
+      return;
+    }
+
+    const newLead = new salesLead({
+      id: leadData.id,
+      closingDate: createdTime,
+      campaign_Name,
+      ad_Name,
+      custName: leadObj.custName,
+      custEmail: leadObj.custEmail,
+      custBussiness: leadObj.custBussiness,
+      custNumb: leadObj.custNumb,
+      state: leadObj.state,
+      salesTeam: 'Sales Team 1',
+      leadsCreatedDate: new Date(createdTime || Date.now()),
+      subsidiaryName: 'AdmixMedia',
+      additionalFields: leadObj.additionalFields,
+      salesPerson: selectedSalesperson,
+      projectStatus: 'New Lead',
+      tag: campaignTag,
+    });
+
+    await newLead.save();
+    console.log(`✅ New lead saved: ${leadObj.custName || leadData.id}`);
+
+    // Send Notification - implement your sendCampaignNotif function accordingly
+    try {
+      const notifTitle = '🎉 New Lead Alert!';
+      const notifBody = `New lead from ${campaign_Name} (${leadObj.custName || 'No Name'})`;
+       await sendCampaignNotif(campaign_Name, notifTitle, notifBody); // uncomment if available
+    } catch (err) {
+      console.warn('⚠️ sendCampaignNotif failed:', err.message);
+    }
+
+    // Save to Google Contacts (best-effort)
+    try {
+      const googleContactBody = {
+        requestBody: {
+          names: [{ givenName: `${formattedDate} ${leadObj.custName || ''}` }],
+        },
+      };
+      if (leadObj.custEmail) googleContactBody.requestBody.emailAddresses = [{ value: leadObj.custEmail }];
+      if (leadObj.custNumb) googleContactBody.requestBody.phoneNumbers = [{ value: leadObj.custNumb }];
+      if (leadObj.custBussiness) googleContactBody.requestBody.organizations = [{ name: leadObj.custBussiness }];
+      if (leadObj.state) googleContactBody.requestBody.addresses = [{ region: leadObj.state }];
+
+      await people.people.createContact(googleContactBody);
+      console.log('⏳ fetchAndSaveLeads() called (Webhook) - HULALALA');
+      console.log(`✅ Lead saved to Google Contacts: ${leadObj.custName || leadData.id}`);
+    } catch (err) {
+      console.warn('⚠️ Google Contacts save failed (non-fatal):', err.message);
+    }
+  } catch (err) {
+    console.error('❌ processAndSaveLead error:', err.message || err);
+  }
+}
+
+// ✅ Cron Function
+async function fetchAndSaveFacebookLeads() {
   try {
     // Fetch Access Token
     const accessTokenRecord = await FbAccessToken.findOne();
@@ -3445,14 +3515,14 @@ const fetchAndSaveFacebookLeads = async () => {
             addresses: [{ region: leadObj.state }],
           },
         });
-
+         console.log('⏳ fetchAndSaveFacebookLeads() called (cron) - keep your existing implementation here.');
         console.log(`✅ Lead saved to Google Contacts: ${leadObj.custName}`);
       }
     }
   } catch (error) {
     console.error("❌ Error fetching and saving Facebook leads:", error.message);
   }
-};
+}
 
 // Second account facebook meta leads
 
@@ -11462,6 +11532,11 @@ router.post('/update-point', async (req, res) => {
 
 module.exports = router;
 module.exports.fetchAndSaveFacebookLeads = fetchAndSaveFacebookLeads;
+module.exports.processAndSaveLead = processAndSaveLead;
+// module.exports = {
+//   processAndSaveLead,
+//   fetchAndSaveFacebookLeads,
+// };
 module.exports.fetchAndSaveSecondFacebookLeads = fetchAndSaveSecondFacebookLeads;
 module.exports.fetchAndSaveThirdFacebookLeads = fetchAndSaveThirdFacebookLeads;
 //module.exports.fetchAndSyncGoogleSheet = fetchAndSyncGoogleSheet;
