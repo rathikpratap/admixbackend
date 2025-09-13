@@ -14,7 +14,7 @@ const APP_SECRET = process.env.APP_SECRET || ''; // set in env for signature ver
 const DISABLE_FB_SIGNATURE = (process.env.DISABLE_FB_SIGNATURE === 'true');
 
 // GET: verification endpoint used by Facebook when you click "Verify and save"
-router.get('/auth/webhook', (req, res) => {
+router.get('/webhook', (req, res) => {
     console.log('➡️ FB verify request received from:', req.ip, 'query:', req.query);
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -42,7 +42,7 @@ function verifySignature(req) {
 }
 
 // POST: receive events
-router.post('/auth/webhook', async (req, res) => {
+router.post('/webhook', async (req, res) => {
     console.log('➡️ FB POST received: headers:', {
     sig: req.headers['x-hub-signature-256'] || req.headers['x-hub-signature']
   });
