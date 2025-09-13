@@ -90,7 +90,7 @@ io.on('connection', (socket) => {
 
 const authRoute = require('./auth-route');
 // const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
-const { fetchAndSaveFacebookLeads } = require('./auth-route');
+//const { fetchAndSaveFacebookLeads } = require('./auth-route');
 const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
 const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
 
@@ -106,14 +106,14 @@ app.get('/', (req, res) => {
 // Run the job every 1 minute
 
 // Schedule: every 5 minutes
-cron.schedule('*/5 * * * *', async () => {
-  console.log('⏳ Running Scheduled Task: Fetching Facebook Leads (every 5 min)');
-  try {
-    await fetchAndSaveFacebookLeads();
-  } catch (err) {
-    console.error('Scheduler error:', err);
-  }
-});
+// cron.schedule('*/5 * * * *', async () => {
+//   console.log('⏳ Running Scheduled Task: Fetching Facebook Leads (every 5 min)');
+//   try {
+//     await fetchAndSaveFacebookLeads();
+//   } catch (err) {
+//     console.error('Scheduler error:', err);
+//   }
+// });
 
 // If running as standalone server, keep process alive (this file can be launched with `node server.js`)
 console.log('✅ Lead fetcher scheduled. Waiting for cron...');

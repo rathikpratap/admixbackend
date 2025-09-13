@@ -9,11 +9,12 @@ const router = express.Router();
 const { processAndSaveLead } = require('./auth-route');
 const FbAccessToken = require('./models/accessToken'); // adjust path to your model
 
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'my_secret_token_hulalala';
-const APP_SECRET = process.env.APP_SECRET || 'e38e2a5369889bf87f81caa78f9759f3'; // set in env for signature verification
+const VERIFY_TOKEN = 'my_secret_token_hulalala';
+const APP_SECRET = process.env.APP_SECRET || ''; // set in env for signature verification
 
 // GET: verification endpoint used by Facebook when you click "Verify and save"
 router.get('/webhook', (req, res) => {
+    console.log('➡️ FB verify request received from:', req.ip, 'query:', req.query);
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -22,7 +23,7 @@ router.get('/webhook', (req, res) => {
     console.log('✅ FB Webhook verified');
     return res.status(200).send(challenge);
   } else {
-    console.warn('❌ FB Webhook verification failed: tokens did not match');
+    console.warn('❌ FB Webhook verification failed: tokens did not match',{ token, expected: VERIFY_TOKEN });
     return res.sendStatus(403);
   }
 });
@@ -40,6 +41,9 @@ function verifySignature(req) {
 
 // POST: receive events
 router.post('/webhook', async (req, res) => {
+    console.log('➡️ FB POST received: headers:', {
+    sig: req.headers['x-hub-signature-256'] || req.headers['x-hub-signature']
+  });
   // reply quickly so FB doesn't retry
   res.sendStatus(200);
 
