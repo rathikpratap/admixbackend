@@ -54,7 +54,7 @@ router.get('/webhook', (req, res) => {
 // }
 
 router.post(
-  '/auth/webhook',
+  '/webhook',
   express.raw({ type: 'application/json' }), // <- important: captures raw bytes into req.body (Buffer)
   async (req, res) => {
     // send 200 immediately
