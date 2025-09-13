@@ -32,12 +32,15 @@ router.get('/webhook', (req, res) => {
 // helper: signature verification (recommended)
 function verifySignature(req) {
   if (!APP_SECRET) return true; // allow if not configured (not recommended for prod)
-  if (DISABLE_FB_SIGNATURE) return true;
+  //if (DISABLE_FB_SIGNATURE) return true;
   const signatureHeader = req.headers['x-hub-signature-256'] || req.headers['x-hub-signature'];
   if (!signatureHeader) return false;
   const [algo, signature] = signatureHeader.split('=');
   const digestMethod = algo === 'sha256' ? 'sha256' : 'sha1';
   const expected = crypto.createHmac(digestMethod, APP_SECRET).update(req.rawBody || '').digest('hex');
+  console.log('👉 DEBUG expected HMAC:', expected);   // add this line
+  console.log('👉 DEBUG rawBody:', JSON.stringify(req.rawBody)); // optional: show exactly what server sees
+
   return signature === expected;
 }
 
