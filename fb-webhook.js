@@ -92,6 +92,7 @@ console.log('👉 rawBuffer hex (first 1000 chars)=', rawBuffer.toString('hex').
           console.log('📬 Received leadgen id:', leadId);
 
           // Get current PAGE_ACCESS_TOKEN from env or DB
+          let pageIdFromEntry = entry.id || (entry?.[0]?.id);
           let PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
           if (!PAGE_ACCESS_TOKEN) {
             const tokenRecord = await FbAccessToken.findOne();

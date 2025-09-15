@@ -3369,6 +3369,23 @@ async function processAndSaveLead(leadData, meta = {}) {
     await newLead.save();
     console.log(`✅ New lead saved: ${leadObj.custName || leadData.id}`);
 
+    // 🔔 Emit new lead event
+if (global.io) {
+  try {
+    global.io.emit('new-lead', {
+      id: newLead.id,
+      custName: newLead.custName,
+      custEmail: newLead.custEmail,
+      custNumb: newLead.custNumb,
+      campaign: newLead.campaign_Name,
+      created: newLead.leadsCreatedDate,
+      tag: newLead.tag
+    });
+  } catch (e) {
+    console.warn('Socket emit failed:', e.message || e);
+  }
+}
+
     // Send Notification - implement your sendCampaignNotif function accordingly
     try {
       const notifTitle = '🎉 New Lead Alert!';
