@@ -84,8 +84,8 @@ io.on('connection', (socket) => {
 const authRoute = require('./auth-route');
 // const fetchAndSaveFacebookLeads = require('./auth-route').fetchAndSaveFacebookLeads;
 //const { fetchAndSaveFacebookLeads } = require('./auth-route');
-const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
-const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
+//const fetchAndSaveSecondFacebookLeads = require('./auth-route').fetchAndSaveSecondFacebookLeads;
+//const fetchAndSaveThirdFacebookLeads = require('./auth-route').fetchAndSaveThirdFacebookLeads;
 
 
 //const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
@@ -112,15 +112,15 @@ app.get('/', (req, res) => {
 console.log('✅ Lead fetcher scheduled. Waiting for cron...');
 
 // ✅ Run second job every 1 minutes
-cron.schedule('* * * * *', async () => {
-    console.log('⏳ Running Scheduled Task: Fetching Second Facebook Leads');
-    await fetchAndSaveSecondFacebookLeads();
-});
+// cron.schedule('* * * * *', async () => {
+//     console.log('⏳ Running Scheduled Task: Fetching Second Facebook Leads');
+//     await fetchAndSaveSecondFacebookLeads();
+// });
 
-cron.schedule('* * * * *', async () => {
-    console.log('⏳ Running Scheduled Task: Fetching Third Facebook Leads');
-    await fetchAndSaveThirdFacebookLeads();
-});
+// cron.schedule('* * * * *', async () => {
+//     console.log('⏳ Running Scheduled Task: Fetching Third Facebook Leads');
+//     await fetchAndSaveThirdFacebookLeads();
+// });
 
 //Sync Google Sheet
 // cron.schedule('* * * * *', async () => {
