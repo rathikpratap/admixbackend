@@ -104,7 +104,7 @@ router.post('/send-otp', async (req, res) => {
     return res.json({ success: false, message: "User not found!" });
   }
 
-   // 🔑 Plain password check
+  // 🔑 Plain password check
   if (user.signupPassword !== password) {
     return res.json({ success: false, message: "Invalid username or password!" });
   }
@@ -424,7 +424,7 @@ router.get('/completeProject', checkAuth, async (req, res) => {
   }
 });
 
-router.get('/allProjects',checkAuth, async (req, res) => {
+router.get('/allProjects', checkAuth, async (req, res) => {
   const person1 = req.userData?.name;
   try {
     const now = new Date();
@@ -449,7 +449,7 @@ router.get('/allProjects',checkAuth, async (req, res) => {
 
 // all previous Month projects
 
-router.get('/allPreviousProjects',checkAuth, async (req, res) => {
+router.get('/allPreviousProjects', checkAuth, async (req, res) => {
   const person1 = req.userData?.name;
   try {
     const currentMonth = new Date().getMonth() + 1;
@@ -469,7 +469,7 @@ router.get('/allPreviousProjects',checkAuth, async (req, res) => {
 
 //all Previous Two Month Data
 
-router.get('/allTwoPreviousProjects',checkAuth, async (req, res) => {
+router.get('/allTwoPreviousProjects', checkAuth, async (req, res) => {
   const person1 = req.userData?.name;
   try {
     const currentMonth = new Date().getMonth() + 1;
@@ -711,7 +711,7 @@ router.get('/read-cust/:id', async (req, res) => {
     }
 
     const task = await Task.findById(id);
-    if(task){
+    if (task) {
       return res.json(task);
     }
 
@@ -3370,27 +3370,27 @@ async function processAndSaveLead(leadData, meta = {}) {
     console.log(`✅ New lead saved: ${leadObj.custName || leadData.id}`);
 
     // 🔔 Emit new lead event
-if (global.io) {
-  try {
-    global.io.emit('new-lead', {
-      id: newLead.id,
-      custName: newLead.custName,
-      custEmail: newLead.custEmail,
-      custNumb: newLead.custNumb,
-      campaign: newLead.campaign_Name,
-      created: newLead.leadsCreatedDate,
-      tag: newLead.tag
-    });
-  } catch (e) {
-    console.warn('Socket emit failed:', e.message || e);
-  }
-}
+    if (global.io) {
+      try {
+        global.io.emit('new-lead', {
+          id: newLead.id,
+          custName: newLead.custName,
+          custEmail: newLead.custEmail,
+          custNumb: newLead.custNumb,
+          campaign: newLead.campaign_Name,
+          created: newLead.leadsCreatedDate,
+          tag: newLead.tag
+        });
+      } catch (e) {
+        console.warn('Socket emit failed:', e.message || e);
+      }
+    }
 
     // Send Notification - implement your sendCampaignNotif function accordingly
     try {
       const notifTitle = '🎉 New Lead Alert!';
       const notifBody = `New lead from ${campaign_Name} (${leadObj.custName || 'No Name'})`;
-       await sendCampaignNotif(campaign_Name, notifTitle, notifBody); // uncomment if available
+      await sendCampaignNotif(campaign_Name, notifTitle, notifBody); // uncomment if available
     } catch (err) {
       console.warn('⚠️ sendCampaignNotif failed:', err.message);
     }
@@ -3857,7 +3857,7 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
 
 //get Teams Leads
 
-router.get('/getTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -3903,7 +3903,7 @@ router.get('/getSalesTeamWork', async (req, res) => {
 
 //get Yesterday Team Leads
 
-router.get('/getYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getYesterdayTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -3952,7 +3952,7 @@ router.get('/getSalesYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getOneYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getOneYesterdayTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -4000,7 +4000,7 @@ router.get('/getSalesOneYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getTwoYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getTwoYesterdayTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -4048,7 +4048,7 @@ router.get('/getSalesTwoYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getThreeYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getThreeYesterdayTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -4096,7 +4096,7 @@ router.get('/getSalesThreeYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getFourYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getFourYesterdayTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -4144,7 +4144,7 @@ router.get('/getSalesFourYesterdayTeamWork', async (req, res) => {
   }
 });
 
-router.get('/getFiveYesterdayTeams-leads/:name',checkAuth, async (req, res) => {
+router.get('/getFiveYesterdayTeams-leads/:name', checkAuth, async (req, res) => {
   const name = req.params.name;
   const person1 = req.userData.name;
   try {
@@ -4227,12 +4227,12 @@ router.get('/getSales-Leads', async (req, res) => {
 
 // SalesLead by Range
 
-router.post('/salesleadsByRange',checkAuth, async (req, res) => {
+router.post('/salesleadsByRange', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   try {
-    const {startDate, endDate, categ, projectStatus} = req.body;
-    let query = {salesPerson : person1};
-     if (startDate && endDate) {
+    const { startDate, endDate, categ, projectStatus } = req.body;
+    let query = { salesPerson: person1 };
+    if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
@@ -4246,7 +4246,7 @@ router.post('/salesleadsByRange',checkAuth, async (req, res) => {
       query.projectStatus = projectStatus;
     }
     const rangeTotalData = await salesLead.find(query).sort({ closingDate: -1 });
-    res.json( rangeTotalData);
+    res.json(rangeTotalData);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
@@ -4621,7 +4621,7 @@ router.get('/allEditorProjects', async (req, res) => {
       }
     });
 
-    const task = await Task.find({graphicDesigner: person}).sort({ assignedDate: -1});
+    const task = await Task.find({ graphicDesigner: person }).sort({ assignedDate: -1 });
 
     if (allProjects.length || allB2bProjects.length || task.length) {
       return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
@@ -4733,9 +4733,9 @@ router.get('/editorProjects', async (req, res) => {
     });
 
     const task = await Task.find({
-        assignedDate: { $gte: startOfMonth, $lte: endOfToday},
-        graphicDesigner: person
-    }).sort({ assignedDate: -1});
+      assignedDate: { $gte: startOfMonth, $lte: endOfToday },
+      graphicDesigner: person
+    }).sort({ assignedDate: -1 });
 
     return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
 
@@ -4841,9 +4841,9 @@ router.get('/editorPreviousProjects', async (req, res) => {
     });
 
     const task = await Task.find({
-        assignedDate: { $gte: prevMonthStart, $lte: prevMonthEnd},
-        graphicDesigner: person
-    }).sort({ assignedDate: -1});
+      assignedDate: { $gte: prevMonthStart, $lte: prevMonthEnd },
+      graphicDesigner: person
+    }).sort({ assignedDate: -1 });
 
     return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
   } catch (error) {
@@ -4948,9 +4948,9 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
     });
 
     const task = await Task.find({
-        assignedDate: { $gte: twoPrevMonthStart, $lte: twoPrevMonthEnd},
-        graphicDesigner: person
-    }).sort({ assignedDate: -1});
+      assignedDate: { $gte: twoPrevMonthStart, $lte: twoPrevMonthEnd },
+      graphicDesigner: person
+    }).sort({ assignedDate: -1 });
 
     return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
   } catch (error) {
@@ -5051,10 +5051,10 @@ router.get('/editorActiveList', async (req, res) => {
     }).sort({ closingDate: -1 });
 
     const task = await Task.find({
-        graphicStatus: { $ne: 'Completed' } ,
-        assignedDate: { $gte: startDate, $lte: endDate},
-        graphicDesigner: person
-    }).sort({ assignedDate: -1});
+      graphicStatus: { $ne: 'Completed' },
+      assignedDate: { $gte: startDate, $lte: endDate },
+      graphicDesigner: person
+    }).sort({ assignedDate: -1 });
 
     const products = [];
     const b2bProducts = [];
@@ -5181,10 +5181,10 @@ router.get('/editorCompleteList', async (req, res) => {
     }).sort({ b2bProjectDate: -1 });
 
     const task = await Task.find({
-      graphicStatus: {$eq: 'Completed'},
-      assignedDate: {$gte: startDate, $lte: endDate},
+      graphicStatus: { $eq: 'Completed' },
+      assignedDate: { $gte: startDate, $lte: endDate },
       graphicDesigner: person
-    }).sort({assignedDate: -1});
+    }).sort({ assignedDate: -1 });
 
     const products = [];
     const b2bProducts = [];
@@ -8615,10 +8615,10 @@ router.get('/changesEditorProjects', async (req, res) => {
     }).sort({ b2bEditorPassDate: -1 });
 
     const task = await Task.find({
-        graphicStatus: { $eq: 'Video Changes' } ,
-        assignedDate: { $gte: startOfMonth, $lte: endOfMonth},
-        graphicDesigner: person
-    }).sort({ assignedDate: -1});
+      graphicStatus: { $eq: 'Video Changes' },
+      assignedDate: { $gte: startOfMonth, $lte: endOfMonth },
+      graphicDesigner: person
+    }).sort({ assignedDate: -1 });
 
     const changesProjects = [];
 
@@ -8658,7 +8658,7 @@ router.get('/changesEditorProjects', async (req, res) => {
       }
     });
 
-    return res.json({changesProjects, task});
+    return res.json({ changesProjects, task });
   } catch (error) {
     console.error("Error Fetching Changes Projects", error);
     res.status(500).json({ error: 'Failed to fetch changes projects' });
@@ -9543,7 +9543,7 @@ const updateEditorMonthlyPoints = async (editorName) => {
     ]
   });
 
-   // 2️⃣ Task collection projects
+  // 2️⃣ Task collection projects
   const tasks = await Task.find({
     graphicDesigner: editorName,
     graphicStatus: 'Completed',
@@ -9580,7 +9580,7 @@ const updateEditorMonthlyPoints = async (editorName) => {
     }
   }
 
-   // ➤ Loop over Task collection
+  // ➤ Loop over Task collection
   for (const task of tasks) {
     const matches = task.graphicDesigner === editorName &&
       task.graphicStatus === 'Completed' &&
@@ -10716,7 +10716,7 @@ router.post('/uploadLead', upload.single('file'), checkAuth, async (req, res) =>
 
 //date wise leads Data
 
-router.get('/getDateCampaign/:name',checkAuth, async (req, res) => {
+router.get('/getDateCampaign/:name', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   const name = req.params.name;
   const selectedDate = req.query.selectDate; // Get selected date and WhatsApp campaign from the query string
@@ -11190,21 +11190,21 @@ router.post("/upload-excel", upload1.single("file"), async (req, res) => {
   }
 });
 
-router.post('/newTag',async(req,res)=>{
-  try{
+router.post('/newTag', async (req, res) => {
+  try {
     const tag = new NewTag({
       tagName: req.body.tagName
     })
     await tag.save().then((_) => {
-      res.json({ success: true, message: "New Tag Added"})
+      res.json({ success: true, message: "New Tag Added" })
     }).catch((err) => {
-      if(err.code === 11000){
-        return res.json({ success: false, message: 'Tag Already Stored'})
+      if (err.code === 11000) {
+        return res.json({ success: false, message: 'Tag Already Stored' })
       }
     });
-  }catch(error){
+  } catch (error) {
     console.error('Error Adding Tag', error);
-    res.status(500).json({ error: 'Failed to add Category'});
+    res.status(500).json({ error: 'Failed to add Category' });
   }
 });
 
@@ -11218,7 +11218,7 @@ router.get('/getTagNames', async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWo',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWo', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   try {
     const today = new Date();
@@ -11239,7 +11239,7 @@ router.get('/getTeams-leadsWo',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWoYes',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWoYes', checkAuth, async (req, res) => {
   const name = req.userData.name;
   try {
     const yesterday = new Date();
@@ -11263,7 +11263,7 @@ router.get('/getTeams-leadsWoYes',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWoOne',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWoOne', checkAuth, async (req, res) => {
   const name = req.userData.name;
   try {
     const yesterday = new Date();
@@ -11287,7 +11287,7 @@ router.get('/getTeams-leadsWoOne',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWoTwo',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWoTwo', checkAuth, async (req, res) => {
   const name = req.userData.name;
   try {
     const yesterday = new Date();
@@ -11311,7 +11311,7 @@ router.get('/getTeams-leadsWoTwo',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWoThree',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWoThree', checkAuth, async (req, res) => {
   const name = req.userData.name;
   try {
     const yesterday = new Date();
@@ -11335,7 +11335,7 @@ router.get('/getTeams-leadsWoThree',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWoFour',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWoFour', checkAuth, async (req, res) => {
   const name = req.userData.name;
   try {
     const yesterday = new Date();
@@ -11359,7 +11359,7 @@ router.get('/getTeams-leadsWoFour',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getTeams-leadsWoFive',checkAuth, async (req, res) => {
+router.get('/getTeams-leadsWoFive', checkAuth, async (req, res) => {
   const name = req.userData.name;
   try {
     const yesterday = new Date();
@@ -11383,7 +11383,7 @@ router.get('/getTeams-leadsWoFive',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getDateCampaignWo',checkAuth, async (req, res) => {
+router.get('/getDateCampaignWo', checkAuth, async (req, res) => {
   const name = req.userData.name;
   const selectedDate = req.query.selectDate; // Get selected date and WhatsApp campaign from the query string
 
@@ -11408,42 +11408,42 @@ router.get('/getDateCampaignWo',checkAuth, async (req, res) => {
   }
 });
 
-router.get('/getPointsUpdate', async(req,res)=>{
+router.get('/getPointsUpdate', async (req, res) => {
   try {
     const allProjects = [];
     const allB2bProjects = [];
 
     // Handle Customer entries
-    const customerDocs = await Customer.find({updateMorePoints: true}).sort({ closingDate: -1 });
+    const customerDocs = await Customer.find({ updateMorePoints: true }).sort({ closingDate: -1 });
 
     customerDocs.forEach(doc => {
       const item = doc.toObject();
 
-      
-        allProjects.push({
-          ...item,
-          type: 'Customer',
-          subEntries: item.subEntries || []
-        });
-      
+
+      allProjects.push({
+        ...item,
+        type: 'Customer',
+        subEntries: item.subEntries || []
+      });
+
     });
 
     // Handle B2B entries
-    const b2bDocs = await B2bCustomer.find({updateMorePoints: true}).sort({ b2bEditorPassDate: -1 });
+    const b2bDocs = await B2bCustomer.find({ updateMorePoints: true }).sort({ b2bEditorPassDate: -1 });
 
     b2bDocs.forEach(doc => {
       const item = doc.toObject();
 
-      
-        allB2bProjects.push({
-          ...item,
-          type: 'b2b',
-          subEntries: item.subEntries || []
-        });
-      
+
+      allB2bProjects.push({
+        ...item,
+        type: 'b2b',
+        subEntries: item.subEntries || []
+      });
+
     });
 
-    const task = await Task.find({updateMorePoints: true}).sort({ assignedDate: -1});
+    const task = await Task.find({ updateMorePoints: true }).sort({ assignedDate: -1 });
 
     if (allProjects.length || allB2bProjects.length || task.length) {
       console.log("LALALALALALA")
