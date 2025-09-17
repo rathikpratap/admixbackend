@@ -128,14 +128,6 @@ router.post('/send-otp', async (req, res) => {
       });
     }
 
-    // Check if already logged in today
-    // if (user.lastOTPLogin && momment(user.lastOTPLogin).isSame(now, 'day')) {
-    //   return res.json({
-    //     success: false,
-    //     message: "OTP already used today. Login not required again."
-    //   });
-    // }
-
     if (user.lastOTPLogin && moment(user.lastOTPLogin).isSame(now, 'day')) {
       const payload = {
         userId: user._id,
@@ -321,7 +313,6 @@ router.get('/profile', checkAuth, async (req, res) => {
   person = req.userData.name;
   personTeam = req.userData.Saleteam;
 
-  console.log("PERSON TEAMMMMMMMMMMMMMM======>>", personTeam);
   // role = req.userData.signupRole;
   role = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
 
@@ -445,7 +436,6 @@ router.get('/allProjects', checkAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to Fetch Leads' });
   }
 });
-
 
 // all previous Month projects
 
@@ -679,27 +669,6 @@ router.get('/allCompleteProjects', async (req, res) => {
 
 //get Customer
 
-// router.get('/read-cust/:id', async (req, res) => {
-//   try {
-//     // Search in the Customer collection
-//     const customerDetails = await Customer.findById(req.params.id);
-
-//     // Search in other collections, for example, OtherCollection
-//     const otherDetails = await salesLead.findById(req.params.id);
-
-//     // Check if any data found in either collection
-//     if (customerDetails) {
-//       return res.json(customerDetails);
-//     } else if (otherDetails) {
-//       return res.json(otherDetails);
-//     } else {
-//       return res.json({ result: "No Data" });
-//     }
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// });
-
 router.get('/read-cust/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -709,18 +678,15 @@ router.get('/read-cust/:id', async (req, res) => {
     if (customerDetails) {
       return res.json(customerDetails);
     }
-
     const task = await Task.findById(id);
     if (task) {
       return res.json(task);
     }
-
     // Try to find in salesLead collection
     const otherDetails = await salesLead.findById(id);
     if (otherDetails) {
       return res.json(otherDetails);
     }
-
     // Check subEntries in Customer collection
     const allCustomers = await Customer.find({});
     for (const doc of allCustomers) {
@@ -734,7 +700,6 @@ router.get('/read-cust/:id', async (req, res) => {
         });
       }
     }
-
     // Optionally: Check subEntries in salesLead (if applicable)
     const allLeads = await salesLead.find({});
     for (const doc of allLeads) {
@@ -754,7 +719,6 @@ router.get('/read-cust/:id', async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
-
 
 //get Employee
 
@@ -886,7 +850,6 @@ const getSheetId = async (sheetName) => {
   }
 };
 
-
 // delete SalesLead
 
 router.delete('/delete-sales/:id', async (req, res) => {
@@ -903,17 +866,6 @@ router.delete('/delete-sales/:id', async (req, res) => {
 });
 
 // Edit Customer Details By editor
-
-// router.put('/updateEditor/:id', async (req, res) => {
-//   const custDet = await Customer.findByIdAndUpdate(req.params.id, {
-//     $set: req.body
-//   })
-//   if (custDet) {
-//     return res.json(custDet)
-//   } else {
-//     res.send({ result: "No No Data" })
-//   }
-// });
 
 router.put('/updateEditor/:id', async (req, res) => {
   try {
@@ -967,113 +919,7 @@ router.put('/updateEditor/:id', async (req, res) => {
   }
 });
 
-
 // Edit Customer Details
-
-// router.put('/update/:id', checkAuth, async (req, res) => {
-//   try {
-//     const person1 = req.userData.name;
-//     const personTeam1 = req.userData.Saleteam;
-
-//     let custDet = await Customer.findById(req.params.id);
-//     let leadDet = await salesLead.findById(req.params.id);
-
-//     if (custDet) {
-//       custDet = await Customer.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
-
-//       // Update in Google Sheets
-//       const sheetUpdated = await updateCustomerInGoogleSheet(custDet);
-
-//       return res.json({ custDet, sheetUpdated });
-//     }
-//     else if (leadDet) {
-//       if (req.body.projectStatus === 'Not Interested') {
-//         leadDet = await salesLead.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
-//         return res.json(leadDet);
-//       } else {
-//         // Convert lead to customer
-//         const newCustomer = new Customer({
-//           _id: leadDet._id,
-//           custCode: req.body.custCode,
-//           custName: leadDet.custName,
-//           custNumb: leadDet.custNumb,
-//           custNumb2: req.body.custNumb2,
-//           custEmail: leadDet.custEmail,
-//           custBussiness: leadDet.custBussiness,
-//           closingDate: req.body.closingDate,
-//           leadsCreatedDate: leadDet.closingDate,
-//           closingPrice: req.body.closingPrice,
-//           closingCateg: req.body.closingCateg,
-//           billType: req.body.billType,
-//           AdvPay: req.body.AdvPay,
-//           remainingAmount: req.body.remainingAmount,
-//           custCountry: req.body.custCountry,
-//           custCity: req.body.custCity,
-//           custState: req.body.custState,
-//           projectStatus: req.body.projectStatus,
-//           youtubeLink: req.body.youtubeLink,
-//           restAmount: req.body.restAmount,
-//           restPaymentDate: req.body.restPaymentDate,
-//           remark: req.body.remark,
-//           salesPerson: person1,
-//           salesTeam: personTeam1,
-//           graphicDesigner: req.body.graphicDesigner,
-//           editor: req.body.editor,
-//           scriptWriter: req.body.scriptWriter,
-//           voiceOver: req.body.voiceOver,
-//           wordsCount: req.body.wordsCount,
-//           scriptDuration: req.body.scriptDuration,
-//           script: req.body.script,
-//           scriptDeliveryDate: req.body.scriptDeliveryDate,
-//           scriptStatus: req.body.scriptStatus,
-//           scriptPayment: req.body.scriptPayment,
-//           scriptOtherChanges: req.body.scriptOtherChanges,
-//           scriptChangesPayment: req.body.scriptChangesPayment,
-//           videoDuration: req.body.videoDuration,
-//           videoDeliveryDate: req.body.videoDeliveryDate,
-//           videoType: req.body.videoType,
-//           editorStatus: req.body.editorStatus,
-//           editorPayment: req.body.editorPayment,
-//           editorOtherChanges: req.body.editorOtherChanges,
-//           editorChangesPayment: req.body.editorChangesPayment,
-//           voiceDuration: req.body.voiceDuration,
-//           voiceDeliveryDate: req.body.voiceDeliveryDate,
-//           voiceOverType: req.body.voiceOverType,
-//           voiceOverStatus: req.body.voiceOverStatus,
-//           voicePayment: req.body.voicePayment,
-//           voiceOtherChanges: req.body.voiceOtherChanges,
-//           voiceChangesPayment: req.body.voiceChangesPayment,
-//           totalEditorPayment: req.body.totalEditorPayment,
-//           totalScriptPayment: req.body.totalScriptPayment,
-//           totalVoicePayment: req.body.totalVoicePayment,
-//           videoDurationMinutes: req.body.videoDurationMinutes,
-//           videoDurationSeconds: req.body.videoDurationSeconds,
-//           voiceDurationMinutes: req.body.voiceDurationMinutes,
-//           voiceDurationSeconds: req.body.voiceDurationSeconds,
-//           scriptDurationMinutes: req.body.scriptDurationMinutes,
-//           scriptDurationSeconds: req.body.scriptDurationSeconds,
-//           numberOfVideos: req.body.numberOfVideos,
-//           companyName: req.body.companyName,
-//           scriptPassDate: req.body.scriptPassDate,
-//           Qr: req.body.Qr,
-//           customerType: req.body.customerType
-//         });
-
-//         await newCustomer.save();
-//         await salesLead.findByIdAndDelete(req.params.id);
-
-//         // Add new customer to Google Sheets
-//         const sheetUpdated = await updateCustomerInGoogleSheet(newCustomer);
-
-//         return res.json({ newCustomer, sheetUpdated });
-//       }
-//     } else {
-//       return res.json({ result: "No Data" });
-//     }
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// });
 
 router.put('/update/:id', checkAuth, async (req, res) => {
   try {
@@ -1580,86 +1426,6 @@ const addHeadersToSheet = async (spreadsheetId, sheetTitle) => {
     console.error("Error adding headers to sheet:", error);
   }
 };
-
-// router.post('/customer', async (req, res) => {
-//   try {
-//     const customer = new Customer(req.body);
-//     await customer.save();
-
-//     await appendToGoogleSheet(customer);
-//     res.json({ success: true, message: "Customer Added and Google Sheet Updated" });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: "Error adding Customer", error: error.message });
-//   }
-// });
-
-// router.post('/customer', async (req, res) => {
-//   try {
-//     const {
-//       graphicsCount = 0,
-//       videosCount = 0,
-//       reelsCount = 0,
-//       custName,
-//       closingDate,
-//       custCode,
-//     } = req.body;
-
-//     // Convert custCode to number (if it's string)
-//     const baseCustCode = parseInt(custCode, 10);
-//     if (isNaN(baseCustCode)) {
-//       return res.status(400).json({ success: false, message: "Invalid custCode: must be a number" });
-//     }
-
-//     // ✅ Create main entry (include counts)
-//     const mainCustomer = new Customer({
-//       ...req.body,
-//       entryType: 'Main',
-//       graphicsCount,
-//       videosCount,
-//       reelsCount
-//     });
-//     await mainCustomer.save();
-
-//     // ✅ Generate sub-entries with incremented custCodes
-//     let nextCustCode = baseCustCode + 1;
-//     const subEntries = [];
-
-//     const createSubEntries = (count, type) => {
-//       for (let i = 1; i <= count; i++) {
-//         subEntries.push(new Customer({
-//           custName: `${custName} (${type} ${i})`,
-//           closingDate,
-//           custCode: nextCustCode++,
-//           entryType: type
-//         }));
-//       }
-//     };
-
-//     createSubEntries(graphicsCount, 'Graphic');
-//     createSubEntries(videosCount, 'Video');
-//     createSubEntries(reelsCount, 'Reel');
-
-//     if (subEntries.length > 0) {
-//       await Customer.insertMany(subEntries);
-//     }
-
-//     // ✅ Send only main entry to Google Sheet
-//     await appendToGoogleSheet(mainCustomer);
-
-//     res.json({
-//       success: true,
-//       message: `Main entry and ${subEntries.length} sub-entry(ies) saved.`,
-//     });
-
-//   } catch (error) {
-//     console.error("Error in /customer:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error adding customer",
-//       error: error.message,
-//     });
-//   }
-// });
 
 router.post('/customer', async (req, res) => {
   try {
@@ -2431,7 +2197,6 @@ router.get('/dataByRange/:startDate/:endDate', checkAuth, async (req, res) => {
     const rangeTotalAmount = rangeTotalData.reduce((sum, doc) => sum + doc.closingPrice, 0);
     const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
     const rangeTotalDue = rangeTotalData.reduce((sum, doc) => sum + doc.remainingAmount, 0);
-    console.log("Range TOtal Amount===>>", rangeTotalAmount);
     res.json({
       rangeTotalData: rangeTotalData,
       rangeTotalAmount: rangeTotalAmount,
@@ -4548,16 +4313,6 @@ router.get('/scriptCompleteList', async (req, res) => {
 
 //Editor Projects
 
-// router.get('/allEditorProjects', async (req, res) => {
-//   const allProjects = (await Customer.find({ editor: person }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
-//   const allB2bProjects = (await B2bCustomer.find({ b2bEditor: person }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-//   if (allProjects || allB2bProjects) {
-//     return res.json({ list: [...allProjects, ...allB2bProjects] });
-//   } else {
-//     res.send({ result: "No Data Found" })
-//   }
-// });
-
 router.get('/allEditorProjects', async (req, res) => {
   try {
     const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
@@ -4634,35 +4389,6 @@ router.get('/allEditorProjects', async (req, res) => {
     res.status(500).json({ error: 'Failed to Fetch All Projects' });
   }
 });
-
-
-// router.get('/editorProjects', async (req, res) => {
-//   try {
-//     //const currentMonth = new Date().getMonth() + 1;
-//     const now = new Date();
-//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-//     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-//     const allProjects = (await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: startOfMonth,
-//         $lte: endOfToday
-//       }
-//     }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer', subEntries: item.subEntries || [] }));
-
-//     const allB2bProjects = (await B2bCustomer.find({
-//       b2bEditor: person,
-//       b2bEditorPassDate: {
-//         $gte: startOfMonth,
-//         $lte: endOfToday
-//       }
-//     }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b',subEntries: item.subEntries || [] }));
-//     return res.json({ list: [...allProjects, ...allB2bProjects] })
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to Fetch Leads' })
-//   }
-// });
 
 router.get('/editorProjects', async (req, res) => {
   try {
@@ -4745,31 +4471,6 @@ router.get('/editorProjects', async (req, res) => {
   }
 });
 
-// router.get('/editorPreviousProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const allProjects = (await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
-//       }
-//     }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
-
-//     const b2bProducts = (await B2bCustomer.find({
-//       b2bEditor: person,
-//       b2bEditorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 2, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth - 1, 1)
-//       }
-//     }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-//     return res.json({ list: [...allProjects, ...b2bProducts] })
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to Fetch Leads' })
-//   }
-// });
-
 router.get('/editorPreviousProjects', async (req, res) => {
   try {
     const now = new Date();
@@ -4851,31 +4552,6 @@ router.get('/editorPreviousProjects', async (req, res) => {
     res.status(500).json({ error: 'Failed to Fetch Previous Projects' });
   }
 });
-
-// router.get('/editorTwoPreviousProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const allProjects = (await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
-//       }
-//     }).sort({ editorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
-
-//     const b2bProducts = (await B2bCustomer.find({
-//       b2bEditor: person,
-//       b2bEditorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth - 2, 2)
-//       }
-//     }).sort({ b2bEditorPassDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-//     return res.json({ list: [...allProjects, ...b2bProducts] })
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to Fetch Leads' })
-//   }
-// });
 
 router.get('/editorTwoPreviousProjects', async (req, res) => {
   try {
@@ -4999,33 +4675,6 @@ router.get('/todayEntriesEditor', async (req, res) => {
   }
 });
 
-// router.get('/editorActiveList', async (req, res) => {
-//   const currentMonth = new Date().getMonth() + 1;
-//   try {
-//     const products = (await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-//       },
-//       editorStatus: { $ne: 'Completed' }
-//     }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
-
-//     const b2bProducts = (await B2bCustomer.find({
-//       b2bEditor: person,
-//       b2bProjectDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-//       },
-//       projectStatus: { $ne: 'Completed' }
-//     }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-//     res.json({ products, b2bProducts });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server Error' });
-//   }
-// });
-
 router.get('/editorActiveList', async (req, res) => {
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
@@ -5130,35 +4779,7 @@ router.get('/editorActiveList', async (req, res) => {
   }
 });
 
-// router.get('/editorCompleteList', async (req, res) => {
-//   const currentMonth = new Date().getMonth() + 1;
-//   try {
-//     const products = (await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-//       },
-//       editorStatus: { $regex: /^Completed$/i }
-//     }).sort({ closingDate: -1 })).map(item => ({ ...item.toObject(), type: 'Customer' }));
-
-//     const b2bProducts = (await B2bCustomer.find({
-//       b2bEditor: person,
-//       b2bProjectDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 3, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth + 1, 0)
-//       },
-//       projectStatus: { $regex: /^Completed$/i }
-//     }).sort({ b2bProjectDate: -1 })).map(item => ({ ...item.toObject(), type: 'b2b' }));
-//     res.json({ products, b2bProducts });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server Error' });
-//   }
-// });
-
 router.get('/editorCompleteList', async (req, res) => {
-  console.log("EDITOR PWEAON========>>", person);
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -6658,123 +6279,6 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
-// router.post('/estInvoice', async (req, res) => {
-//   try {
-//     const {
-//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg, customCateg,
-//       rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state, allowUpdate // Added to handle duplicate logic
-//     } = req.body;
-//     // Parse the invoiceDate to check for the current month and year
-//     const currentMonth = new Date(invoiceDate).getMonth();
-//     const currentYear = new Date(invoiceDate).getFullYear();
-//     // Check if an invoice exists for the current month
-//     const existingInvoice = await EstInvoice.findOne({
-//       custName,
-//       custNumb,
-//       $expr: {
-//         $and: [
-//           { $eq: [{ $month: "$date" }, currentMonth + 1] }, // MongoDB months are 1-based
-//           { $eq: [{ $year: "$date" }, currentYear] }
-//         ]
-//       }
-//     });
-//     if (existingInvoice && !allowUpdate) {
-//       // Send a response indicating data already exists
-//       return res.json({
-//         success: false,
-//         message: "Invoice of the User is already exists in this Month. Do you want to save this as a new entry?",
-//         dataExists: true
-//       });
-//     }
-//     if (existingInvoice && allowUpdate) {
-//       Object.assign(existingInvoice, {
-//         custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, invoiceCateg, customCateg, rows,
-//         //date: invoiceDate,
-//         GSTAmount, totalAmount, billFormat, discountValue, afterDiscountTotal, state
-//       });
-//       await existingInvoice.save();
-//       return res.json({ success: true, message: 'Invoice Updated Successfully' });
-//     }
-//     // Save the new invoice
-//     const estInvoice = new EstInvoice({
-//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
-//       customCateg, rows, date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
-//     });
-//     await estInvoice.save();
-//     res.json({ success: true, message: 'Invoice Created Successfully' });
-//   } catch (err) {
-//     console.error("Error saving/Updating Invoice Details", err);
-//     res.json({ success: false, message: "Error Saving Invoice" });
-//   }
-// });
-
-// router.post('/estInvoice', async (req, res) => {
-//   try {
-//     const {
-//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
-//       customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue,
-//       afterDiscountTotal, state, allowUpdate, allowNewDateEntry
-//     } = req.body;
-
-//     const date = new Date(invoiceDate);
-//     const currentMonth = date.getMonth() + 1;
-//     const currentYear = date.getFullYear();
-
-//     // Check if any invoice exists for same customer & month
-//     const existingInvoice = await EstInvoice.findOne({
-//       custName,
-//       custNumb,
-//       $expr: {
-//         $and: [
-//           { $eq: [{ $month: "$date" }, currentMonth] },
-//           { $eq: [{ $year: "$date" }, currentYear] }
-//         ]
-//       }
-//     });
-
-//     if (existingInvoice) {
-//       const sameDate = new Date(existingInvoice.date).toISOString().split('T')[0] === date.toISOString().split('T')[0];
-
-//       if (sameDate && !allowUpdate) {
-//         return res.json({
-//           success: false,
-//           sameDateExists: true,
-//           message: "An invoice with the same date already exists. Do you want to update it?"
-//         });
-//       }
-
-//       if (!sameDate && !allowNewDateEntry) {
-//         return res.json({
-//           success: false,
-//           differentDateExists: true,
-//           message: "An invoice already exists for this month. Do you want to save it as a new entry with a different date?"
-//         });
-//       }
-
-//       if (sameDate && allowUpdate) {
-//         Object.assign(existingInvoice, {
-//           custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, invoiceCateg, customCateg, rows,
-//           GSTAmount, totalAmount, billFormat, discountValue, afterDiscountTotal, state
-//         });
-//         await existingInvoice.save();
-//         return res.json({ success: true, message: 'Invoice Updated Successfully' });
-//       }
-//     }
-
-//     // Save new invoice
-//     const estInvoice = new EstInvoice({
-//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb, invoiceCateg,
-//       customCateg, rows, date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
-//     });
-//     await estInvoice.save();
-//     res.json({ success: true, message: 'Invoice Created Successfully' });
-
-//   } catch (err) {
-//     console.error("Error saving/updating invoice", err);
-//     res.json({ success: false, message: "Error saving invoice" });
-//   }
-// });
-
 router.post('/estInvoice', async (req, res) => {
   try {
     const {
@@ -6850,94 +6354,7 @@ router.post('/estInvoice', async (req, res) => {
   }
 });
 
-
-
 //Update Invoice
-
-// router.post('/updateInvoice', async (req, res) => {
-//   try {
-//     const {
-//       custGST, custAddLine1, custAddLine2, custAddLine3,
-//       billNumber, billType, gstType, custName, custNumb,
-//       invoiceCateg, customCateg, rows, invoiceDate,
-//       GSTAmount, totalAmount, billFormat, allowUpdate, financialYear, discountValue, afterDiscountTotal, state
-//     } = req.body;
-
-//     if (!invoiceDate || isNaN(new Date(invoiceDate).getTime())) {
-//       return res.status(400).json({ success: false, message: "Invalid invoice date" });
-//     }
-
-//     const currentMonth = new Date(invoiceDate).getMonth();
-//     const currentYear = new Date(invoiceDate).getFullYear();
-
-//     const existingInvoice = await EstInvoice.findOne({
-//       custName,
-//       custNumb,
-//       billNumber,
-//       //billFormat,
-//       $expr: {
-//         $and: [
-//           { $eq: [{ $month: "$date" }, currentMonth + 1] },
-//           { $eq: [{ $year: "$date" }, currentYear] }
-//         ]
-//       }
-//     });
-
-//     if (existingInvoice && !allowUpdate) {
-//       return res.json({
-//         success: false,
-//         message: "Invoice of the User already exists in this Month. Do you want to save this as a new entry?",
-//         dataExists: true
-//       });
-//     }
-
-//     if (existingInvoice && allowUpdate) {
-//       const updates = {};
-//       const scalarFields = {
-//         custGST, custAddLine1, custAddLine2, custAddLine3,
-//         billNumber, billType, gstType,
-//         invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state
-//       };
-
-//       for (const [key, newVal] of Object.entries(scalarFields)) {
-//         const oldVal = existingInvoice[key];
-//         if (oldVal !== newVal) {
-//           updates[key] = newVal;
-//         }
-//       }
-
-//       // Compare rows (deep comparison)
-//       if (JSON.stringify(existingInvoice.rows) !== JSON.stringify(rows)) {
-//         updates.rows = rows;
-//       }
-
-//       if (Object.keys(updates).length > 0) {
-//         await EstInvoice.updateOne(
-//           { _id: existingInvoice._id },
-//           { $set: updates }
-//         );
-//         return res.json({ success: true, message: 'Invoice Updated Successfully (only changed fields)' });
-//       } else {
-//         return res.json({ success: true, message: 'No changes detected — invoice already up to date' });
-//       }
-//     }
-
-//     // Create new invoice
-//     const estInvoice = new EstInvoice({
-//       custGST, custAddLine1, custAddLine2, custAddLine3,
-//       billNumber, billType, gstType, custName, custNumb,
-//       invoiceCateg, customCateg, rows,
-//       date: invoiceDate, GSTAmount, totalAmount, billFormat, financialYear, discountValue, afterDiscountTotal, state
-//     });
-
-//     await estInvoice.save();
-//     res.json({ success: true, message: 'Invoice Created Successfully' });
-
-//   } catch (err) {
-//     console.error("Error saving/updating invoice:", err);
-//     res.status(500).json({ success: false, message: "Error Saving Invoice" });
-//   }
-// });
 
 router.post('/updateInvoice', async (req, res) => {
   try {
@@ -7053,12 +6470,6 @@ router.get('/estInvoiceCount', async (req, res) => {
 });
 
 // Main Invoice Count
-
-// router.get('/mainInvoiceCount', async (req, res) => {
-//   const dataLength = await EstInvoice.countDocuments({ billFormat: 'Main' });
-//   const nonGST = await EstInvoice.countDocuments({ billFormat: 'Non-GST'});
-//   return res.json({dataLength, nonGST});
-// });
 
 router.get('/mainInvoiceCount', async (req, res) => {
   try {
@@ -7731,62 +7142,6 @@ router.get('/conversionRate', async (req, res) => {
   }
 });
 
-// router.get('/conversionRateMonthly', async (req, res) => {
-//   try {
-//     const totalLeads = await salesLead.aggregate([
-//       {
-//         $group: {
-//           _id: {
-//             salesPerson: '$salesPerson',
-//             month: { $month: '$closingDate' },
-//             year: { $year: '$closingDate' }
-//           },
-//           totalNumberOfLeads: { $sum: 1 }
-//         }
-//       }
-//     ]);
-//     const totalSales = await Customer.aggregate([
-//       {
-//         $group: {
-//           _id: {
-//             salesPerson: '$salesPerson',
-//             month: { $month: '$closingDate' },
-//             year: { $year: '$closingDate' }
-//           },
-//           totalNumberOfSales: { $sum: 1 }
-//         }
-//       }
-//     ]);
-//     const conversionRates = totalLeads.map(lead => {
-//       const sales = totalSales.find(sale =>
-//         sale._id.salesPerson &&
-//         sale._id.salesPerson === lead._id.salesPerson &&
-//         sale._id.month === lead._id.month &&
-//         sale._id.year === lead._id.year
-//       );
-//       const totalNumberOfLeads = lead.totalNumberOfLeads;
-//       const totalNumberOfSales = sales ? sales.totalNumberOfSales : 0;
-//       const totalSum = totalNumberOfLeads + totalNumberOfSales;
-//       const conversionRate = totalNumberOfLeads ? (totalNumberOfSales / totalSum) * 100 : 0;
-//       return {
-//         salesPerson: lead._id.salesPerson,
-//         month: lead._id.month,
-//         year: lead._id.year,
-//         totalLeads: totalNumberOfLeads,
-//         totalSales: totalNumberOfSales,
-//         conversionRate: conversionRate.toFixed(2) // converting to a fixed-point notation
-//       };
-//     });
-//     if (conversionRates.length > 0) {
-//       res.json({ status: 'success', data: conversionRates });
-//     } else {
-//       res.json({ status: 'success', data: [], message: 'No leads or sales found' });
-//     }
-//   } catch (error) {
-//     res.status(500).json({ status: 'fail', error: error.message });
-//   }
-// });
-
 router.get('/conversionRateMonthly', async (req, res) => {
   try {
     const totalLeads = await salesLead.aggregate([
@@ -8009,9 +7364,7 @@ router.get('/usersAttendance', async (req, res) => {
   }
   try {
     const salesPerson = person;
-    console.log("ATTENDANCE SALES===========>>", salesPerson);
     const users = await User.find({ signupUsername: salesPerson });
-    console.log("Attendance Person===>>", users);
     const daysInMonth = new Date(year, month, 0).getDate();
     const attendancePromises = users.map(async user => {
       let currentAttendance;
@@ -8170,73 +7523,6 @@ router.get('/mediumScriptProjects', async (req, res) => {
 
 // Urgent Editor Projects
 
-// router.get('/urgentEditorProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const urgentProjects = await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//       },
-//       priority: 'Urgent',
-//       editorStatus: { $ne: 'Completed' }
-//     }).sort({ editorPassDate: -1 });
-//     return res.json(urgentProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
-
-// router.get('/urgentEditorProjects', async (req, res) => {
-//   try {
-//     const now = new Date();
-//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-//     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-//     const isValidDate = (d) => d && new Date(d) >= startOfMonth && new Date(d) <= endOfMonth;
-
-//     const urgentDocs = await Customer.find({
-//       priority: 'Urgent',
-//       editorStatus: { $ne: 'Completed' }
-//     }).sort({ editorPassDate: -1 });
-
-//     const urgentProjects = [];
-
-//     urgentDocs.forEach(doc => {
-//       const item = doc.toObject();
-
-//       const mainValid = item.editor === person && isValidDate(item.editorPassDate);
-
-//       const validSubEntries = (item.subEntries || []).filter(sub =>
-//         sub.editor === person && isValidDate(sub.editorPassDate)
-//       );
-
-//       if (mainValid) {
-//         urgentProjects.push({
-//           ...item,
-//           subEntries: validSubEntries,
-//           type: 'Customer'
-//         });
-//       } else if (validSubEntries.length > 0) {
-//         validSubEntries.forEach(sub => {
-//           urgentProjects.push({
-//             ...sub,
-//             parentCustCode: item.custCode,
-//             type: 'Customer'
-//           });
-//         });
-//       }
-//     });
-
-//     return res.json(urgentProjects);
-//   } catch (error) {
-//     console.error("Error Fetching Urgent Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' });
-//   }
-// });
-
 router.get('/urgentEditorProjects', async (req, res) => {
   try {
     const now = new Date();
@@ -8331,26 +7617,6 @@ router.get('/urgentEditorProjects', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch urgent projects' });
   }
 });
-
-
-// router.get('/highEditorProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const urgentProjects = await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//       },
-//       priority: 'High',
-//       editorStatus: { $ne: 'Completed' }
-//     }).sort({ editorPassDate: -1 });
-//     return res.json(urgentProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
 
 router.get('/highEditorProjects', async (req, res) => {
   try {
@@ -8457,25 +7723,6 @@ router.get('/highEditorProjects', async (req, res) => {
 });
 
 
-// router.get('/mediumEditorProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const urgentProjects = await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//       },
-//       priority: 'Medium',
-//       editorStatus: { $ne: 'Completed' }
-//     }).sort({ editorPassDate: -1 });
-//     return res.json(urgentProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
-
 router.get('/mediumEditorProjects', async (req, res) => {
   try {
     const now = new Date();
@@ -8484,12 +7731,6 @@ router.get('/mediumEditorProjects', async (req, res) => {
 
     const isValidDate = (date) =>
       date && new Date(date) >= startOfMonth && new Date(date) <= endOfMonth;
-
-    // Define 'person' (should be passed via auth or query param)
-    // const person = req.user?.username || req.query.person;
-    // if (!person) {
-    //   return res.status(400).json({ error: 'Missing editor identity' });
-    // }
 
     const mediumCustomers = await Customer.find({
       priority: 'Medium',
@@ -8579,24 +7820,6 @@ router.get('/mediumEditorProjects', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch medium priority projects' });
   }
 });
-
-// router.get('/changesEditorProjects', async (req, res) => {
-//   const currentMonth = new Date().getMonth() + 1;
-//   try {
-//     const changesProjects = await Customer.find({
-//       editor: person,
-//       editorPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth)
-//       },
-//       projectStatus: { $eq: 'Video Changes' }
-//     }).sort({ editorPassDate: -1 });
-//     return res.json(changesProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
 
 router.get('/changesEditorProjects', async (req, res) => {
   try {
@@ -8726,25 +7949,6 @@ router.get('/mediumVoProjects', async (req, res) => {
 
 // Urgent Graphic Projects
 
-// router.get('/urgentGraphicProjects', async (req, res) => {
-//   try {
-//     const currentMonth = new Date().getMonth() + 1;
-//     const urgentProjects = await Customer.find({
-//       graphicDesigner: person,
-//       graphicPassDate: {
-//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-//         $lte: new Date(new Date().getFullYear(), currentMonth, 0)
-//       },
-//       priority: 'Urgent',
-//       graphicStatus: { $ne: 'Complete' }
-//     }).sort({ graphicPassDate: -1 });
-//     return res.json(urgentProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
-
 router.get('/urgentGraphicProjects', async (req, res) => {
   try {
     const now = new Date();
@@ -8804,22 +8008,6 @@ router.get('/urgentGraphicProjects', async (req, res) => {
   }
 });
 
-// router.get('/pendingGraphicProjects', async (req, res) => {
-//   try {
-//     const startOfDay = new Date();
-//     startOfDay.setHours(0, 0, 0, 0);
-//     const pendingProjects = await Customer.find({
-//       graphicDesigner: person,
-//       graphicPassDate: { $lt: startOfDay },
-//       graphicStatus: { $ne: 'Complete' }
-//     }).sort({ graphicPassDate: -1 });
-//     return res.json(pendingProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
-
 router.get('/pendingGraphicProjects', async (req, res) => {
   try {
     const startOfDay = new Date();
@@ -8875,25 +8063,6 @@ router.get('/pendingGraphicProjects', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch pending projects' });
   }
 });
-
-
-// router.get('/todayGraphicProjects', async (req, res) => {
-//   try {
-//     const today = new Date();
-//     const todayProjects = await Customer.find({
-//       graphicDesigner: person,
-//       graphicPassDate: {
-//         $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
-//         $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
-//       },
-//       graphicStatus: { $ne: 'Complete' }
-//     }).sort({ graphicPassDate: -1 });
-//     return res.json(todayProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
 
 router.get('/todayGraphicProjects', async (req, res) => {
   try {
@@ -8951,19 +8120,6 @@ router.get('/todayGraphicProjects', async (req, res) => {
     res.status(500).json({ error: "Failed to fetch today's projects" });
   }
 });
-
-// router.get('/changesGraphicProjects', async (req, res) => {
-//   try {
-//     const changesProjects = await Customer.find({
-//       graphicDesigner: person,
-//       graphicStatus: { $eq: 'Graphic Designing Changes' }
-//     }).sort({ graphicPassDate: -1 });
-//     return res.json(changesProjects)
-//   } catch (error) {
-//     console.error("Error Fetching Leads", error);
-//     res.status(500).json({ error: 'Failed to fetch Leads' })
-//   }
-// });
 
 router.get('/changesGraphicProjects', async (req, res) => {
   try {
@@ -9226,7 +8382,6 @@ router.get('/getCampaignNames', async (req, res) => {
     // Extract unique campaign names
     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
 
-    console.log("CAMPAIGN NAMES===========>>", campaignNames);
     return res.json(campaignNames);
   } catch (error) {
     console.error('Error Fetching Recent Campaign Leads:', error);
@@ -9246,7 +8401,6 @@ router.get('/getWhatsAppCampaignNames', async (req, res) => {
     });
     const campaignNames = [...new Set(recentLeads.map(lead => lead.campaign_Name))];
 
-    console.log("CAMPAIGN NAMES===========>>", campaignNames);
     return res.json(campaignNames);
   } catch (error) {
     console.error('Error Fetching Recent Campaign Leads', error);
@@ -9420,39 +8574,6 @@ router.get('/getInvoice/:startDate/:endDate', async (req, res) => {
   }
 });
 //Incentives
-
-// PUT route for adding or updating incentive
-// router.put('/addIncentive', async (req, res) => {
-//   try {
-//     const { employeeName, category, incentives } = req.body;
-
-//     // Check if the incentive entry for the employee and category already exists
-//     let updatedIncentive;
-//     const existingIncentive = await incentive.findOne({ employeeName, category });
-
-//     if (existingIncentive) {
-//       // Update existing incentive
-//       updatedIncentive = await incentive.findOneAndUpdate(
-//         { employeeName, category },
-//         { $set: { incentives } },
-//         { new: true }  // Return the updated document
-//       );
-//     } else {
-//       // Create new incentive entry
-//       const newIncentive = new incentive({
-//         employeeName,
-//         category,
-//         incentives
-//       });
-//       updatedIncentive = await newIncentive.save();
-//     }
-
-//     res.json({ success: true, message: "Incentive Added or Updated Successfully!", data: updatedIncentive });
-//   } catch (err) {
-//     console.error("Error Adding/Updating Incentive:", err);
-//     res.status(500).json({ success: false, message: "Error Adding/Updating Incentive" });
-//   }
-// });
 
 router.put('/addIncentive', async (req, res) => {
   try {
@@ -10090,7 +9211,6 @@ router.get('/sales_status/:person/:status', async (req, res) => {
       salesPerson: person,
       projectStatus: status
     })
-    console.log("DATA DATATATATATATA==================>>", fetching);
     return res.json(fetching);
   } catch (error) {
     console.error("Error Fetching Closing", error);
@@ -10108,7 +9228,6 @@ router.get('/sales_statusClosing/:closing(*)/:name/:status', async (req, res) =>
       closingCateg: closing,
       projectStatus: status
     })
-    console.log("ALL SET----->>", fetching);
     return res.json(fetching);
   } catch (error) {
     console.error("Error fetching Closing", error);
@@ -10595,57 +9714,6 @@ function excelDateToJSDate(serial) {
   const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // Excel epoch starts on 1899-12-30
   return new Date(excelEpoch.getTime() + serial * 86400000); // 86400000 ms/day
 }
-
-// router.post('/uploadLead', upload.single('file'),checkAuth, async (req, res) => {
-//   try {
-//     const person1 = req.userData?.name;
-//     const fileBuffer = req.file.buffer;
-//     const fileExt = path.extname(req.file.originalname).toLowerCase();
-//     const fileName = path.parse(req.file.originalname).name;
-//     const currentDate = new Date();
-
-//     // Load file based on extension
-//     let workbook;
-//     if (fileExt === '.csv') {
-//       workbook = XLSX.read(fileBuffer.toString(), { type: 'string' });
-//     } else if (fileExt === '.xlsx') {
-//       workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-//     } else {
-//       return res.status(400).json({ error: 'Unsupported file type' });
-//     }
-
-//     const sheetName = workbook.SheetNames[0];
-//     const sheet = workbook.Sheets[sheetName];
-//     const rawData = XLSX.utils.sheet_to_json(sheet);
-
-//     const mappedData = rawData.map(row => {
-//       let parsedDate = currentDate;
-//       const subscribedAt = row['Subscribed at'];
-
-//       // Excel date serial number check
-//       if (typeof subscribedAt === 'number') {
-//         parsedDate = excelDateToJSDate(subscribedAt);
-//       }
-
-//       return {
-//         custName: row['Name'] || '',
-//         custNumb: row['Phone Number'] || '',
-//         closingDate: parsedDate,
-//         campaign_Name: `${person1} ${row['Label Name'] || ''}`,
-//         label: row['Label Name'] || '',
-//         leadsCreatedDate: parsedDate,
-//         campaignType: "WhatsApp API"
-//       };
-//     });
-
-//     await salesLead.insertMany(mappedData);
-//     res.status(200).json({ message: 'Leads Upload Successful' });
-
-//   } catch (err) {
-//     console.error('Error Uploading Leads:', err);
-//     res.status(500).json({ error: 'Failed to Upload Leads' });
-//   }
-// });
 
 router.post('/uploadLead', upload.single('file'), checkAuth, async (req, res) => {
   try {
@@ -11446,7 +10514,6 @@ router.get('/getPointsUpdate', async (req, res) => {
     const task = await Task.find({ updateMorePoints: true }).sort({ assignedDate: -1 });
 
     if (allProjects.length || allB2bProjects.length || task.length) {
-      console.log("LALALALALALA")
       return res.json({ list: [...allProjects, ...allB2bProjects, ...task] });
     } else {
       res.send({ result: "No Data Found" });
@@ -11461,7 +10528,6 @@ router.get('/getPointsUpdate', async (req, res) => {
 router.post('/update-point', async (req, res) => {
   try {
     const item = req.body.item;  // ✅ singular
-    console.log("POINT PAYLOAD ===>", item);
 
     let existingItem = await Customer.findById(item._id);
     if (existingItem) {
