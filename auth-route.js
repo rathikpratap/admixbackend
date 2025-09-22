@@ -5167,6 +5167,70 @@ router.post('/update-projectStatus', checkAuth, async (req, res) => {
     return res.status(500).json({ error: error.message })
   }
 });
+// server: routes file
+router.post('/update-projectStatusManagement', checkAuth, async (req, res) => {
+  try {
+    const userName = req.userData?.name || 'system';
+    let items = req.body.item;
+
+    // Accept single object or array
+    if (!items) {
+      return res.status(400).json({ error: 'No item(s) provided' });
+    }
+    if (!Array.isArray(items)) {
+      items = [items];
+    }
+
+    const results = [];
+
+    for (const it of items) {
+      try {
+        if (!it || !it._id) {
+          results.push({ _id: null, ok: false, reason: 'missing _id' });
+          continue;
+        }
+
+        const existingItem = await salesLead.findById(it._id);
+        if (!existingItem) {
+          results.push({ _id: it._id, ok: false, reason: 'not found' });
+          continue;
+        }
+
+        // update only allowed fields (whitelist)
+        const up = {
+          projectStatus: it.projectStatus,
+          remark: it.remark,
+          custBussiness: it.custBussiness,
+          followup1: it.followup1,
+          followup2: it.followup2,
+          followup3: it.followup3,
+          followup4: it.followup4,
+          callReminderDate: it.callReminderDate
+        };
+
+        // apply updates (skip undefined to avoid overwriting with undefined)
+        Object.keys(up).forEach(k => {
+          if (typeof up[k] !== 'undefined') existingItem[k] = up[k];
+        });
+
+        // Optionally set the salesperson who updated it:
+        // existingItem.updatedBy = userName;
+
+        await existingItem.save();
+        results.push({ _id: it._id, ok: true });
+      } catch (innerErr) {
+        console.error('Error processing item', it?._id, innerErr);
+        results.push({ _id: it?._id || null, ok: false, reason: innerErr.message });
+      }
+    }
+
+    return res.json({ success: true, results });
+  } catch (error) {
+    console.error('update-projectStatusManagement failed:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 
 //Leads Reminder
 
