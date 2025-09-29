@@ -35,7 +35,10 @@ const estInvoiceSchema = new mongoose.Schema({
   },
   discountValue: {type: Number},
   afterDiscountTotal: {type: Number},
-  state: {type:String}
+  state: {type:String},
+  quotationNumber: {type: String},
+  quotationDate: {type: Date},
+  salesPerson: {type: String}
 });
 
 module.exports = mongoose.model('estInvoice', estInvoiceSchema);

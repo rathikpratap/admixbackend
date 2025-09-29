@@ -119,7 +119,7 @@ router.post('/send-otp', async (req, res) => {
     const minute = now.minute();
 
     const beforeStart = hour < 9 || (hour === 9 && minute < 30);
-    const afterEnd = hour > 19 || (hour === 23 && minute > 30);
+    const afterEnd = hour > 19 || (hour === 19 && minute > 30);
 
     if (beforeStart || afterEnd) {
       return res.json({
@@ -2780,7 +2780,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04FtazpVNWx-1CgYIARAAGAQSNwF-L9Irb0g1WoAz-WhAeeDwmQKKpcXcTQKaZCXrm7yuijk94K0ixpi9f6kBDEb4cPYTPjWD56c';
+const REFERESH_TOKEN = '1//04pX_N3f16HEvCgYIARAAGAQSNwF-L9IrBQ6_bKjpalE-bbLdOTtJtLwuuqgWbcCPGPbyEyKpeCBUqZn_sT51oppWvthqTajFx2E';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6343,13 +6343,133 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
-router.post('/estInvoice', async (req, res) => {
+router.post('/estInvoice',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
   try {
     const {
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear,
-      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry
+      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId, customerId, invoiceNumb
     } = req.body;
+
+    const date = new Date(invoiceDate);
+    const currentMonth = date.getMonth() + 1;
+    const currentYear = date.getFullYear();
+    const dateString = date.toISOString().split('T')[0];
+
+    // Find all invoices for the same customer in the same month/year
+    const sameMonthInvoices = await EstInvoice.find({
+      custName,
+      custNumb,
+      salesPerson: person1,
+      $expr: {
+        $and: [
+          { $eq: [{ $month: "$date" }, currentMonth] },
+          { $eq: [{ $year: "$date" }, currentYear] }
+        ]
+      }
+    });
+
+    // Check if any of those invoices is for the same exact date
+    const sameDateInvoice = sameMonthInvoices.find(inv =>
+      new Date(inv.date).toISOString().split('T')[0] === dateString
+    );
+
+    // --- helper: update SalesLead safely (skip if no id) ---
+
+    console.log('estINVOICEid:', salesLeadId);
+    console.log('customerId:', customerId);
+    // let existingItem = await salesLead.findById(salesLeadId);
+    // console.log("existingItem======>>", existingItem);
+    // if(existingItem){
+    //   existingItem.quotationNumber = quotationNumber;
+    //   existingItem.quotationDate = date;
+    // }
+
+    // Case 1: Same date exists, and update not allowed
+    if (sameDateInvoice && !allowUpdate) {
+      return res.json({
+        success: false,
+        sameDateExists: true,
+        message: "An invoice with the same date already exists. Do you want to update it?"
+      });
+    }
+
+    // Case 2: Same month exists but not same date, and save-new not allowed
+    if (!sameDateInvoice && sameMonthInvoices.length > 0 && !allowNewDateEntry) {
+      return res.json({
+        success: false,
+        differentDateExists: true,
+        message: "An invoice already exists for this month. Do you want to save this as a new entry with a different date?"
+      });
+    }
+
+    // Case 3: Same date & update allowed
+    if (sameDateInvoice && allowUpdate) {
+      Object.assign(sameDateInvoice, {
+        custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
+        invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
+        discountValue, afterDiscountTotal, state, salesPerson: person1
+      });
+      await sameDateInvoice.save();
+      return res.json({ success: true, message: 'Invoice Updated Successfully' });
+    }
+
+    // Case 4: New entry allowed (either first time or allowedNewDateEntry is true)
+    const estInvoice = new EstInvoice({
+      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
+      custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
+      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1
+    });
+
+    await estInvoice.save();
+
+    if (salesLeadId) {
+      await salesLead.findByIdAndUpdate(
+        salesLeadId,
+        {
+          $set: {
+            quotationNumber: quotationNumber ?? null,
+            quotationDate: date
+          }
+        }
+      );
+    }
+
+    if(customerId){
+      await Customer.findByIdAndUpdate(
+        customerId,
+        {
+          $push: {
+              invoiceNumber: {InvoiceNo: invoiceNumb ?? null, invoiceDate: date}
+          }
+        }
+      )
+    }
+    return res.json({ success: true, message: 'Invoice Created Successfully' });
+
+  } catch (err) {
+    console.error("Error saving/updating invoice", err);
+    res.status(500).json({ success: false, message: "Error saving invoice" });
+  }
+});
+
+//custome Quotation
+
+router.post('/customQuotation',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
+  try {
+    const {
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billNumber, billType, gstType, custName, custNumb,
+      invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount,
+      billFormat, financialYear, discountValue, afterDiscountTotal, state,
+      allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId
+    } = req.body;
+
+    if (!custName || !custNumb || !invoiceDate) {
+      return res.status(400).json({ success: false, message: "custName, custNumb and invoiceDate are required." });
+    }
 
     const date = new Date(invoiceDate);
     const currentMonth = date.getMonth() + 1;
@@ -6399,6 +6519,18 @@ router.post('/estInvoice', async (req, res) => {
         discountValue, afterDiscountTotal, state
       });
       await sameDateInvoice.save();
+
+      // Also ensure salesLead is updated/created accordingly
+      await upsertSalesLead({
+        salesLeadId,
+        custName,
+        custNumb,
+        state,
+        quotationNumber,
+        quotationDate: date,
+        salesPerson: person1
+      });
+
       return res.json({ success: true, message: 'Invoice Updated Successfully' });
     }
 
@@ -6406,17 +6538,115 @@ router.post('/estInvoice', async (req, res) => {
     const estInvoice = new EstInvoice({
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
       custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
-      billFormat, financialYear, discountValue, afterDiscountTotal, state
+      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber
     });
 
     await estInvoice.save();
-    return res.json({ success: true, message: 'Invoice Created Successfully' });
+
+    // Create/update salesLead record (even if no id was provided)
+    const leadDoc = await upsertSalesLead({
+      salesLeadId,
+      custName,
+      custNumb,
+      state,
+      quotationNumber,
+      quotationDate: date,
+      salesPerson: person1
+    });
+
+    return res.json({
+      success: true,
+      message: 'Invoice Created Successfully',
+      invoiceId: estInvoice._id,
+      salesLeadId: leadDoc?._id
+    });
 
   } catch (err) {
     console.error("Error saving/updating invoice", err);
     res.status(500).json({ success: false, message: "Error saving invoice" });
   }
 });
+
+/**
+ * Upsert helper for salesLead:
+ * - If salesLeadId is given: update that lead.
+ * - Else, try to find an existing lead by custNumb (fallback to {custName, custNumb}).
+ *   If found: update it. If not: create a new one.
+ * Always sets/updates quotationNumber and quotationDate.
+ */
+async function upsertSalesLead({
+  salesLeadId,
+  custName,
+  custNumb,
+  state,
+  quotationNumber,
+  quotationDate,
+  salesPerson
+}) {
+  // Normalize minimal filter
+  const baseUpdate = {
+    custName,
+    custNumb,
+    state: state ?? null,
+    quotationNumber: quotationNumber ?? null,
+    quotationDate: quotationDate ?? null,
+    ...(salesPerson ? { salesPerson } : {})  // set only if provided
+  };
+
+  // Prefer explicit ID if provided
+  if (salesLeadId) {
+    const updated = await salesLead.findByIdAndUpdate(
+      salesLeadId,
+      {
+        $set: {
+          ...baseUpdate,
+          // Optional: set a useful status when quotation is created/updated
+          projectStatus: 'New Lead',
+          // Only set created date if it doesn't exist
+          leadsCreatedDate: new Date()
+        }
+      },
+      { new: true }
+    );
+    return updated;
+  }
+
+  // No ID → try existing by custNumb (unique enough in many orgs)
+  let existing = null;
+  if (custNumb) {
+    existing = await salesLead.findOne({ custNumb });
+  }
+  if (!existing && custNumb && custName) {
+    existing = await salesLead.findOne({ custName, custNumb });
+  }
+
+  if (existing) {
+    existing.quotationNumber = quotationNumber ?? existing.quotationNumber ?? null;
+    existing.quotationDate = quotationDate ?? existing.quotationDate ?? null;
+    if (!existing.leadsCreatedDate) existing.leadsCreatedDate = new Date();
+    if (!existing.projectStatus) existing.projectStatus = 'New Lead';
+    if (state && !existing.state) existing.state = state;
+    await existing.save();
+    return existing;
+  }
+
+  // Create a brand-new lead (minimal fields we actually have)
+  const newLead = new salesLead({
+    custName,
+    custNumb,
+    state: state ?? null,
+    leadsCreatedDate: new Date(),
+    projectStatus: 'New Lead',
+    quotationNumber: quotationNumber ?? null,
+    quotationDate: quotationDate ?? null,
+    closingDate: new Date(),
+    companyName: 'Admix Media',
+    ...(salesPerson ? { salesPerson } : {}) // set if provided
+  });
+
+  await newLead.save();
+  return newLead;
+}
 
 //Update Invoice
 
@@ -8603,7 +8833,7 @@ router.get('/downloadCategoryCamp/:startDate/:endDate/:campaign(*)', async (req,
 });
 // get Invoices
 
-router.get('/getInvoice/:startDate/:endDate', async (req, res) => {
+router.get('/getInvoiceRange/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
@@ -8613,14 +8843,14 @@ router.get('/getInvoice/:startDate/:endDate', async (req, res) => {
         $gte: startDate, $lte: endDate
       },
       // custGST: { $ne: '' }
-      billFormat: { $eq: 'GST' }
+      billType: { $eq: 'GST' }
     };
     let query2 = {
       date: {
         $gte: startDate, $lte: endDate
       },
       // custGST: { $eq: '' }
-      billFormat: { $eq: 'Non-GST' }
+      billtype: { $eq: 'Non-GST' }
     };
     let query3 = {
       date: {
@@ -8637,6 +8867,45 @@ router.get('/getInvoice/:startDate/:endDate', async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
+// All Quotations and Invoices salesPerson wise
+
+router.get('/getInvoice',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
+  console.log('PERNJDNSKSDSJND=====>>', person1);
+  try {
+    let query1 = {
+      salesPerson: person1,
+      // custGST: { $ne: '' }
+      billType: { $eq: 'GST' },
+      billFormat: {$ne: 'Estimate'}
+    };
+    let query2 = {
+      // salesPerson: person1,
+      // custGST: { $eq: '' }
+      billType: { $eq: 'Non-GST' },
+      billFormat: {$ne: 'Estimate'}
+    };
+    let query3 = {
+      // salesPerson: person1,
+      billFormat: { $eq: 'Estimate' },
+      $or:[
+        { billType: 'GST'},
+        {billType: 'Non-GST'}
+      ]
+    }
+    const invoiceData = await EstInvoice.find(query1).sort({date: -1});
+    const nonGSTData = await EstInvoice.find(query2).sort({date: -1});
+    const quotationData = await EstInvoice.find(query3).sort({date: -1});
+    console.log('HELLO HELLO TESTING');
+    res.json({ invoiceData, nonGSTData, quotationData });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
 //Incentives
 
 router.put('/addIncentive', async (req, res) => {
@@ -10607,6 +10876,61 @@ router.post('/update-point', async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
+
+// server/routes/estInvoice.js (ya jahan aapke routes hain)
+router.get('/verify-quotation', async (req, res) => {
+  try {
+    const { financialYear, suffix, custName, custNumb } = req.query;
+
+    if (!financialYear || !suffix) {
+      return res.status(400).json({ ok: false, message: 'financialYear and suffix are required' });
+    }
+
+    const quotationNumber = `ADM-${financialYear}/${suffix}`;
+
+    // Find quotation by quotationNumber
+    const quote = await EstInvoice.findOne({ quotationNumber });
+
+    if (!quote) {
+      return res.json({ ok: true, found: false, match: false, message: 'Quotation not found' });
+    }
+
+    let mismatchFields = [];
+
+    // --- Check for mismatches ---
+    if (String(quote.custName).trim().toLowerCase() !== String(custName || '').trim().toLowerCase()) {
+      mismatchFields.push('Customer Name');
+    }
+
+    if (String(quote.custNumb).trim() !== String(custNumb || '').trim()) {
+      mismatchFields.push('Customer Number');
+    }
+
+    const isMatch = mismatchFields.length === 0;
+
+    return res.json({
+      ok: true,
+      found: true,
+      match: isMatch,
+      mismatchFields,
+      message: isMatch
+        ? 'Quotation matches this customer'
+        : `${mismatchFields.join(' and ')} do not match`,
+      quotation: {
+        quotationNumber: quote.quotationNumber,
+        custName: quote.custName,
+        custNumb: quote.custNumb
+      }
+    });
+  } catch (err) {
+    console.error('verify-quotation error', err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+
+
+
 // const videoAuth = new google.auth.GoogleAuth({
 //   keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS,
 //   scopes: ['https://www.googleapis.com/auth/drive'],

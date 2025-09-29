@@ -95,6 +95,15 @@ const customerSchema = new mongoose.Schema({
     pointsEarned: {type: Number},
     pointsCalculated: { type: Boolean, default: false},
     updateMorePoints: {type: Boolean, default: false},
+    quotationNumber: {type: String},
+    quotationDate: {type: Date},
+    invoiceNumber: [
+        {
+            InvoiceNo:{type: String},
+            invoiceDate: {type: Date}
+        }
+    ],
+    invoiceDate:[{type: Date}],
     // entryType: { type: String, enum: ['Main', 'Graphic', 'Video', 'Reel'], default: 'Main' },
     entryType: { type: String, default: 'Main' },
     subEntries: [

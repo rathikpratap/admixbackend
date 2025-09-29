@@ -28,7 +28,9 @@ const salesLeadSchema = new mongoose.Schema({
     callReminderDate: Date,
     Label: String,
     salesPerson: String,
-    tag: String
+    tag: String,
+    quotationNumber: {type: String},
+    quotationDate: {type: Date},
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);
