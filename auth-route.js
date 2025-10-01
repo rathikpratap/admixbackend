@@ -6701,7 +6701,7 @@ router.post('/updateInvoice', async (req, res) => {
       const updates = {};
 
       const scalarFields = {
-        custGST, custAddLine1, custAddLine2, custAddLine3,
+        custName, custNumb, custGST, custAddLine1, custAddLine2, custAddLine3,
         billNumber, billType, gstType,
         invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state, financialYear, billFormat
       };
@@ -10895,16 +10895,45 @@ router.get('/verify-quotation', async (req, res) => {
       return res.json({ ok: true, found: false, match: false, message: 'Quotation not found' });
     }
 
+    // helper: keep only digits and return last 10 digits (or '' if none)
+    const last10 = (input) => {
+      if (!input) return '';
+      const digits = String(input).replace(/\D/g, ''); // remove non-digits
+      return digits.length > 10 ? digits.slice(-10) : digits; // if <10 returns as-is (you may treat as invalid)
+    };
+
+    // If quote.custNumb possibly contains multiple numbers (comma/space separated), split and test any
+    const dbNumbersRaw = (quote.custNumb && quote.custNumb.toString()) || '';
+    const dbNumberCandidates = dbNumbersRaw.split(/[\s,;|]+/).filter(Boolean);
+
+    const dbLast10Set = new Set(dbNumberCandidates.map(n => last10(n)).filter(Boolean));
+
+    const reqLast10 = last10(custNumb || '');
+
     let mismatchFields = [];
 
-    // --- Check for mismatches ---
-    if (String(quote.custName).trim().toLowerCase() !== String(custName || '').trim().toLowerCase()) {
-      mismatchFields.push('Customer Name');
+    // Name comparison (case-insensitive, trimmed)
+    const dbName = String(quote.custName || '').trim().toLowerCase();
+    const reqName = String(custName || '').trim().toLowerCase();
+    const nameMatches = dbName && reqName ? dbName === reqName : false;
+    if (!nameMatches) mismatchFields.push('Customer Name');
+
+    // Phone comparison using last-10 digits
+    let phoneMatches = false;
+    if (reqLast10) {
+      if (dbLast10Set.has(reqLast10)) {
+        phoneMatches = true;
+      } else {
+        // also consider if db had a single contiguous number (no split) but different formatting:
+        const dbSingleLast10 = last10(dbNumbersRaw);
+        if (dbSingleLast10 && dbSingleLast10 === reqLast10) phoneMatches = true;
+      }
+    } else {
+      // if request provided no number, treat as mismatch
+      phoneMatches = false;
     }
 
-    if (String(quote.custNumb).trim() !== String(custNumb || '').trim()) {
-      mismatchFields.push('Customer Number');
-    }
+    if (!phoneMatches) mismatchFields.push('Customer Number');
 
     const isMatch = mismatchFields.length === 0;
 
