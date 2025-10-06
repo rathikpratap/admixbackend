@@ -2780,7 +2780,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04pX_N3f16HEvCgYIARAAGAQSNwF-L9IrBQ6_bKjpalE-bbLdOTtJtLwuuqgWbcCPGPbyEyKpeCBUqZn_sT51oppWvthqTajFx2E';
+const REFERESH_TOKEN = '1//04PM-kJb-mNqqCgYIARAAGAQSNwF-L9IrsuFa_8wdlJ5dCgE8CrAUjP_Nsfkc1zwY7jWFLxXaSO35a2mr-aLOXyclfV81zIQd7mQ';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -10957,7 +10957,20 @@ router.get('/verify-quotation', async (req, res) => {
   }
 });
 
+//Delete Invoices/Quotation
 
+router.delete('/delete-est/:id',async(req,res)=>{
+  try{
+    const est = await EstInvoice.findByIdAndDelete(req.params.id);
+    if(est){
+      return res.json(est);
+    }else{
+      return res.json({ result: "No Data Deleted"});
+    }
+  }catch(error){
+    return res.status(500).json({error: error.message});
+  }
+});
 
 
 // const videoAuth = new google.auth.GoogleAuth({
