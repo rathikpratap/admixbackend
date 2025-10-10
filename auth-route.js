@@ -2843,202 +2843,6 @@ router.get("/get-assigned-campaigns", async (req, res) => {
   }
 });
 
-
-// 🔹 Function to Delay (Exponential Backoff for Rate Limits)
-// const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-
-// //New code fb leads fetching
-
-//let adAccountId = 'act_1477501622481834';
-
-/**
- * Fetch active campaigns for an ad account (paginated)
- */
-// const fetchLeadsFromFacebook = async (accessToken) => {
-//   let allLeads = [];
-
-//   try {
-//     // STEP 1: Get ACTIVE campaigns
-//     let nextPage = `https://graph.facebook.com/v22.0/${adAccountId}/campaigns?effective_status=["ACTIVE"]&fields=id,name&limit=20&access_token=${accessToken}`;
-//     while (nextPage) {
-//       const campaignRes = await axios.get(nextPage);
-//       const campaigns = campaignRes.data?.data || [];
-
-//       for (const campaign of campaigns) {
-//         console.log(`📢 Campaign: ${campaign.name} (${campaign.id})`);
-
-//         // STEP 2: Get ACTIVE ads for campaign
-//         let adsPage = `https://graph.facebook.com/v22.0/${campaign.id}/ads?effective_status=["ACTIVE"]&fields=id,name&limit=20&access_token=${accessToken}`;
-//         while (adsPage) {
-//           const adsRes = await axios.get(adsPage);
-//           const ads = adsRes.data?.data || [];
-
-//           for (const ad of ads) {
-//             console.log(`   🎯 Ad: ${ad.name} (${ad.id})`);
-
-//             // STEP 3: Get leads for this ad
-//             let leadsPage = `https://graph.facebook.com/v22.0/${ad.id}/leads?fields=id,created_time,field_data&limit=200&access_token=${accessToken}`;
-//             while (leadsPage) {
-//               const leadsRes = await axios.get(leadsPage);
-//               const leads = leadsRes.data?.data || [];
-
-//               for (const lead of leads) {
-//                 allLeads.push({
-//                   id: lead.id,
-//                   created_time: lead.created_time,
-//                   field_data: lead.field_data,
-//                   campaign_Name: campaign.name,
-//                   ad_Name: ad.name,
-//                 });
-//               }
-
-//               // ✅ Proper next page line
-//               leadsPage = leadsRes.data.paging?.next || null;
-//             }
-//           }
-
-//           // ✅ Proper next page line for ads
-//           adsPage = adsRes.data.paging?.next || null;
-//         }
-//       }
-
-//       // ✅ Proper next page line for campaigns
-//       nextPage = campaignRes.data.paging?.next || null;
-//     }
-//   } catch (err) {
-//     console.error("❌ Error fetching Facebook leads:", err.response?.data || err.message);
-//     await delay(2000);
-//   }
-
-//   return allLeads;
-// };
-
-/**
- * Main Function: Fetch & Save Facebook Leads
- */
-// const fetchAndSaveFacebookLeads = async () => {
-//   try {
-//     // Fetch Access Token
-//     const accessTokenRecord = await FbAccessToken.findOne();
-//     if (!accessTokenRecord || !accessTokenRecord.newAccessToken) {
-//       console.error("❌ Access token is missing or invalid");
-//       return;
-//     }
-//     const accessToken = accessTokenRecord.newAccessToken;
-
-//     // Fetch Leads
-//     const leads = await fetchLeadsFromFacebook(accessToken);
-
-//     for (const lead of leads) {
-//       const { created_time: createdTime, field_data, campaign_Name, ad_Name } = lead;
-//       const formattedDate = new Date(createdTime).toISOString().slice(0, 10).split("-").reverse().join("");
-
-//       let leadObj = {
-//         custName: "",
-//         custEmail: "",
-//         custBussiness: "",
-//         custNumb: "",
-//         state: "",
-//         additionalFields: {},
-//       };
-
-//       if (Array.isArray(field_data)) {
-//         for (const field of field_data) {
-//           const fieldName = field.name.toLowerCase().replace("_", " ");
-//           const value = Array.isArray(field.values) && field.values.length > 0 ? field.values[0] : "";
-
-//           if (fieldName === "full name" || fieldName === "name") leadObj.custName = value;
-//           else if (fieldName === "email") leadObj.custEmail = value;
-//           else if (fieldName === "company name") leadObj.custBussiness = value;
-//           else if (fieldName === "phone number" || fieldName === "phone no.") leadObj.custNumb = value;
-//           else if (fieldName === "state") leadObj.state = value;
-//           else leadObj.additionalFields[fieldName] = value;
-//         }
-//       }
-
-//       // Salesperson assignment
-//       let assignedSalesperson = [];
-//       let campaignTag = "";
-//       const assignedCampaign = await CampaignAssignment.findOne({ campaignName: campaign_Name });
-//       if (assignedCampaign) {
-//         if (Array.isArray(assignedCampaign.employees) && assignedCampaign.employees.length > 0) {
-//           assignedSalesperson = assignedCampaign.employees;
-//         }
-//         campaignTag = assignedCampaign.tag || "";
-//       }
-
-//       // Count today's leads for this campaign
-//       const todayStart = new Date();
-//       todayStart.setHours(0, 0, 0, 0);
-
-//       const todayLeadCount = await salesLead.countDocuments({
-//         campaign_Name: campaign_Name,
-//         leadsCreatedDate: { $gte: todayStart },
-//       });
-
-//       // Round-robin salesperson assignment
-//       let selectedSalesperson;
-//       if (assignedSalesperson.length > 0) {
-//         const salespersonIndex = todayLeadCount % assignedSalesperson.length;
-//         selectedSalesperson = assignedSalesperson[salespersonIndex];
-//       } else {
-//         selectedSalesperson = "Unassigned";
-//       }
-
-//       // Prevent duplicate leads
-//       let existingLead = await salesLead.findOne({
-//         closingDate: createdTime,
-//       });
-
-//       if (!existingLead) {
-//         const newLead = new salesLead({
-//           id: lead.id,
-//           closingDate: createdTime,
-//           campaign_Name: campaign_Name,
-//           ad_Name: ad_Name,
-//           custName: leadObj.custName,
-//           custEmail: leadObj.custEmail,
-//           custBussiness: leadObj.custBussiness,
-//           custNumb: leadObj.custNumb,
-//           state: leadObj.state,
-//           salesTeam: "Sales Team 1",
-//           leadsCreatedDate: new Date(createdTime),
-//           subsidiaryName: "AdmixMedia",
-//           additionalFields: leadObj.additionalFields,
-//           salesPerson: selectedSalesperson,
-//           projectStatus: "New Lead",
-//           tag: campaignTag,
-//         });
-
-//         await newLead.save();
-//         console.log(`✅ New lead saved: ${leadObj.custName}`);
-
-//         // Send Notification
-//         const notifTitle = "🎉 New Lead Alert!";
-//         const notifBody = `New lead from ${campaign_Name} (${leadObj.custName});`;
-//         await sendCampaignNotif(campaign_Name, notifTitle, notifBody);
-//         console.log(`✅ Notification sent for: ${leadObj.custName}`);
-
-//         // Save to Google Contacts
-//         await people.people.createContact({
-//           requestBody: {
-//             names: [{ givenName: `${formattedDate} ${leadObj.custName}` }],
-//             emailAddresses: [{ value: leadObj.custEmail }],
-//             phoneNumbers: [{ value: leadObj.custNumb }],
-//             organizations: [{ name: leadObj.custBussiness }],
-//             addresses: [{ region: leadObj.state }],
-//           },
-//         });
-
-//         console.log(`✅ Lead saved to Google Contacts: ${leadObj.custName}`);
-//       }
-//     }
-//   } catch (error) {
-//     console.error("❌ Error fetching and saving Facebook leads:", error.message);
-//   }
-// };
-
 //WEBHOOK WALA CODE START FROM HERE
 
 // ✅ Reusable function (Lead save logic)
@@ -4635,7 +4439,6 @@ router.get('/editorTwoPreviousProjects', async (req, res) => {
   }
 });
 
-
 router.get('/dataByDatePassRangeEditor/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
@@ -5230,7 +5033,6 @@ router.post('/update-projectStatusManagement', checkAuth, async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
-
 
 //Leads Reminder
 
@@ -6349,7 +6151,7 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
     const {
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear,
-      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId, customerId, invoiceNumb
+      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId, customerId, invoiceNumb, QrCheck
     } = req.body;
 
     const date = new Date(invoiceDate);
@@ -6379,6 +6181,7 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
 
     console.log('estINVOICEid:', salesLeadId);
     console.log('customerId:', customerId);
+    console.log('QrCheck:', QrCheck);
     // let existingItem = await salesLead.findById(salesLeadId);
     // console.log("existingItem======>>", existingItem);
     // if(existingItem){
@@ -6409,7 +6212,7 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
       Object.assign(sameDateInvoice, {
         custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
         invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
-        discountValue, afterDiscountTotal, state, salesPerson: person1
+        discountValue, afterDiscountTotal, state, salesPerson: person1, QrCheck
       });
       await sameDateInvoice.save();
       return res.json({ success: true, message: 'Invoice Updated Successfully' });
@@ -6419,7 +6222,7 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
     const estInvoice = new EstInvoice({
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
       custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
-      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1
+      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1, QrCheck
     });
 
     await estInvoice.save();
@@ -6753,7 +6556,6 @@ router.post('/updateInvoice', async (req, res) => {
     res.status(500).json({ success: false, message: "Error Saving Invoice" });
   }
 });
-
 
 // Estimate Invoice Count
 
@@ -8016,7 +7818,6 @@ router.get('/highEditorProjects', async (req, res) => {
   }
 });
 
-
 router.get('/mediumEditorProjects', async (req, res) => {
   try {
     const now = new Date();
@@ -8905,7 +8706,6 @@ router.get('/getInvoice',checkAuth, async (req, res) => {
   }
 });
 
-
 //Incentives
 
 router.put('/addIncentive', async (req, res) => {
@@ -9071,7 +8871,6 @@ const updateEditorMonthlyPoints = async (editorName) => {
   };
 };
 
-
 router.post('/update-editor-monthly-points', async (req, res) => {
   try {
     const { editorName } = req.body;
@@ -9113,7 +8912,6 @@ router.get('/all-editor-monthly-points', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-
 
 router.get('/allIncentive', async (req, res) => {
   try {
@@ -10401,7 +10199,6 @@ router.post('/uploadToDrive', videoUpload.single('file'), async (req, res) => {
   }
 });
 
-
 router.post('/cancelUpload', (req, res) => {
   const { uploadId } = req.body;
 
@@ -10410,7 +10207,6 @@ router.post('/cancelUpload', (req, res) => {
   }
 
   cancelledUploads.add(uploadId); // ⬅️ mark it as cancelled
-
 
   return res.json({ success: true, message: 'Upload cancelled, temp file deleted' });
 
@@ -10820,7 +10616,6 @@ router.get('/getPointsUpdate', async (req, res) => {
     customerDocs.forEach(doc => {
       const item = doc.toObject();
 
-
       allProjects.push({
         ...item,
         type: 'Customer',
@@ -10834,7 +10629,6 @@ router.get('/getPointsUpdate', async (req, res) => {
 
     b2bDocs.forEach(doc => {
       const item = doc.toObject();
-
 
       allB2bProjects.push({
         ...item,
