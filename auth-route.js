@@ -2780,7 +2780,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04PM-kJb-mNqqCgYIARAAGAQSNwF-L9IrsuFa_8wdlJ5dCgE8CrAUjP_Nsfkc1zwY7jWFLxXaSO35a2mr-aLOXyclfV81zIQd7mQ';
+const REFERESH_TOKEN = '1//046A47my09_EkCgYIARAAGAQSNwF-L9Ira9EX9q_lSIGdxdhdN20KWvJp08ZAJpJ2n24ypKsRyyUauEwsMLPj1JiaR0aQlQzZi0M';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6151,7 +6151,10 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
     const {
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear,
-      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId, customerId, invoiceNumb, QrCheck
+      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId, customerId, invoiceNumb, QrCheck,
+      //Mew
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList, visibilityFlags
     } = req.body;
 
     const date = new Date(invoiceDate);
@@ -6212,7 +6215,10 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
       Object.assign(sameDateInvoice, {
         custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
         invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
-        discountValue, afterDiscountTotal, state, salesPerson: person1, QrCheck
+        discountValue, afterDiscountTotal, state, salesPerson: person1, QrCheck,
+        //New
+        noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
+        paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
       });
       await sameDateInvoice.save();
       return res.json({ success: true, message: 'Invoice Updated Successfully' });
@@ -6222,7 +6228,10 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
     const estInvoice = new EstInvoice({
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
       custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
-      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1, QrCheck
+      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1, QrCheck,
+      //New
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
+        paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
     });
 
     await estInvoice.save();
@@ -6267,7 +6276,10 @@ router.post('/customQuotation',checkAuth, async (req, res) => {
       billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount,
       billFormat, financialYear, discountValue, afterDiscountTotal, state,
-      allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId
+      allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId,
+      //New
+      noteText, noteHtml,termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList, visibilityFlags
     } = req.body;
 
     if (!custName || !custNumb || !invoiceDate) {
@@ -6283,6 +6295,7 @@ router.post('/customQuotation',checkAuth, async (req, res) => {
     const sameMonthInvoices = await EstInvoice.find({
       custName,
       custNumb,
+      salesPerson: person1,
       $expr: {
         $and: [
           { $eq: [{ $month: "$date" }, currentMonth] },
@@ -6319,7 +6332,10 @@ router.post('/customQuotation',checkAuth, async (req, res) => {
       Object.assign(sameDateInvoice, {
         custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
         invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
-        discountValue, afterDiscountTotal, state
+        discountValue, afterDiscountTotal, state, salesPerson: person1,
+        //New
+        noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
+        paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
       });
       await sameDateInvoice.save();
 
@@ -6341,7 +6357,10 @@ router.post('/customQuotation',checkAuth, async (req, res) => {
     const estInvoice = new EstInvoice({
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
       custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
-      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber
+      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, salesPerson: person1,
+      //New
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
+      paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
     });
 
     await estInvoice.save();
@@ -6453,14 +6472,18 @@ async function upsertSalesLead({
 
 //Update Invoice
 
-router.post('/updateInvoice', async (req, res) => {
+router.post('/updateInvoice',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
   try {
     const {
       _id,  // <- optional, existing invoice ka id
       custGST, custAddLine1, custAddLine2, custAddLine3,
       billNumber, billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate,
-      GSTAmount, totalAmount, billFormat, allowUpdate, financialYear, discountValue, afterDiscountTotal, state
+      GSTAmount, totalAmount, billFormat, allowUpdate, financialYear, discountValue, afterDiscountTotal, state,
+      //Mew
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList, visibilityFlags
     } = req.body;
 
     if (!invoiceDate || isNaN(new Date(invoiceDate).getTime())) {
@@ -6506,7 +6529,10 @@ router.post('/updateInvoice', async (req, res) => {
       const scalarFields = {
         custName, custNumb, custGST, custAddLine1, custAddLine2, custAddLine3,
         billNumber, billType, gstType,
-        invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state, financialYear, billFormat
+        invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state, financialYear, billFormat,
+        //Mew
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList, visibilityFlags
       };
 
       for (const [key, newVal] of Object.entries(scalarFields)) {
@@ -6545,10 +6571,39 @@ router.post('/updateInvoice', async (req, res) => {
       financialYear,
       discountValue,
       afterDiscountTotal,
-      state
+      // quotationNumber,
+      // invoiceNumb,
+      salesPerson: person1,
+      // QrCheck,
+      state,
+      //Mew
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList, visibilityFlags
     });
 
     await newInvoice.save();
+    // if (salesLeadId) {
+    //   await salesLead.findByIdAndUpdate(
+    //     salesLeadId,
+    //     {
+    //       $set: {
+    //         quotationNumber: quotationNumber ?? null,
+    //         quotationDate: date
+    //       }
+    //     }
+    //   );
+    // }
+
+    // if(customerId){
+    //   await Customer.findByIdAndUpdate(
+    //     customerId,
+    //     {
+    //       $push: {
+    //           invoiceNumber: {InvoiceNo: invoiceNumb ?? null, invoiceDate: date}
+    //       }
+    //     }
+    //   )
+    // }
     res.json({ success: true, message: 'Invoice Created Successfully', _id: newInvoice._id });
 
   } catch (err) {

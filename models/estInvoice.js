@@ -39,7 +39,24 @@ const estInvoiceSchema = new mongoose.Schema({
   quotationNumber: {type: String},
   quotationDate: {type: Date},
   salesPerson: {type: String},
-  QrCheck: {type: String}
+  QrCheck: {type: String},
+  //New Feilds
+  noteText: {type: String},
+  noteHtml: {type: String},
+  termsHtml: {type: String},
+  termsList: [{type: String}],
+  packageIncludesHtml: {type: String},
+  packageIncludesList: [{type: String}],
+  paymentTermsHtml: {type: String},
+  paymentTermsList: [{type: String}],
+  additionalNotesHtml:{type: String},
+  additionalNotesList: [{type: String}],
+  visibilityFlags:{
+    isMetaAdsVisible: { type: Boolean, default: false},
+    isAdrunVisible: {type: Boolean, default: false},
+    isWebDevelopmentVisible: {type: Boolean, default: false},
+    isModelAvailabilityVisible: {type: Boolean, default: false},
+  }
 });
 
 module.exports = mongoose.model('estInvoice', estInvoiceSchema);
