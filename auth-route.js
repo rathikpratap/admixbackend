@@ -2423,6 +2423,100 @@ router.get('/downloadRangeFile/:startDate/:endDate', checkAuth, async (req, res)
   }
 });
 
+//Download Range File EX
+
+router.post('/downloadRangeFileEx', checkAuth, async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.body;
+
+    console.log('Body received for downloadRangeFileEx ===>', req.body);
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    // end date inclusive
+    const endInclusive = new Date(end);
+    endInclusive.setDate(endInclusive.getDate() + 1);
+
+    const person1 = req.userData?.name;
+    const role1 = Array.isArray(req.userData.signupRole)
+      ? req.userData.signupRole[0]
+      : req.userData.signupRole;
+
+    // base query (role + date range)
+    let query = {
+      closingDate: { $gte: start, $lte: endInclusive }
+    };
+
+    if (!(role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader')) {
+      query.salesPerson = person1;
+    }
+
+    // 🔴 STATUS LOGIC YAHAN
+    if (status && Array.isArray(status) && status.length > 0) {
+      console.log('Status filter for download ===>', status);
+
+      if (status.includes('Exclude Closing')) {
+        // "Without Closing" matlab: saare jinke projectStatus != "With Closing"
+        // (agar tum 'With Closing' ki string aur kuch rakhte ho to yahan change karna)
+        query.projectStatus = { $ne: 'Closing' };
+      } else {
+        // normal case: projectStatus in selected status list
+        query.projectStatus = { $in: status };
+      }
+    }
+
+    console.log('Final download query ===>', JSON.stringify(query));
+
+    const rangeFileData = await salesLead.find(query);
+
+    console.log('Rows to export ===>', rangeFileData.length);
+
+    const data = rangeFileData.map(customer => ({
+      custName: customer.custName,
+      custNumb: customer.custNumb,
+      custBussiness: customer.custBussiness,
+      LeadDate: customer.closingDate,
+      custCity: customer.custCity,
+      custState: customer.custState,
+      projectStatus: customer.projectStatus,
+      salesPerson: customer.salesPerson,
+      remark: customer.remark
+    }));
+
+    // Excel create in memory
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="customers.xlsx"'
+    );
+
+    return res.send(buffer);
+
+  } catch (err) {
+    console.error('Error Downloading File', err);
+    return res.status(500).json({ error: 'Failed to download File' });
+  }
+});
+
+
 // Download Sales Range Data
 
 router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
@@ -2780,7 +2874,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04UR0CtVQwPotCgYIARAAGAQSNwF-L9IrRIGUYR57xxAClRXT_yAp3qyAduaTeyOkN42OjogpgkfOXxKkGQpGhVjo4xFQ__5GP_Q';
+const REFERESH_TOKEN = '1//04XxYPNCNfjq8CgYIARAAGAQSNwF-L9Ir97r20utEOcagJFcJnQFSlKa9rSmGJQzeFGYLhcS5TvUsaQIIvfshzf82M59FeItuceE';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3421,6 +3515,104 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// router.post('/leadsByRangeEx', async (req, res) => {
+//   try {
+//     const { startDate, endDate, status } = req.body;
+
+//     const start = new Date(startDate);
+//     const end = new Date(endDate);
+//     end.setDate(end.getDate() + 1); // end date inclusive
+
+//     let query = {
+//       created_time: {
+//         $gte: start,
+//         $lte: end
+//       }
+//     };
+
+//     // agar status selected hai to us par filter
+//     if (status && Array.isArray(status) && status.length > 0) {
+//       query.status = { $in: status };
+//     }
+
+//     const rangeTotalData = await transferLead
+//       .find(query)
+//       .sort({ created_time: -1 });
+
+//     res.json({ rangeTotalData });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
+router.post('/leadsByRangeEx', async (req, res) => {
+  try {
+    console.log('Body received ===>', req.body);
+
+    let { startDate, endDate, status } = req.body;
+
+    // Validation
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'startDate and endDate are required' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    // End date inclusive: (end + 1 day, with $lt)
+    const endInclusive = new Date(end);
+    endInclusive.setDate(endInclusive.getDate() + 1);
+
+    // Base query: leadsCreatedDate range
+    let query = {
+      leadsCreatedDate: {
+        $gte: start,
+        $lt: endInclusive
+      }
+    };
+
+    // Status filter: projectStatus field
+    // if (status && Array.isArray(status) && status.length > 0) {
+    //   console.log('Status filter ===>', status);
+    //   query.projectStatus = { $in: status };   // 👈 yahi sahi field hai
+    // }
+
+    if (status && Array.isArray(status) && status.length > 0) {
+
+      // If selected option contains "Without Closing"
+      if (status.includes("Exclude Closing")) {
+        console.log("Applying Excluding Closing logic");
+
+        // Exclude With Closing
+        query.projectStatus = { $ne: "Closing" }; // not equal
+      } else {
+        // Normal status filtering
+        console.log("Applying default status filter");
+        query.projectStatus = { $in: status };
+      }
+    }
+
+    console.log('Mongo query ===>', JSON.stringify(query));
+
+    const rangeTotalData = await salesLead
+      .find(query)
+      .sort({ leadsCreatedDate: -1 });
+
+    console.log('Found count ===>', rangeTotalData.length);
+
+    return res.json({ rangeTotalData });
+
+  } catch (error) {
+    console.error('Error in /leadsByRange ===>', error);
+    return res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -6145,7 +6337,7 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
-router.post('/estInvoice',checkAuth, async (req, res) => {
+router.post('/estInvoice', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   try {
     const {
@@ -6231,7 +6423,7 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
       billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1, QrCheck,
       //New
       noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
-        paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
+      paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
     });
 
     await estInvoice.save();
@@ -6248,12 +6440,12 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
       );
     }
 
-    if(customerId){
+    if (customerId) {
       await Customer.findByIdAndUpdate(
         customerId,
         {
           $push: {
-              invoiceNumber: {InvoiceNo: invoiceNumb ?? null, invoiceDate: date}
+            invoiceNumber: { InvoiceNo: invoiceNumb ?? null, invoiceDate: date }
           }
         }
       )
@@ -6268,7 +6460,7 @@ router.post('/estInvoice',checkAuth, async (req, res) => {
 
 //custome Quotation
 
-router.post('/customQuotation',checkAuth, async (req, res) => {
+router.post('/customQuotation', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   try {
     const {
@@ -6278,7 +6470,7 @@ router.post('/customQuotation',checkAuth, async (req, res) => {
       billFormat, financialYear, discountValue, afterDiscountTotal, state,
       allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId,
       //New
-      noteText, noteHtml,termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
       additionalNotesHtml, additionalNotesList, visibilityFlags
     } = req.body;
 
@@ -6472,7 +6664,7 @@ async function upsertSalesLead({
 
 //Update Invoice
 
-router.post('/updateInvoice',checkAuth, async (req, res) => {
+router.post('/updateInvoice', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   try {
     const {
@@ -6531,8 +6723,8 @@ router.post('/updateInvoice',checkAuth, async (req, res) => {
         billNumber, billType, gstType,
         invoiceCateg, customCateg, GSTAmount, totalAmount, discountValue, afterDiscountTotal, state, financialYear, billFormat,
         //Mew
-      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
-      additionalNotesHtml, additionalNotesList, visibilityFlags
+        noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+        additionalNotesHtml, additionalNotesList, visibilityFlags
       };
 
       for (const [key, newVal] of Object.entries(scalarFields)) {
@@ -8726,7 +8918,7 @@ router.get('/getInvoiceRange/:startDate/:endDate', async (req, res) => {
 
 // All Quotations and Invoices salesPerson wise
 
-router.get('/getInvoice',checkAuth, async (req, res) => {
+router.get('/getInvoice', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   console.log('PERNJDNSKSDSJND=====>>', person1);
   try {
@@ -8734,25 +8926,25 @@ router.get('/getInvoice',checkAuth, async (req, res) => {
       salesPerson: person1,
       // custGST: { $ne: '' }
       billType: { $eq: 'GST' },
-      billFormat: {$ne: 'Estimate'}
+      billFormat: { $ne: 'Estimate' }
     };
     let query2 = {
       // salesPerson: person1,
       // custGST: { $eq: '' }
       billType: { $eq: 'Non-GST' },
-      billFormat: {$ne: 'Estimate'}
+      billFormat: { $ne: 'Estimate' }
     };
     let query3 = {
       // salesPerson: person1,
       billFormat: { $eq: 'Estimate' },
-      $or:[
-        { billType: 'GST'},
-        {billType: 'Non-GST'}
+      $or: [
+        { billType: 'GST' },
+        { billType: 'Non-GST' }
       ]
     }
-    const invoiceData = await EstInvoice.find(query1).sort({date: -1});
-    const nonGSTData = await EstInvoice.find(query2).sort({date: -1});
-    const quotationData = await EstInvoice.find(query3).sort({date: -1});
+    const invoiceData = await EstInvoice.find(query1).sort({ date: -1 });
+    const nonGSTData = await EstInvoice.find(query2).sort({ date: -1 });
+    const quotationData = await EstInvoice.find(query3).sort({ date: -1 });
     console.log('HELLO HELLO TESTING');
     res.json({ invoiceData, nonGSTData, quotationData });
   } catch (error) {
@@ -10808,16 +11000,16 @@ router.get('/verify-quotation', async (req, res) => {
 
 //Delete Invoices/Quotation
 
-router.delete('/delete-est/:id',async(req,res)=>{
-  try{
+router.delete('/delete-est/:id', async (req, res) => {
+  try {
     const est = await EstInvoice.findByIdAndDelete(req.params.id);
-    if(est){
+    if (est) {
       return res.json(est);
-    }else{
-      return res.json({ result: "No Data Deleted"});
+    } else {
+      return res.json({ result: "No Data Deleted" });
     }
-  }catch(error){
-    return res.status(500).json({error: error.message});
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
