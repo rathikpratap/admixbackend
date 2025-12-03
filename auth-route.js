@@ -712,9 +712,7 @@ router.get('/read-cust/:id', async (req, res) => {
         });
       }
     }
-
     return res.json({ result: "No Data" });
-
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -774,7 +772,6 @@ router.delete('/delete-cust/:id', async (req, res) => {
     if (!customer) {
       return res.json({ result: "No Data Deleted" });
     }
-
     // Generate sheet name from closingDate
     const closingDate = customer.closingDate ? new Date(customer.closingDate) : null;
     if (!closingDate) return res.json({ message: "Customer deleted from DB, but no closing date found" });
@@ -789,7 +786,6 @@ router.delete('/delete-cust/:id', async (req, res) => {
     } else {
       return res.json({ message: "Customer deleted from database, but not found in Google Sheets", customer });
     }
-
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -829,7 +825,6 @@ const deleteCustomerFromGoogleSheet = async (sheetName, custCode) => {
         }]
       }
     });
-
     console.log(`Customer with Code ${custCode} deleted from Google Sheet: ${sheetName}`);
     return true;
   } catch (error) {
@@ -3518,37 +3513,6 @@ router.get('/leadsByRange/:startDate/:endDate', async (req, res) => {
   }
 });
 
-// router.post('/leadsByRangeEx', async (req, res) => {
-//   try {
-//     const { startDate, endDate, status } = req.body;
-
-//     const start = new Date(startDate);
-//     const end = new Date(endDate);
-//     end.setDate(end.getDate() + 1); // end date inclusive
-
-//     let query = {
-//       created_time: {
-//         $gte: start,
-//         $lte: end
-//       }
-//     };
-
-//     // agar status selected hai to us par filter
-//     if (status && Array.isArray(status) && status.length > 0) {
-//       query.status = { $in: status };
-//     }
-
-//     const rangeTotalData = await transferLead
-//       .find(query)
-//       .sort({ created_time: -1 });
-
-//     res.json({ rangeTotalData });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
-
 router.post('/leadsByRangeEx', async (req, res) => {
   try {
     console.log('Body received ===>', req.body);
@@ -3579,12 +3543,6 @@ router.post('/leadsByRangeEx', async (req, res) => {
       }
     };
 
-    // Status filter: projectStatus field
-    // if (status && Array.isArray(status) && status.length > 0) {
-    //   console.log('Status filter ===>', status);
-    //   query.projectStatus = { $in: status };   // 👈 yahi sahi field hai
-    // }
-
     if (status && Array.isArray(status) && status.length > 0) {
 
       // If selected option contains "Without Closing"
@@ -3592,7 +3550,7 @@ router.post('/leadsByRangeEx', async (req, res) => {
         console.log("Applying Excluding Closing logic");
 
         // Exclude With Closing
-        query.projectStatus = { $ne: "Closing" }; // not equal
+        query.projectStatus = { $nin: ["Closing","Not Interested"] }; // not equal
       } else {
         // Normal status filtering
         console.log("Applying default status filter");
