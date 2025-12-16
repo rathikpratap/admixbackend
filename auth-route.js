@@ -27,6 +27,7 @@ const jwt = require('jsonwebtoken');
 const checkAuth = require('./middleware/chech-auth');
 const axios = require('axios');
 const multer = require('multer');
+const Counter = require('./models/counter');
 const XLSX = require('xlsx');
 const { sendNotif, sendCampaignNotif } = require('./middleware/sendNotif');
 // const sendCampaignNotif = require('./middleware/sendNotif');
@@ -1425,7 +1426,7 @@ const addHeadersToSheet = async (spreadsheetId, sheetTitle) => {
 router.post('/customer', async (req, res) => {
   try {
     const {
-      custCode,
+      //custCode,
       custName,
       closingDate,
       graphicsCount = 0,
@@ -1438,10 +1439,19 @@ router.post('/customer', async (req, res) => {
       ...restFields
     } = req.body;
 
-    const baseCustCode = parseInt(custCode, 10);
-    if (isNaN(baseCustCode)) {
-      return res.status(400).json({ success: false, message: "Invalid custCode" });
-    }
+    // === 1. Yahan se THREAD-SAFE custCode generate hoga ===
+    const counter = await Counter.findOneAndUpdate(
+      { _id: 'customer' },
+      { $inc: { seq: 1 }},
+      { new: true, upsert: true }
+    );
+
+    const baseCustCode = counter.seq;
+
+    // const baseCustCode = parseInt(custCode, 10);
+    // if (isNaN(baseCustCode)) {
+    //   return res.status(400).json({ success: false, message: "Invalid custCode" });
+    // }
 
     let nextCustCode = 1;
     const subEntries = [];
@@ -1449,7 +1459,8 @@ router.post('/customer', async (req, res) => {
     const createSubEntries = (count, type) => {
       for (let i = 1; i <= count; i++) {
         subEntries.push({
-          custCode: `${custCode}.${nextCustCode++}`,
+          // custCode: `${custCode}.${nextCustCode++}`,
+          custCode: `${baseCustCode}.${nextCustCode++}`,
           custName: `${custName} (${type} ${i})`,
           entryType: type,
           custBussiness: custBussiness,
@@ -2869,7 +2880,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04uL5e5Oyd8FWCgYIARAAGAQSNwF-L9Ir75eQ5_nN9G7GhVw-0sYuR6cApYXyUHhhcyTfgWRl01OZx1VvbYp-8ch67zkfBXwN3Bk';
+const REFERESH_TOKEN = '1//04hlY6LVz2OjiCgYIARAAGAQSNwF-L9IrHkaCeCKiMC5kqdYnNyfiuaKCRsUxkCRnX9T46uQVJ6KFXyjdTh9oiII6eNYecD_EOmk';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -3550,7 +3561,7 @@ router.post('/leadsByRangeEx', async (req, res) => {
         console.log("Applying Excluding Closing logic");
 
         // Exclude With Closing
-        query.projectStatus = { $nin: ["Closing","Not Interested"] }; // not equal
+        query.projectStatus = { $nin: ["Closing", "Not Interested"] }; // not equal
       } else {
         // Normal status filtering
         console.log("Applying default status filter");
@@ -6295,124 +6306,411 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
 
 // est Invoice
 
+// router.post('/estInvoice', checkAuth, async (req, res) => {
+//   const person1 = req.userData.name;
+//   try {
+//     const {
+//       custGST, custAddLine1, custAddLine2, custAddLine3,
+//       //billNumber,
+//       billType, gstType, custName, custNumb,
+//       invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear,
+//       discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry,
+//       //quotationNumber,
+//       salesLeadId, customerId, invoiceNumb: clientInvoiceNumb, QrCheck,
+//       //Mew
+//       noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
+//       additionalNotesHtml, additionalNotesList, visibilityFlags
+//     } = req.body;
+
+//     const date = new Date(invoiceDate);
+//     const currentMonth = date.getMonth() + 1;
+//     const currentYear = date.getFullYear();
+//     const dateString = date.toISOString().split('T')[0];
+
+//     // Find all invoices for the same customer in the same month/year
+//     const sameMonthInvoices = await EstInvoice.find({
+//       custName,
+//       custNumb,
+//       salesPerson: person1,
+//       $expr: {
+//         $and: [
+//           { $eq: [{ $month: "$date" }, currentMonth] },
+//           { $eq: [{ $year: "$date" }, currentYear] }
+//         ]
+//       }
+//     });
+
+//     // Check if any of those invoices is for the same exact date
+//     const sameDateInvoice = sameMonthInvoices.find(inv =>
+//       new Date(inv.date).toISOString().split('T')[0] === dateString
+//     );
+
+//     // --- helper: update SalesLead safely (skip if no id) ---
+
+//     console.log('estINVOICEid:', salesLeadId);
+//     console.log('customerId:', customerId);
+//     console.log('QrCheck:', QrCheck);
+//     // let existingItem = await salesLead.findById(salesLeadId);
+//     // console.log("existingItem======>>", existingItem);
+//     // if(existingItem){
+//     //   existingItem.quotationNumber = quotationNumber;
+//     //   existingItem.quotationDate = date;
+//     // }
+
+//     // Case 1: Same date exists, and update not allowed
+//     if (sameDateInvoice && !allowUpdate) {
+//       return res.json({
+//         success: false,
+//         sameDateExists: true,
+//         message: "An invoice with the same date already exists. Do you want to update it?"
+//       });
+//     }
+
+//     // Case 2: Same month exists but not same date, and save-new not allowed
+//     if (!sameDateInvoice && sameMonthInvoices.length > 0 && !allowNewDateEntry) {
+//       return res.json({
+//         success: false,
+//         differentDateExists: true,
+//         message: "An invoice already exists for this month. Do you want to save this as a new entry with a different date?"
+//       });
+//     }
+
+//     // Case 3: Same date & update allowed
+//     if (sameDateInvoice && allowUpdate) {
+//       Object.assign(sameDateInvoice, {
+//         custGST, custAddLine1, custAddLine2, custAddLine3,
+//         //billNumber,
+//         billType, gstType, invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
+//         discountValue, afterDiscountTotal, state, salesPerson: person1, QrCheck,
+//         //New
+//         noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
+//         paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
+//       });
+//       await sameDateInvoice.save();
+//       return res.json({ success: true, message: 'Invoice Updated Successfully', invoice: sameDateInvoice });
+//     }
+
+//     // Case 4: New entry allowed (either first time or allowedNewDateEntry is true)
+
+//     let finalBillNumber = null;
+//     let finalInvoiceNumb = null;
+//     let finalQuotationNumber = null;
+
+//     if (billFormat === 'Estimate') {
+//       const counterId = `estInvoice_${financialYear}`;
+//       const counter = await Counter.findOneAndUpdate(
+//         { _id: counterId },
+//         { $inc: { quotationNum: 1 } },
+//         { new: true, upsert: true }
+//       );
+//       const seq = counter.quotationNum;  // ✅ yahi sahi property hai
+//       finalBillNumber = seq;
+//       finalQuotationNumber = `ADM-${financialYear}/${finalBillNumber}`;
+
+//       // finalInvoiceNumb = clientInvoiceNumb || finalQuotationNumber;
+//       // finalInvoiceNumb = finalQuotationNumber;
+//       finalInvoiceNumb = null;
+//     } else if (billFormat === 'Main') {
+//       const counterId = `mainInvoice_${financialYear}`;
+
+//       const incField = (billType === 'GST') ? 'GSTNum' : 'NonGSTnum';
+
+//       const counter = await Counter.findOneAndUpdate(
+//         { _id: counterId },
+//         { $inc: { [incField]: 1 } },
+//         { new: true, upsert: true }
+//       );
+
+//       const seq = (billType === 'GST') ? counter.GSTNum : counter.NonGSTnum;
+//       finalBillNumber = seq;
+//       if (billType === 'GST') {
+//         finalInvoiceNumb = `ADMIX-${financialYear}/${finalBillNumber}`;
+//       } else {
+//         finalInvoiceNumb = `ADM-${financialYear}/${finalBillNumber}`;
+//       }
+
+//       // finalQuotationNumber = finalQuotationNumber || null;
+//     } else {
+//       return res.status(400).json({ success: false, message: 'Unknown billFormat. Must be "Estimate" or "Main"' });
+//     }
+
+//     const estInvoice = new EstInvoice({
+//       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber: finalBillNumber, billType, gstType,
+//       custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
+//       billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber: finalQuotationNumber, invoiceNumb: finalInvoiceNumb, salesPerson: person1, QrCheck,
+//       //New
+//       noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
+//       paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
+//     });
+
+//     await estInvoice.save();
+
+//     if (salesLeadId) {
+//       try {
+//         await salesLead.findByIdAndUpdate(
+//           salesLeadId,
+//           {
+//             $set: {
+//               // quotationNumber: quotationNumber ?? null,
+//               quotationNumber: finalQuotationNumber ?? finalInvoiceNumb,
+//               quotationDate: date
+//             }
+//           }
+//         );
+//       } catch (e) {
+//         console.warn('Failed updating salesLead: ', e.message);
+//       }
+//     }
+
+//     if (customerId && billFormat === 'Main' && finalInvoiceNumb) {
+//       try {
+//         await Customer.findByIdAndUpdate(
+//           customerId,
+//           {
+//             $push: {
+//               invoiceNumber: { InvoiceNo: finalInvoiceNumb, invoiceDate: date }
+//             }
+//           }
+//         );
+//       } catch (e) {
+//         console.warn('Failed updating Customer:', e.message);
+//       }
+//     }
+//     return res.json({ success: true, message: 'Invoice Created Successfully', invoice: estInvoice });
+
+//   } catch (err) {
+//     console.error("Error saving/updating invoice", err);
+//     res.status(500).json({ success: false, message: "Error saving invoice" });
+//   }
+// });
+
 router.post('/estInvoice', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
+
   try {
     const {
-      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType, custName, custNumb,
-      invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount, billFormat, financialYear,
-      discountValue, afterDiscountTotal, state, allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId, customerId, invoiceNumb, QrCheck,
-      //Mew
-      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
-      additionalNotesHtml, additionalNotesList, visibilityFlags
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billType: incomingBillType, gstType, custName, custNumb,
+      invoiceCateg, customCateg, rows,
+      invoiceDate, GSTAmount, totalAmount,
+      billFormat: incomingBillFormat, financialYear,
+      discountValue, afterDiscountTotal, state,
+      allowUpdate, allowNewDateEntry,
+      salesLeadId, customerId, QrCheck,
+      noteText, noteHtml, termsHtml, termsList,
+      packageIncludesHtml, packageIncludesList,
+      paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList,
+      visibilityFlags
     } = req.body;
 
     const date = new Date(invoiceDate);
-    const currentMonth = date.getMonth() + 1;
-    const currentYear = date.getFullYear();
-    const dateString = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0];
 
-    // Find all invoices for the same customer in the same month/year
+    /* ======================================================
+       STEP 1: SAME MONTH / SAME DATE CHECK
+    ====================================================== */
+
+    let billFormat = incomingBillFormat;
+    let billType = incomingBillType;
+
+     // frontend agar galti se billFormat = GST / Non-GST bhej de
+    if (billFormat === 'GST' || billFormat === 'Non-GST') {
+      billType = billFormat;   // GST / Non-GST
+      billFormat = 'Main';     // normalize
+    }
+
     const sameMonthInvoices = await EstInvoice.find({
       custName,
       custNumb,
       salesPerson: person1,
       $expr: {
         $and: [
-          { $eq: [{ $month: "$date" }, currentMonth] },
-          { $eq: [{ $year: "$date" }, currentYear] }
+          { $eq: [{ $month: "$date" }, date.getMonth() + 1] },
+          { $eq: [{ $year: "$date" }, date.getFullYear()] }
         ]
       }
     });
 
-    // Check if any of those invoices is for the same exact date
     const sameDateInvoice = sameMonthInvoices.find(inv =>
-      new Date(inv.date).toISOString().split('T')[0] === dateString
+      inv.date.toISOString().split('T')[0] === dateStr
     );
 
-    // --- helper: update SalesLead safely (skip if no id) ---
-
-    console.log('estINVOICEid:', salesLeadId);
-    console.log('customerId:', customerId);
-    console.log('QrCheck:', QrCheck);
-    // let existingItem = await salesLead.findById(salesLeadId);
-    // console.log("existingItem======>>", existingItem);
-    // if(existingItem){
-    //   existingItem.quotationNumber = quotationNumber;
-    //   existingItem.quotationDate = date;
-    // }
-
-    // Case 1: Same date exists, and update not allowed
     if (sameDateInvoice && !allowUpdate) {
       return res.json({
         success: false,
         sameDateExists: true,
-        message: "An invoice with the same date already exists. Do you want to update it?"
+        message: 'Invoice already exists on same date'
       });
     }
 
-    // Case 2: Same month exists but not same date, and save-new not allowed
-    if (!sameDateInvoice && sameMonthInvoices.length > 0 && !allowNewDateEntry) {
+    if (!sameDateInvoice && sameMonthInvoices.length && !allowNewDateEntry) {
       return res.json({
         success: false,
         differentDateExists: true,
-        message: "An invoice already exists for this month. Do you want to save this as a new entry with a different date?"
+        message: 'Invoice already exists this month'
       });
     }
 
-    // Case 3: Same date & update allowed
+    /* ======================================================
+       STEP 2: UPDATE EXISTING INVOICE
+    ====================================================== */
+
     if (sameDateInvoice && allowUpdate) {
       Object.assign(sameDateInvoice, {
-        custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
-        invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
-        discountValue, afterDiscountTotal, state, salesPerson: person1, QrCheck,
-        //New
-        noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
-        paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
+        custGST, custAddLine1, custAddLine2, custAddLine3,
+        invoiceCateg, customCateg, rows,
+        GSTAmount, totalAmount,
+        discountValue, afterDiscountTotal, state,
+        noteText, noteHtml, termsHtml, termsList,
+        packageIncludesHtml, packageIncludesList,
+        paymentTermsHtml, paymentTermsList,
+        additionalNotesHtml, additionalNotesList,
+        visibilityFlags
       });
+
       await sameDateInvoice.save();
-      return res.json({ success: true, message: 'Invoice Updated Successfully' });
+
+      return res.json({
+        success: true,
+        message: 'Invoice Updated',
+        invoice: sameDateInvoice
+      });
     }
 
-    // Case 4: New entry allowed (either first time or allowedNewDateEntry is true)
-    const estInvoice = new EstInvoice({
-      custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
-      custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
-      billFormat, financialYear, discountValue, afterDiscountTotal, state, quotationNumber, invoiceNumb, salesPerson: person1, QrCheck,
-      //New
-      noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList,
-      paymentTermsHtml, paymentTermsList, additionalNotesHtml, additionalNotesList, visibilityFlags
+    /* ======================================================
+       STEP 3: GENERATE NUMBERS (ATOMIC)
+    ====================================================== */
+    
+
+    let billNumber = null;
+    let invoiceNumber = [];
+    let quotationNumber = null;
+
+    if (billFormat === 'Estimate') {
+      const counter = await Counter.findOneAndUpdate(
+        { _id: `estInvoice_${financialYear}` },
+        { $inc: { quotationNum: 1 } },
+        { new: true, upsert: true }
+      );
+
+      billNumber = counter.quotationNum;
+      quotationNumber = `ADM-${financialYear}/${billNumber}`;
+      // invoiceNumber = [];
+    }
+
+    if (billFormat === 'Main') {
+    
+      const isGST = billType === 'GST';
+      const field = isGST ? 'GSTNum' : 'NonGSTnum';
+
+      const counter = await Counter.findOneAndUpdate(
+        { _id: `mainInvoice_${financialYear}` },
+        // { $inc: { [field]: 1 } },
+        {
+          $setOnInsert: isGST
+            ? { NonGSTnum: 812 }   // ❗ GST run → NonGST init only
+            : { GSTNum: 795 },     // ❗ Non-GST run → GST init only
+
+          $inc: { [field]: 1 }
+        },
+        // {
+        //   $setOnInsert: {
+        //     GSTNum: 195,
+        //     NonGSTnum: 197
+        //   },
+        //   $inc: { [field]: 1}
+        // },
+        { new: true, upsert: true }
+      );
+
+      billNumber = billType === 'GST' ? counter.GSTNum : counter.NonGSTnum;
+      // invoiceNumb =
+      const invNo = 
+        billType === 'GST'
+          ? `ADMIX-${financialYear}/${billNumber}`
+          : `ADM-${financialYear}/${billNumber}`;
+
+          invoiceNumber.push({
+            InvoiceNo: invNo,
+            invoiceDate: date
+          });
+
+          // invoiceNumber = [
+          //   {
+          //     InvoiceNo: invNo,
+          //     invoiceDate: date
+          //   }
+          // ];
+    }
+
+    /* ======================================================
+       STEP 4: SAVE INVOICE
+    ====================================================== */
+
+    const invoice = new EstInvoice({
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billFormat, billType,
+      billNumber,
+      invoiceNumber,
+      quotationNumber,
+      custName, custNumb,
+      invoiceCateg, customCateg, rows,
+      date,
+      GSTAmount, totalAmount,
+      financialYear,
+      discountValue, afterDiscountTotal, state,
+      noteText, noteHtml, termsHtml, termsList,
+      packageIncludesHtml, packageIncludesList,
+      paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList,
+      visibilityFlags,
+      salesPerson: person1,
+      QrCheck
     });
 
-    await estInvoice.save();
+    console.log('FINAL invoiceNumber => ', invoiceNumber);
+
+
+    await invoice.save();
+
+    /* ======================================================
+       STEP 5: UPDATE CUSTOMER (ONLY MAIN INVOICE)
+    ====================================================== */
+
+    if (customerId && billFormat === 'Main' && invoiceNumber.length) {
+      await Customer.findByIdAndUpdate(customerId, {
+        $push: { invoiceNumber : invoiceNumber[0]
+          // invoiceNumber: {
+          //   InvoiceNo: invoiceNumb,
+          //   invoiceDate: date
+          // }
+        }
+      });
+    }
+
+    /* ======================================================
+       STEP 6: UPDATE SALES LEAD
+    ====================================================== */
 
     if (salesLeadId) {
-      await salesLead.findByIdAndUpdate(
-        salesLeadId,
-        {
-          $set: {
-            quotationNumber: quotationNumber ?? null,
-            quotationDate: date
-          }
+      await salesLead.findByIdAndUpdate(salesLeadId, {
+        $set: {
+          quotationNumber: quotationNumber ?? invoiceNumber?.[0]?.InvoiceNo,
+          quotationDate: date
         }
-      );
+      });
     }
 
-    if (customerId) {
-      await Customer.findByIdAndUpdate(
-        customerId,
-        {
-          $push: {
-            invoiceNumber: { InvoiceNo: invoiceNumb ?? null, invoiceDate: date }
-          }
-        }
-      )
-    }
-    return res.json({ success: true, message: 'Invoice Created Successfully' });
+    return res.json({
+      success: true,
+      message: 'Invoice Created Successfully',
+      invoice
+    });
 
   } catch (err) {
-    console.error("Error saving/updating invoice", err);
-    res.status(500).json({ success: false, message: "Error saving invoice" });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 });
 
@@ -6423,10 +6721,13 @@ router.post('/customQuotation', checkAuth, async (req, res) => {
   try {
     const {
       custGST, custAddLine1, custAddLine2, custAddLine3,
-      billNumber, billType, gstType, custName, custNumb,
+      //billNumber,
+      billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows, invoiceDate, GSTAmount, totalAmount,
       billFormat, financialYear, discountValue, afterDiscountTotal, state,
-      allowUpdate, allowNewDateEntry, quotationNumber, salesLeadId,
+      allowUpdate, allowNewDateEntry,
+      //quotationNumber,
+      salesLeadId,
       //New
       noteText, noteHtml, termsHtml, termsList, packageIncludesHtml, packageIncludesList, paymentTermsHtml, paymentTermsList,
       additionalNotesHtml, additionalNotesList, visibilityFlags
@@ -6480,7 +6781,9 @@ router.post('/customQuotation', checkAuth, async (req, res) => {
     // Case 3: Same date & update allowed
     if (sameDateInvoice && allowUpdate) {
       Object.assign(sameDateInvoice, {
-        custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
+        custGST, custAddLine1, custAddLine2, custAddLine3,
+        //billNumber,
+        billType, gstType,
         invoiceCateg, customCateg, rows, GSTAmount, totalAmount, billFormat,
         discountValue, afterDiscountTotal, state, salesPerson: person1,
         //New
@@ -6500,10 +6803,21 @@ router.post('/customQuotation', checkAuth, async (req, res) => {
         salesPerson: person1
       });
 
-      return res.json({ success: true, message: 'Invoice Updated Successfully' });
+      return res.json({ success: true, message: 'Invoice Updated Successfully', invoice: sameDateInvoice });
     }
 
     // Case 4: New entry allowed (either first time or allowedNewDateEntry is true)
+    const counterId = `estInvoice_${financialYear}`;
+    const counter = await Counter.findOneAndUpdate(
+      { _id: counterId },
+      { $inc: { quotationNum: 1 } },
+      { new: true, upsert: true }
+    );
+
+    const seq = counter.quotationNum;
+    const billNumber = seq;
+    const quotationNumber = `ADM-${financialYear}/${billNumber}`;
+
     const estInvoice = new EstInvoice({
       custGST, custAddLine1, custAddLine2, custAddLine3, billNumber, billType, gstType,
       custName, custNumb, invoiceCateg, customCateg, rows, date, GSTAmount, totalAmount,
@@ -6530,7 +6844,8 @@ router.post('/customQuotation', checkAuth, async (req, res) => {
       success: true,
       message: 'Invoice Created Successfully',
       invoiceId: estInvoice._id,
-      salesLeadId: leadDoc?._id
+      salesLeadId: leadDoc?._id,
+      invoice: estInvoice
     });
 
   } catch (err) {

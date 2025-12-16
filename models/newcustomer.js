@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
 
-    custCode: { type: Number },
+    custCode: { type: Number, unique: true, required: true },
     custName: { type: String },
     custNumb: { type: Number },
     custNumb2: { type: Number },

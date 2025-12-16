@@ -28,7 +28,7 @@ const estInvoiceSchema = new mongoose.Schema({
   GSTAmount: { type: Number },
   totalAmount: { type: Number },
   billFormat: { type: String },
-  billNumber: { type: Number },
+  billNumber: { type: Number, unique: true, required: true },
   financialYear: {
     type: String,
     required: true,
@@ -37,6 +37,12 @@ const estInvoiceSchema = new mongoose.Schema({
   afterDiscountTotal: {type: Number},
   state: {type:String},
   quotationNumber: {type: String},
+  invoiceNumber: [
+        {
+            InvoiceNo:{type: String},
+            invoiceDate: {type: Date}
+        }
+    ],
   quotationDate: {type: Date},
   salesPerson: {type: String},
   QrCheck: {type: String},
