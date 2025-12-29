@@ -93,7 +93,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'admixmediaindia@gmail.com',
-    pass: 'ivtc wcre rieh lwzh'
+    pass: 'cnhw bntn nbjz lfab'
   }
 });
 
@@ -2880,7 +2880,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//046i5e6IgK9sWCgYIARAAGAQSNwF-L9Ir-vA8koWmBzI8fkbVCAcZa3o6SFBnG0SRjP6d-RpCCqHCFuEOJ3GPr4Ve0Ud_DeAqalo';
+const REFERESH_TOKEN = '1//045E4IMhAWLtkCgYIARAAGAQSNwF-L9IrrpeeH-HwFAd8iC1UR3vCnQ7JTTro2pM0COVj-7kvS4ejugvLE5oh4lByQD9Ye-r5D6Q';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
