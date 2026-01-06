@@ -9,6 +9,7 @@ const Customer = require('./models/newcustomer');
 const WhatsAppCategory = require('./models/whatsAppCategory');
 const Subsidiary = require('./models/subsidiary');
 const ClosingCategory = require('./models/closingCategory');
+const fund = require('./models/fund');
 const NewTag = require('./models/tag');
 const newSalesTeam = require("./models/newSalesTeam");
 const Lead = require('./models/Leads');
@@ -2880,7 +2881,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//045E4IMhAWLtkCgYIARAAGAQSNwF-L9IrrpeeH-HwFAd8iC1UR3vCnQ7JTTro2pM0COVj-7kvS4ejugvLE5oh4lByQD9Ye-r5D6Q';
+const REFERESH_TOKEN = '1//04jYUQdlUOr9qCgYIARAAGAQSNwF-L9IrCHvrLhBAIPS6OJ-oK7jhxFWeose4nyfOPqHQRrH14dV17Dd61_fkxMwLCKWzkWiTpE0';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -11286,6 +11287,58 @@ router.delete('/delete-est/:id', async (req, res) => {
   }
 });
 
+// Add Fund
+
+const normalizeDate = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0); // 👈 time remove
+  return d;
+};
+
+router.post('/addFund', async (req,res)=>{
+  try{
+    const { fbAccount, amount, fundDate} = req.body;
+
+    const onlyDate = normalizeDate(fundDate);
+
+    await fund.findOneAndUpdate(
+      { fbAccount: fbAccount, fundDate: onlyDate},
+      {
+        fbAccount: fbAccount,
+        amount: amount,
+        fundDate: onlyDate
+      },
+      {
+        upsert: true,
+        new: true
+      }
+    );
+    res.json({ success: true, message: "Funds Saved Successfully"});
+  }catch(err){
+    console.error("Error adding Funds:", err);
+    res.json({ success: false, message: "Error Adding Funds"});
+  }
+});
+
+router.get('/monthly', async(req,res)=>{
+  try{
+    const { year, month } = req.query;
+
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
+
+    const data = await fund.find({
+      fundDate: {
+        $gte: startDate,
+        $lt:endDate
+      }
+    }).sort({fbAccount:1, fundDate: 1});
+    res.json({ success: true, data});
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ success: false});
+  }
+});
 
 // const videoAuth = new google.auth.GoogleAuth({
 //   keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS,
