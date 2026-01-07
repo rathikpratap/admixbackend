@@ -2523,6 +2523,146 @@ router.post('/downloadRangeFileEx', checkAuth, async (req, res) => {
   }
 });
 
+router.post('/downloadRangeFileExMa', checkAuth, async (req, res) => {
+  try {
+    console.log('DOWNLOAD BODY ===>', req.body);
+
+    const { startDate, endDate, status, salesPerson } = req.body;
+
+    // -------------------------
+    // 1️⃣ Validation
+    // -------------------------
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    // end date inclusive
+    const endInclusive = new Date(end);
+    endInclusive.setDate(endInclusive.getDate() + 1);
+
+    // -------------------------
+    // 2️⃣ User & Roles
+    // -------------------------
+    const loginUser = req.userData?.name;
+
+    const roles = Array.isArray(req.userData.signupRole)
+      ? req.userData.signupRole
+      : [req.userData.signupRole];
+
+    const PRIVILEGED_ROLES = ['Team Leader', 'Lead Manager', 'Admin'];
+
+    const isPrivilegedUser = roles.some(role =>
+      PRIVILEGED_ROLES.includes(role)
+    );
+
+    console.log('LOGIN USER ===>', loginUser);
+    console.log('USER ROLES ===>', roles);
+    console.log('IS PRIVILEGED ===>', isPrivilegedUser);
+    console.log('DROPDOWN SALESPERSON ===>', salesPerson);
+
+    // -------------------------
+    // 3️⃣ Base Query (Date)
+    // -------------------------
+    let query = {
+      closingDate: {
+        $gte: start,
+        $lt: endInclusive
+      }
+    };
+
+    // -------------------------
+    // 4️⃣ Salesperson Logic (FIXED)
+    // -------------------------
+    if (isPrivilegedUser) {
+      // Team Leader / Lead Manager / Admin
+      if (salesPerson) {
+        query.salesPerson = salesPerson; // ✅ dropdown wins
+      }
+    } else {
+      // Sales Team user → sirf apna data
+      query.salesPerson = loginUser;
+    }
+
+    // -------------------------
+    // 5️⃣ Status Logic
+    // -------------------------
+    if (status && Array.isArray(status) && status.length > 0) {
+      if (status.includes('Exclude Closing')) {
+        query.projectStatus = { $ne: 'Closing' };
+      } else {
+        query.projectStatus = { $in: status };
+      }
+    }
+
+    console.log('FINAL DOWNLOAD QUERY ===>', JSON.stringify(query));
+
+    // -------------------------
+    // 6️⃣ Fetch Data
+    // -------------------------
+    const leads = await salesLead
+      .find(query)
+      .sort({ closingDate: -1 });
+
+    console.log('ROWS TO EXPORT ===>', leads.length);
+
+    // -------------------------
+    // 7️⃣ Prepare Excel Data
+    // -------------------------
+    const excelData = leads.map((lead, index) => ({
+      'No.': index + 1,
+      'Customer Name': lead.custName,
+      'Mobile Number': lead.custNumb,
+      'Business': lead.custBussiness,
+      'Lead Date': lead.closingDate,
+      'City': lead.custCity,
+      'State': lead.custState,
+      'Status': lead.projectStatus,
+      'Sales Person': lead.salesPerson,
+      'Remark': lead.remark || ''
+    }));
+
+    // -------------------------
+    // 8️⃣ Create Excel
+    // -------------------------
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+
+    const buffer = XLSX.write(wb, {
+      bookType: 'xlsx',
+      type: 'buffer'
+    });
+
+    // -------------------------
+    // 9️⃣ Response Headers
+    // -------------------------
+    const fileName = `Leads_${start.toISOString().slice(0, 10)}_to_${end.toISOString().slice(0, 10)}.xlsx`;
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${fileName}"`
+    );
+
+    return res.send(buffer);
+
+  } catch (error) {
+    console.error('DOWNLOAD ERROR ===>', error);
+    return res.status(500).json({ error: 'Failed to download file' });
+  }
+});
+
+
 
 // Download Sales Range Data
 
@@ -3585,6 +3725,54 @@ router.post('/leadsByRangeEx', async (req, res) => {
     return res.status(500).json({ message: 'Server Error' });
   }
 });
+
+router.post('/leadsByRangeExMa', async (req, res) => {
+  try {
+    let { startDate, endDate, status, salesPerson } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'startDate and endDate are required' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setDate(end.getDate() + 1); // inclusive end date
+
+    let query = {
+      leadsCreatedDate: {
+        $gte: start,
+        $lt: end
+      }
+    };
+
+    // ✅ Salesperson filter (optional)
+    if (salesPerson) {
+      query.salesPerson = salesPerson;
+    }
+
+    // ✅ Status filter (optional)
+    if (status && Array.isArray(status) && status.length > 0) {
+      if (status.includes("Exclude Closing")) {
+        query.projectStatus = { $nin: ["Closing", "Not Interested"] };
+      } else {
+        query.projectStatus = { $in: status };
+      }
+    }
+
+    console.log("Final Mongo Query ===>", query);
+
+    const rangeTotalData = await salesLead
+      .find(query)
+      .sort({ leadsCreatedDate: -1 });
+
+    res.json({ rangeTotalData });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 
 //get Teams Leads
 
