@@ -9180,7 +9180,7 @@ router.get('/getCampaignNames', async (req, res) => {
 
     // Fetch leads from the last 7 days based on leadsCreatedDate
     const recentLeads = await salesLead.find({
-      leadsCreatedDate: { $gte: sevenDayAgo },
+      leadsCreatedDate: { $gte: sevenDaysAgo },
       campaignType: { $ne: "WhatsApp API" }
     });
 
