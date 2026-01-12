@@ -3021,7 +3021,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04jYUQdlUOr9qCgYIARAAGAQSNwF-L9IrCHvrLhBAIPS6OJ-oK7jhxFWeose4nyfOPqHQRrH14dV17Dd61_fkxMwLCKWzkWiTpE0';
+const REFERESH_TOKEN = '1//04Eebva5EtYaeCgYIARAAGAQSNwF-L9IrnP9p2qk0Nvz25dvnku0lBBnw1Qqnvat-sPAQosDc1T_BeHjV1etVOyL2-tuoMiNmYso';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -9175,11 +9175,12 @@ router.get('/getAllCampaignNames', async (req, res) => {
 
 router.get('/getCampaignNames', async (req, res) => {
   try {
-    const oneMonthAgo = moment().subtract(30, 'days').toDate();
+    // const oneMonthAgo = moment().subtract(30, 'days').toDate();
+    const sevenDaysAgo = moment().subtract(7, 'days').toDate();
 
     // Fetch leads from the last 7 days based on leadsCreatedDate
     const recentLeads = await salesLead.find({
-      leadsCreatedDate: { $gte: oneMonthAgo },
+      leadsCreatedDate: { $gte: sevenDayAgo },
       campaignType: { $ne: "WhatsApp API" }
     });
 
