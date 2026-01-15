@@ -97,6 +97,8 @@ const customerSchema = new mongoose.Schema({
     updateMorePoints: {type: Boolean, default: false},
     quotationNumber: {type: String},
     quotationDate: {type: Date},
+    modelName: {type: String},
+    status:[{ code: {type:String},date:{type: Date}}],
     invoiceNumber: [
         {
             InvoiceNo:{type: String},
@@ -170,8 +172,9 @@ const customerSchema = new mongoose.Schema({
             advPay: {type: Number},
             remainingAmount: {type: Number},
             restAmount: {type: Number},
-            restAmountDate: {type: Date}
-            
+            restAmountDate: {type: Date},
+            modelName: {type: String},
+            status:[{ code: {type: String},date:{type: Date}}],
         }
     ]
 });

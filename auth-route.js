@@ -8,6 +8,7 @@ const User = require('./models/user');
 const Customer = require('./models/newcustomer');
 const WhatsAppCategory = require('./models/whatsAppCategory');
 const Subsidiary = require('./models/subsidiary');
+const Model = require('./models/model');
 const ClosingCategory = require('./models/closingCategory');
 const fund = require('./models/fund');
 const NewTag = require('./models/tag');
@@ -2283,20 +2284,119 @@ router.get('/rangeTopPerformer/:startDate/:endDate', async (req, res) => {
   }
 });
 
+// router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
+//   const startDate = new Date(req.params.startDate);
+//   const endDate = new Date(req.params.endDate);
+//   endDate.setDate(endDate.getDate() + 1);
+//   try {
+//     let query = {
+//       restPaymentDate: { $gte: startDate, $lte: endDate }
+//     };
+//     const totalEntries = await Customer.find(query);
+//     const totalMonthRecv = totalEntries.reduce((sum, doc) => sum + doc.restAmount, 0);
+//     res.json(totalMonthRecv);
+//   } catch (error) {
+//     console.log("Error getting Total Received Amount", error.message);
+//     res.status(500).json({ json: "Failed", error: error.message });
+//   }
+// });
+
+// router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
+//   const startDate = new Date(req.params.startDate);
+//   const endDate = new Date(req.params.endDate);
+//   endDate.setDate(endDate.getDate() + 1);
+
+//   console.log("START DATE=======>>", startDate);
+//   console.log("END DATE========>>", endDate);
+
+//   try {
+//     let query = {
+//       // 1️⃣ restAmountDate selected range me ho
+//       restPaymentDate: { 
+//         $gte: startDate, 
+//         $lte: endDate 
+//       },
+
+//       // 2️⃣ closingDate selected range me NA ho
+//       $or: [
+//         { closingDate: { $lt: startDate } },   // range se pehle
+        
+//       ]
+//     };
+
+//     const totalEntries = await Customer.find(query);
+
+//     const totalMonthRecv = totalEntries.reduce(
+//       (sum, doc) => sum + (doc.restAmount || 0),
+//       0
+//     );
+
+//     console.log("TOTAL MONTH RECV==========>>", totalMonthRecv);
+//     res.json(totalMonthRecv);
+
+//   } catch (error) {
+//     console.log("Error getting Total Received Amount", error.message);
+//     res.status(500).json({ status: "Failed", error: error.message });
+//   }
+// });
+
 router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
+
   try {
-    let query = {
-      restPaymentDate: { $gte: startDate, $lte: endDate }
+    const query = {
+      // restAmountDate selected range me
+      restPaymentDate: { 
+        $gte: startDate, 
+        $lte: endDate 
+      },
+
+      // closingDate selected range me NA ho
+      $or: [
+        { closingDate: { $lt: startDate } },
+        { closingDate: { $gt: endDate } },
+        { closingDate: { $exists: false } },
+        { closingDate: null }
+      ]
     };
+
     const totalEntries = await Customer.find(query);
-    const totalMonthRecv = totalEntries.reduce((sum, doc) => sum + doc.restAmount, 0);
-    res.json(totalMonthRecv);
+
+    let totalMonthRecv = 0;
+    let qrWiseAmount = {}; // 👈 QR wise data
+
+    totalEntries.forEach(doc => {
+      const amount = doc.restAmount || 0;
+      const qr = doc.Qr || "NO_QR";
+
+      totalMonthRecv += amount;
+
+      if (!qrWiseAmount[qr]) {
+        qrWiseAmount[qr] = 0;
+      }
+      qrWiseAmount[qr] += amount;
+    });
+
+    // ✅ Console output
+    console.log("===== QR Wise Payment Received =====");
+    Object.keys(qrWiseAmount).forEach(qr => {
+      console.log(`QR: ${qr} → Amount: ₹${qrWiseAmount[qr]}`);
+    });
+    console.log("TOTAL RECEIVED:", totalMonthRecv);
+    console.log("===================================");
+
+    // API response
+    // res.json(totalMonthRecv);
+    res.json({
+      totalReceived: totalMonthRecv,
+      qrWiseAmount
+    });
+
   } catch (error) {
     console.log("Error getting Total Received Amount", error.message);
-    res.status(500).json({ json: "Failed", error: error.message });
+    res.status(500).json({ status: "Failed", error: error.message });
   }
 });
 
@@ -11527,6 +11627,94 @@ router.get('/monthly', async(req,res)=>{
     console.error(err);
     res.status(500).json({ success: false});
   }
+});
+
+//Models Projects
+
+router.get('/onlyModelProject',async(req,res)=>{
+  try{
+    const modelProjects = await Customer.find({
+      closingCateg : { $in: ['Model/ UGC', 'Package']}
+    }).sort({closingDate: -1});
+    return res.json(modelProjects);
+  }catch(error){
+    console.error("Error Fetching CLosing", error);
+    res.status(500).json({error: 'Failed to fetch closings'});
+  }
+});
+
+router.post('/newModel', async(req,res)=>{
+  try{
+    const model = new Model({
+      modelName: req.body.modelName
+    })
+    await model.save().then((_) => {
+      res.json({ success: true, message: "New Model Added"})
+    }).catch((err) => {
+      if(err.code === 11000) {
+        return res.json({ success: false, message: "Model Already Added"})
+      }
+    });
+  }catch(error){
+    console.error('Error Adding Model', error);
+    res.status(500).json({ error: 'Failed to add Model'});
+  }
+});
+
+router.get('/getModels', async(req,res)=>{
+  try{
+    const models = await Model.find();
+    res.json(models);
+  }catch(error){
+    console.error("Error Fetching Model Names",error);
+    res.status(500).json({ error: 'Failed to fetch Models'})
+  }
+});
+
+router.post('/updateModelName', async(req,res)=>{
+  try{
+    const {_id, modelName} = req.body;
+    let existingItem = await Customer.findById(_id);
+    if(existingItem){
+      existingItem.modelName = modelName;
+      await existingItem.save();
+    }
+    res.json({ message: "Model Updated"});
+  }catch(err){
+    res.status(500).json({message: err.message});
+  }
+});
+
+router.post('/updateSubEntryModel', async(req,res)=>{
+  try{
+    const {parentId, subEntry} = req.body;
+    const customer = await Customer.findById(parentId);
+    if(!customer) return res.status(404).json({ message: 'Customer not found'});
+
+    const sub = customer.subEntries.find(entry => entry.custCode === subEntry.custCode);
+    if (!sub) return res.status(404).json({ message: 'Sun-entry not found'});
+
+    Object.assign(sub, subEntry);
+    await customer.save();
+    res.json({message: 'Sub-entry updated'});
+  }catch(err){
+    res.status(500).json({message: err.message});
+  }
+});
+
+router.post('/updateModelStatus', async(req,res) => {
+  const {id,status} = req.body;
+  await Customer.findByIdAndUpdate(id,{status});
+  res.json({message: 'Status Updated'});
+});
+
+router.post('/updateModelSubStatus', async(req,res)=>{
+  const { userId, subId, status} = req.body;
+  await Customer.updateOne(
+    { _id: userId, "subEntries._id": subId},
+    { $set: { "subEntries.$.status": status}}
+  );
+  res.json({ message: 'Sub Status Updated'});
 });
 
 // const videoAuth = new google.auth.GoogleAuth({
