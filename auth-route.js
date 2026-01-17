@@ -65,7 +65,8 @@ router.post('/register', async (req, res) => {
     salesTeam: req.body.salesTeam,
     subsidiaryName: req.body.subsidiaryName,
     incentivePassword: req.body.incentivePassword,
-    editorType: req.body.editorType
+    editorType: req.body.editorType,
+    joiningDate: req.body.joiningDate
   })
   await user.save()
     .then((_) => {
@@ -1444,7 +1445,7 @@ router.post('/customer', async (req, res) => {
     // === 1. Yahan se THREAD-SAFE custCode generate hoga ===
     const counter = await Counter.findOneAndUpdate(
       { _id: 'customer' },
-      { $inc: { seq: 1 }},
+      { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
 
@@ -2320,7 +2321,7 @@ router.get('/rangeTopPerformer/:startDate/:endDate', async (req, res) => {
 //       // 2️⃣ closingDate selected range me NA ho
 //       $or: [
 //         { closingDate: { $lt: startDate } },   // range se pehle
-        
+
 //       ]
 //     };
 
@@ -2348,9 +2349,9 @@ router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
   try {
     const query = {
       // restAmountDate selected range me
-      restPaymentDate: { 
-        $gte: startDate, 
-        $lte: endDate 
+      restPaymentDate: {
+        $gte: startDate,
+        $lte: endDate
       },
 
       // closingDate selected range me NA ho
@@ -2391,7 +2392,8 @@ router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
     // res.json(totalMonthRecv);
     res.json({
       totalReceived: totalMonthRecv,
-      qrWiseAmount
+      qrWiseAmount,
+      totalEntries
     });
 
   } catch (error) {
@@ -3121,7 +3123,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04Eebva5EtYaeCgYIARAAGAQSNwF-L9IrnP9p2qk0Nvz25dvnku0lBBnw1Qqnvat-sPAQosDc1T_BeHjV1etVOyL2-tuoMiNmYso';
+const REFERESH_TOKEN = '1//04sMxEFNpaS39CgYIARAAGAQSNwF-L9IrLRO9rcGuot2dKjo6JyHOLFkRFxJOgnD3nZ125B9DDQ6hr2MXwe_ymE6IylCCmj9WZdY';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6803,7 +6805,7 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
     let billFormat = incomingBillFormat;
     let billType = incomingBillType;
 
-     // frontend agar galti se billFormat = GST / Non-GST bhej de
+    // frontend agar galti se billFormat = GST / Non-GST bhej de
     if (billFormat === 'GST' || billFormat === 'Non-GST') {
       billType = billFormat;   // GST / Non-GST
       billFormat = 'Main';     // normalize
@@ -6870,7 +6872,7 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
     /* ======================================================
        STEP 3: GENERATE NUMBERS (ATOMIC)
     ====================================================== */
-    
+
 
     let billNumber = null;
     let invoiceNumber = [];
@@ -6889,7 +6891,7 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
     }
 
     if (billFormat === 'Main') {
-    
+
       const isGST = billType === 'GST';
       const field = isGST ? 'GSTNum' : 'NonGSTnum';
 
@@ -6915,22 +6917,22 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
 
       billNumber = billType === 'GST' ? counter.GSTNum : counter.NonGSTnum;
       // invoiceNumb =
-      const invNo = 
+      const invNo =
         billType === 'GST'
           ? `ADMIX-${financialYear}/${billNumber}`
           : `ADM-${financialYear}/${billNumber}`;
 
-          invoiceNumber.push({
-            InvoiceNo: invNo,
-            invoiceDate: date
-          });
+      invoiceNumber.push({
+        InvoiceNo: invNo,
+        invoiceDate: date
+      });
 
-          // invoiceNumber = [
-          //   {
-          //     InvoiceNo: invNo,
-          //     invoiceDate: date
-          //   }
-          // ];
+      // invoiceNumber = [
+      //   {
+      //     InvoiceNo: invNo,
+      //     invoiceDate: date
+      //   }
+      // ];
     }
 
     /* ======================================================
@@ -6969,7 +6971,8 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
 
     if (customerId && billFormat === 'Main' && invoiceNumber.length) {
       await Customer.findByIdAndUpdate(customerId, {
-        $push: { invoiceNumber : invoiceNumber[0]
+        $push: {
+          invoiceNumber: invoiceNumber[0]
           // invoiceNumber: {
           //   InvoiceNo: invoiceNumb,
           //   invoiceDate: date
@@ -8262,13 +8265,14 @@ router.get('/attendance', async (req, res) => {
 
 // salesPerson wise Attendance
 
-router.get('/usersAttendance', async (req, res) => {
+router.get('/usersAttendance',checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
   const { year, month } = req.query;
   if (!year || !month) {
     return res.status(400).json({ success: false, message: "Year and month are required." });
   }
   try {
-    const salesPerson = person;
+    const salesPerson = person1;
     const users = await User.find({ signupUsername: salesPerson });
     const daysInMonth = new Date(year, month, 0).getDate();
     const attendancePromises = users.map(async user => {
@@ -11584,14 +11588,14 @@ const normalizeDate = (date) => {
   return d;
 };
 
-router.post('/addFund', async (req,res)=>{
-  try{
-    const { fbAccount, amount, fundDate} = req.body;
+router.post('/addFund', async (req, res) => {
+  try {
+    const { fbAccount, amount, fundDate } = req.body;
 
     const onlyDate = normalizeDate(fundDate);
 
     await fund.findOneAndUpdate(
-      { fbAccount: fbAccount, fundDate: onlyDate},
+      { fbAccount: fbAccount, fundDate: onlyDate },
       {
         fbAccount: fbAccount,
         amount: amount,
@@ -11602,15 +11606,15 @@ router.post('/addFund', async (req,res)=>{
         new: true
       }
     );
-    res.json({ success: true, message: "Funds Saved Successfully"});
-  }catch(err){
+    res.json({ success: true, message: "Funds Saved Successfully" });
+  } catch (err) {
     console.error("Error adding Funds:", err);
-    res.json({ success: false, message: "Error Adding Funds"});
+    res.json({ success: false, message: "Error Adding Funds" });
   }
 });
 
-router.get('/monthly', async(req,res)=>{
-  try{
+router.get('/monthly', async (req, res) => {
+  try {
     const { year, month } = req.query;
 
     const startDate = new Date(Date.UTC(year, month - 1, 1));
@@ -11619,103 +11623,326 @@ router.get('/monthly', async(req,res)=>{
     const data = await fund.find({
       fundDate: {
         $gte: startDate,
-        $lt:endDate
+        $lt: endDate
       }
-    }).sort({fbAccount:1, fundDate: 1});
-    res.json({ success: true, data});
-  }catch(err){
+    }).sort({ fbAccount: 1, fundDate: 1 });
+    res.json({ success: true, data });
+  } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false});
+    res.status(500).json({ success: false });
   }
 });
 
 //Models Projects
 
-router.get('/onlyModelProject',async(req,res)=>{
-  try{
+router.get('/onlyModelProject', async (req, res) => {
+  try {
     const modelProjects = await Customer.find({
-      closingCateg : { $in: ['Model/ UGC', 'Package']}
-    }).sort({closingDate: -1});
+      closingCateg: { $in: ['Model/ UGC', 'Package'] },
+      closingDate: { $gte: new Date('2026-01-01') }
+    }).sort({ closingDate: -1 });
     return res.json(modelProjects);
-  }catch(error){
+  } catch (error) {
     console.error("Error Fetching CLosing", error);
-    res.status(500).json({error: 'Failed to fetch closings'});
+    res.status(500).json({ error: 'Failed to fetch closings' });
   }
 });
 
-router.post('/newModel', async(req,res)=>{
-  try{
+// router.get('/onlyModelProjectAdmin', async (req, res) => {
+//   try {
+//     const sender = req.query.senderName || '';
+//     let role = req.query.role || 'EMPLOYEE';
+
+//     console.log("FULL QUERY======>>", req.query);
+//     console.log("ROLE RAW======>>", req.query.role);
+//     console.log("SENDER RAW====>>", req.query.sender);
+//     console.log("PRJECT ROLE=======>>", role);
+
+//     if (typeof role === 'string' && role.includes(',')) {
+//       role = role.split(',');
+//     }
+
+//     const isAdmin = Array.isArray(role)
+//       ? role.includes('Admin')
+//       : role === 'Admin';
+
+//     let statusCondition = {};
+
+//     if (isAdmin) {
+//       // Admin/Shiva → sab SEND_BY_*
+//       statusCondition = {
+//         status: {
+//           $elemMatch: {
+//             code: { $regex: /^SEND_BY_/ }
+//           }
+//         }
+//       };
+
+//     } else if (sender) {
+//       // Employee → apna
+//       statusCondition = {
+//         status: {
+//           $elemMatch: {
+//             code: `SEND_BY_${sender.toUpperCase()}`
+//           }
+//         }
+//       };
+
+//     } else {
+//       return res.status(400).json({ error: 'Sender required' });
+//     }
+
+//     const modelProjects = await Customer.find({
+//       closingCateg: { $in: ['Model/ UGC', 'Package'] },
+//       closingDate: { $gte: new Date('2026-01-01') },
+//       ...statusCondition
+//     }).sort({ closingDate: -1 });
+//     console.log("MODEL PROJECTS ADMIN========>>", modelProjects);
+//     return res.json(modelProjects);
+
+//   } catch (error) {
+//     console.error("Error Fetching Closing", error);
+//     res.status(500).json({ error: 'Failed to fetch closings' });
+//   }
+// });
+
+router.get('/onlyModelProjectAdmin', async (req, res) => {
+  try {
+    const sender = req.query.senderName || '';
+    let role = req.query.role || 'EMPLOYEE';
+
+    if (typeof role === 'string' && role.includes(',')) {
+      role = role.split(',');
+    }
+
+    const isAdmin = Array.isArray(role)
+      ? role.includes('Admin')
+      : role === 'Admin';
+
+    let statusCondition = {};
+
+    // ───────────── ADMIN CASE ─────────────
+    if (isAdmin) {
+
+      statusCondition = {
+        $or: [
+          // 1) Main document status
+          {
+            status: {
+              $elemMatch: {
+                code: { $regex: /^SEND_BY_/ }
+              }
+            }
+          },
+
+          // 2) SubEntries status
+          {
+            "subEntries.status": {
+              $elemMatch: {
+                code: { $regex: /^SEND_BY_/ }
+              }
+            }
+          }
+        ]
+      };
+
+    }
+    // ───────────── EMPLOYEE CASE ─────────────
+    else if (sender) {
+
+      const empCode = `SEND_BY_${sender.toUpperCase()}`;
+
+      statusCondition = {
+        $or: [
+          {
+            status: {
+              $elemMatch: { code: empCode }
+            }
+          },
+          {
+            "subEntries.status": {
+              $elemMatch: { code: empCode }
+            }
+          }
+        ]
+      };
+
+    } else {
+      return res.status(400).json({ error: 'Sender required' });
+    }
+
+    const modelProjects = await Customer.find({
+      closingCateg: { $in: ['Model/ UGC', 'Package'] },
+      closingDate: { $gte: new Date('2026-01-01') },
+
+      ...statusCondition   // 👈 MAIN CHANGE
+    }).sort({ closingDate: -1 });
+
+    return res.json(modelProjects);
+
+  } catch (error) {
+    console.error("Error Fetching Closing", error);
+    res.status(500).json({ error: 'Failed to fetch closings' });
+  }
+});
+
+
+
+
+
+router.post('/newModel', async (req, res) => {
+  try {
     const model = new Model({
       modelName: req.body.modelName
     })
     await model.save().then((_) => {
-      res.json({ success: true, message: "New Model Added"})
+      res.json({ success: true, message: "New Model Added" })
     }).catch((err) => {
-      if(err.code === 11000) {
-        return res.json({ success: false, message: "Model Already Added"})
+      if (err.code === 11000) {
+        return res.json({ success: false, message: "Model Already Added" })
       }
     });
-  }catch(error){
+  } catch (error) {
     console.error('Error Adding Model', error);
-    res.status(500).json({ error: 'Failed to add Model'});
+    res.status(500).json({ error: 'Failed to add Model' });
   }
 });
 
-router.get('/getModels', async(req,res)=>{
-  try{
+router.get('/getModels', async (req, res) => {
+  try {
     const models = await Model.find();
     res.json(models);
-  }catch(error){
-    console.error("Error Fetching Model Names",error);
-    res.status(500).json({ error: 'Failed to fetch Models'})
+  } catch (error) {
+    console.error("Error Fetching Model Names", error);
+    res.status(500).json({ error: 'Failed to fetch Models' })
   }
 });
 
-router.post('/updateModelName', async(req,res)=>{
-  try{
-    const {_id, modelName} = req.body;
+router.post('/updateModelName', async (req, res) => {
+  try {
+    const { _id, modelName } = req.body;
     let existingItem = await Customer.findById(_id);
-    if(existingItem){
+    if (existingItem) {
       existingItem.modelName = modelName;
       await existingItem.save();
     }
-    res.json({ message: "Model Updated"});
-  }catch(err){
-    res.status(500).json({message: err.message});
+    res.json({ message: "Model Updated" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/updateSubEntryModel', async(req,res)=>{
-  try{
-    const {parentId, subEntry} = req.body;
+router.post('/updateSubEntryModel', async (req, res) => {
+  try {
+    const { parentId, subEntry } = req.body;
     const customer = await Customer.findById(parentId);
-    if(!customer) return res.status(404).json({ message: 'Customer not found'});
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
 
     const sub = customer.subEntries.find(entry => entry.custCode === subEntry.custCode);
-    if (!sub) return res.status(404).json({ message: 'Sun-entry not found'});
+    if (!sub) return res.status(404).json({ message: 'Sun-entry not found' });
 
     Object.assign(sub, subEntry);
     await customer.save();
-    res.json({message: 'Sub-entry updated'});
-  }catch(err){
-    res.status(500).json({message: err.message});
+    res.json({ message: 'Sub-entry updated' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/updateModelStatus', async(req,res) => {
-  const {id,status} = req.body;
-  await Customer.findByIdAndUpdate(id,{status});
-  res.json({message: 'Status Updated'});
+router.post('/updateModelStatus', async (req, res) => {
+  const { id, status } = req.body;
+  await Customer.findByIdAndUpdate(id, { status });
+  res.json({ message: 'Status Updated' });
 });
 
-router.post('/updateModelSubStatus', async(req,res)=>{
-  const { userId, subId, status} = req.body;
-  await Customer.updateOne(
-    { _id: userId, "subEntries._id": subId},
-    { $set: { "subEntries.$.status": status}}
-  );
-  res.json({ message: 'Sub Status Updated'});
+// router.post('/updateModelSubStatus', async (req, res) => {
+//   const { userId, subId, status } = req.body;
+//   console.log('USERID=====>>', userId);
+//   console.log('SUBID=====>>', subId);
+//   console.log('STATUS=====>>', status);
+//   await Customer.updateOne(
+//     { _id: userId, "subEntries._id": subId },
+//     { $set: { "subEntries.$.status": status } }
+//   );
+//   res.json({ message: 'Sub Status Updated' });
+// });
+
+router.post('/updateModelSubStatus', async (req, res) => {
+  try {
+    const { parentId, custCode, status } = req.body;
+
+    const customer = await Customer.findById(parentId);
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    const sub = customer.subEntries.find(
+      entry => entry.custCode === custCode
+    );
+
+    if (!sub) {
+      return res.status(404).json({ message: 'Sub-entry not found' });
+    }
+
+    // ✅ Sirf status update
+    sub.status = status;
+
+    await customer.save();
+
+    res.json({ message: 'Sub Status Updated' });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
+router.get('/rangeTotalEntriesRestDownloadAdmin/:startDate/:endDate',async(req,res)=>{
+  const startDate = new Date(req.params.startDate);
+  const endDate = new Date(req.params.endDate);
+  endDate.setDate(endDate.getDate() + 1);
+  try{
+    let query;
+    query = {
+      restPaymentDate: {
+        $gte: startDate, $lte: endDate
+      },
+      $or:[
+        {closingDate: {$lt: startDate}},
+        {closingDate: {$gt: endDate}},
+        {closingDate: { $exists: false}},
+        {closingDate: null}
+      ]
+    };
+    const rangeFileData = await Customer.find(query);
+    const data = rangeFileData.map(customer => ({
+      'custCode': customer.custCode,
+      'custName': customer.custName,
+      'custNumb': customer.custNumb,
+      'custBusiness': customer.custBussiness,
+      'closingDate': customer.closingDate,
+      'closingPrice': customer.closingPrice,
+      'closingCateg': customer.closingCateg,
+      'AdvPay': customer.AdvPay,
+      'remainingAmount': customer.remainingAmount,
+      'restAmount': customer.restAmount,
+      'restPaymentDate': customer.restPaymentDate,
+      'Qr': customer.Qr,
+      'billType': customer.billType,
+      'projectState': customer.projectStatus,
+      'custState': customer.custState,
+      'salesPerson': customer.salesPerson,
+      'remark': customer.remark
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws, 'Customers');
+    XLSX.writeFile(wb, 'RangeRestAmountCustomers.xlsx');
+    res.download('RangeRestAmountCustomers.xlsx');
+  }catch(err){
+    console.error('Error Downloading File', err);
+    res.status(500).json({error: 'Failed to download File'});
+  }
+});
+
 
 // const videoAuth = new google.auth.GoogleAuth({
 //   keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS,

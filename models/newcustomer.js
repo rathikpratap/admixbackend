@@ -87,6 +87,7 @@ const customerSchema = new mongoose.Schema({
     bundleStatus: { type: String },
     bundlePassDate: { type: Date },
     Qr: { type: String },
+    restAmountQr: {type: String},
     customerType: { type: String },
     isHighlighted: { type: Boolean, default: false },
     graphicsCount: { type: Number },
