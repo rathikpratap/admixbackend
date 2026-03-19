@@ -41,7 +41,8 @@ const io = new Server(server, {
         origin: 'https://www.login.admixmedia.in',
         methods: ['GET', 'POST'],
         credentials: true
-    }
+    },
+    transports: ['websocket']
 });
 
 // Make Socket.IO globally accessible
