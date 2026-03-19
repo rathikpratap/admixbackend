@@ -9267,13 +9267,23 @@ router.post('/transferCustomerToSalesLead', async (req, res) => {
 });
 //get Campaign NAmes for leads
 
+// router.get('/getAllCampaignNames', async (req, res) => {
+//   try {
+//     const allLeads = await salesLead.find();
+//     return res.json(allLeads)
+//   } catch (error) {
+//     console.error('Error Fetching Leads:', error);
+//     res.status(500).json({ error: 'Failed to fetch leads' });
+//   }
+// });
+
 router.get('/getAllCampaignNames', async (req, res) => {
   try {
-    const allLeads = await salesLead.find();
-    return res.json(allLeads)
+    const campaigns = await salesLead.distinct("campaign_Name");
+    return res.json(campaigns);
   } catch (error) {
-    console.error('Error Fetching Leads:', error);
-    res.status(500).json({ error: 'Failed to fetch leads' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed' });
   }
 });
 
@@ -9319,13 +9329,23 @@ router.get('/getWhatsAppCampaignNames', async (req, res) => {
 
 // get all Closing Names
 
+// router.get('/getClosingNames', async (req, res) => {
+//   try {
+//     const allClosing = await Customer.find();
+//     return res.json(allClosing)
+//   } catch (error) {
+//     console.log("Error Fetching Closing:", error);
+//     res.status(500).json({ error: 'Failed to fetch Closing' });
+//   }
+// });
+
 router.get('/getClosingNames', async (req, res) => {
   try {
-    const allClosing = await Customer.find();
-    return res.json(allClosing)
+    const closings = await Customer.distinct("closingCateg");
+    return res.json(closings);
   } catch (error) {
-    console.log("Error Fetching Closing:", error);
-    res.status(500).json({ error: 'Failed to fetch Closing' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed' });
   }
 });
 
