@@ -66,7 +66,8 @@ router.post('/register', async (req, res) => {
     subsidiaryName: req.body.subsidiaryName,
     incentivePassword: req.body.incentivePassword,
     editorType: req.body.editorType,
-    joiningDate: req.body.joiningDate
+    joiningDate: req.body.joiningDate,
+    cardNo: req.body.cardNo
   })
   await user.save()
     .then((_) => {
@@ -3123,7 +3124,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04oRM-Ba1hZVsCgYIARAAGAQSNwF-L9Ir9RveBfz_zGRGcOumqCbCTL50tP47bXDIymBS0kR6Exz_d669S68OAH3WhMvbv-lTocI';
+const REFERESH_TOKEN = '1//04_rL7_7fmg3oCgYIARAAGAQSNwF-L9IrONFB-KiEXl4-aG5Db6w0tkBf-JQOcbFu6pIVFz8CU8EKZoUNVdLBJNSa_o5GzrdQGIc';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -8189,6 +8190,63 @@ router.post('/update-attendance', async (req, res) => {
   }
 });
 
+// 🔥 UPDATE ATTENDANCE (DAY-WISE SAFE)
+// router.post("/update-attendance-new", async (req, res) => {
+//   console.log('IM HIT');
+//   const { username, year, month, attendance } = req.body;
+
+//   if (!username || !year || !month || !attendance) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Missing required fields",
+//     });
+//   }
+
+//   try {
+//     const user = await User.findOne({ signupUsername: username });
+
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     🔥 Ensure structure
+//     if (!user.attendanceNew) user.attendanceNew = {};
+//     if (!user.attendanceNew[year]) user.attendanceNew[year] = {};
+//     if (!user.attendanceNew[year][month])
+//       user.attendanceNew[year][month] = {};
+
+//     🔥 Day-wise update
+//     attendance.forEach((day) => {
+//       const dayNum = moment(day.date).format("DD");
+//       const dayNum = String(new Date(day.date).getDate()).padStart(2, "0");
+
+//       user.attendanceNew[year][month][dayNum] = {
+//         status: day.status,
+//         reason: day.reason || "",
+//       };
+//     });
+
+//     user.markModified("attendanceNew");
+//     await user.save();
+
+//     console.log("✅ SAVED:", user.attendanceNew[year][monthKey]);
+
+//     res.json({
+//       success: true,
+//       message: "Attendance updated successfully",
+//     });
+//   } catch (err) {
+//     console.error("Error updating attendance:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//     });
+//   }
+// });
+
 router.get('/attendance', async (req, res) => {
   const { year, month } = req.query;
   if (!year || !month) {
@@ -8260,6 +8318,179 @@ router.get('/attendance', async (req, res) => {
   } catch (err) {
     console.error("Error fetching or updating attendance data:", err);
     res.status(500).json({ success: false, message: "Error fetching or updating attendance data." });
+  }
+});
+
+// router.get('/attendance-new', async (req, res) => {
+//   const { year, month } = req.query;
+
+//   if (!year || !month) {
+//     return res.status(400).json({ success: false });
+//   }
+
+//   try {
+//     const users = await User.find();
+
+//     const monthKey = String(month).padStart(2, "0");
+//     const daysInMonth = new Date(year, month, 0).getDate();
+
+//     const result = users.map(user => {
+
+//       const attendanceMap = user.attendanceNew?.[year]?.[monthKey] || {};
+
+//       let totalPresent = 0;
+//       let totalAbsent = 0;
+//       let totalHalfDay = 0;
+
+//       const attendanceArray = [];
+
+//       for (let d = 1; d <= daysInMonth; d++) {
+
+//         const dayKey = String(d).padStart(2, '0');
+
+//         const dayData = attendanceMap[dayKey];
+
+//         let status = dayData?.status || "Select";
+//         let reason = dayData?.reason || "";
+
+//         if (status === "Present") totalPresent++;
+//         if (status === "Absent") totalAbsent++;
+//         if (status === "Half Day") totalHalfDay++;
+
+//         attendanceArray.push({
+//           date: `${year}-${month}-${dayKey}`,
+//           status,
+//           reason
+//         });
+//       }
+
+//       return {
+//         username: user.signupUsername,
+//         attendance: attendanceArray,
+//         totalPresent,
+//         totalAbsent,
+//         totalHalfday: totalHalfDay
+//       };
+//     });
+
+//     res.json({ success: true, data: result });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false });
+//   }
+// });
+
+// ================= SAVE ATTENDANCE =================
+router.post("/update-attendance-new", async (req, res) => {
+  const { username, year, month, attendance } = req.body;
+
+  try {
+    const user = await User.findOne({ signupUsername: username });
+
+    const yearKey = String(year);
+    const monthKey = String(month).padStart(2, "0");
+
+    if (!user.attendanceNew) user.attendanceNew = {};
+    if (!user.attendanceNew[yearKey]) user.attendanceNew[yearKey] = {};
+    if (!user.attendanceNew[yearKey][monthKey]) {
+      user.attendanceNew[yearKey][monthKey] = {};
+    }
+
+    // 🔥 EXISTING DATA LO
+    const existingMonthData = user.attendanceNew[yearKey][monthKey];
+
+    // 🔥 MERGE (IMPORTANT)
+    attendance.forEach((day) => {
+      const dayKey = String(new Date(day.date).getDate()).padStart(2, "0");
+
+      const existing = existingMonthData[dayKey] || {};
+
+      const isChanged = day.status !== "Select" && (existing.status !== day.status || (existing.reason || "") !== (day.reason || ""));
+
+      existingMonthData[dayKey] = {
+        // ...(existingMonthData[dayKey] || {}), // 🔥 old data safe
+        ...existing,
+        status: day.status,
+        reason: day.reason || "",
+        isManual: isChanged ? true : existing.isManual || false
+      };
+    });
+
+    user.attendanceNew[yearKey][monthKey] = existingMonthData;
+
+    user.markModified("attendanceNew");
+    await user.save();
+
+    console.log("✅ FINAL DATA:", user.attendanceNew[yearKey][monthKey]);
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+});
+
+
+// ================= GET ATTENDANCE =================
+router.get("/attendance-new", async (req, res) => {
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({ success: false });
+  }
+
+  try {
+    const users = await User.find();
+
+    const monthKey = String(month).padStart(2, "0");
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const data = users.map((user) => {
+
+      const attendanceMap =
+        user.attendanceNew?.[year]?.[monthKey] || {};
+
+      let totalPresent = 0;
+      let totalAbsent = 0;
+      let totalHalfDay = 0;
+
+      const attendanceArray = [];
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayKey = String(d).padStart(2, "0");
+
+        const dayData = attendanceMap[dayKey];
+
+        const status = dayData?.status || "Select";
+        const reason = dayData?.reason || "";
+
+        if (status.includes("Present")) totalPresent++;
+        if (status === "Absent") totalAbsent++;
+        if (status.includes("Half Day")) totalHalfDay++;
+
+        attendanceArray.push({
+          date: `${year}-${monthKey}-${dayKey}`,
+          status,
+          reason,
+        });
+      }
+
+      return {
+        username: user.signupUsername,
+        attendance: attendanceArray,
+        totalPresent,
+        totalAbsent,
+        totalHalfday: totalHalfDay,
+      };
+    });
+
+    res.json({ success: true, data });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 
@@ -11962,7 +12193,6 @@ router.get('/rangeTotalEntriesRestDownloadAdmin/:startDate/:endDate',async(req,r
     res.status(500).json({error: 'Failed to download File'});
   }
 });
-
 
 // const videoAuth = new google.auth.GoogleAuth({
 //   keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS,

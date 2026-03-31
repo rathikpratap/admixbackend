@@ -31,6 +31,7 @@ const registerSchema = new mongoose.Schema({
   paymentThreeVideo: { type: Number },
   accessToken: { type: String },
   editorType: {type: String},
+  cardNo: {type: String},
   loginSessions: [
     {
       loginTime: { type: Date },
@@ -46,6 +47,10 @@ const registerSchema = new mongoose.Schema({
     },
     default: {}
   },
+  attendanceNew: {
+  type: Object,
+  default: {}
+},
   subsidiaryName: {type: String},
   incentivePassword: {type: String},
   lastOTPLogin: {type: Date},

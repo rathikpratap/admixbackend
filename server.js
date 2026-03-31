@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const cors = require('cors');
 const cron = require('node-cron');
+const sql = require('mssql');
 
 const http = require('http');
 const { Server } = require('socket.io');
@@ -17,6 +18,7 @@ app.use('/auth', fbWebhook);
 
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
+
 //app.use(express.json());
 
 const salesLead = require('./models/salesLead');
@@ -91,6 +93,11 @@ const authRoute = require('./auth-route');
 
 //const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
 const reminder = require('./auth-route').reminder;
+
+const { fetchAttendance } = require('./attendance-job');
+
+console.log("DEBUG fetchAttendance:", fetchAttendance);
+// const fetchAttendance = require('./auth-route').fetchAttendance;
 app.use('/auth', authRoute);
 
 app.get('/', (req, res) => {
@@ -136,10 +143,46 @@ cron.schedule('* * * * *', async () => {
     reminder();
 });
 
-
+cron.schedule("* * * * *", async () => {
+  console.log("⏳ Fetching attendance...");
+  await fetchAttendance();
+});
 // app.listen(port, () => {
 //     console.log("Server Connected!!!!")
 // });
+
+// const config = {
+//   user: "sa",
+//   password: "abc@123",
+//   server: "127.0.0.1",
+//   port: 1433,
+//   database: "realtime",
+//   options: {
+//     encrypt: false,
+//     trustServerCertificate: true
+//   }
+// };
+
+// async function fetchAttendance2() {
+//   try {
+//     await sql.connect(config);
+
+//     const result = await sql.query(`
+//       SELECT TOP 50 
+//         cardno, 
+//         punchdatetime 
+//       FROM tran_machinerawpunch
+//       ORDER BY punchdatetime DESC
+//     `);
+
+//     console.log(result.recordset);
+
+//   } catch (err) {
+//     console.error("Error:", err);
+//   }
+// }
+
+// fetchAttendance2();
 
 server.listen(port, () => {
     console.log(`✅ Server running on port ${port}`);
