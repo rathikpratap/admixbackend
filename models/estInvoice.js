@@ -28,7 +28,7 @@ const estInvoiceSchema = new mongoose.Schema({
   GSTAmount: { type: Number },
   totalAmount: { type: Number },
   billFormat: { type: String },
-  billNumber: { type: Number, unique: true, required: true },
+  billNumber: { type: Number, required: true },
   financialYear: {
     type: String,
     required: true,
@@ -64,5 +64,9 @@ const estInvoiceSchema = new mongoose.Schema({
     isModelAvailabilityVisible: {type: Boolean, default: false},
   }
 });
+estInvoiceSchema.index(
+  { billNumber: 1, financialYear: 1 },
+  { unique: true }
+);
 
 module.exports = mongoose.model('estInvoice', estInvoiceSchema);
