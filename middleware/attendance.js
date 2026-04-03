@@ -1048,6 +1048,16 @@ async function processAttendance(records) {
       let lastPunch = null;
       let workHours = 0;
 
+      const inTimeIST = moment(firstPunch).format("YYYY-MM-DD hh:mm A");
+
+const outTimeIST = lastPunch
+  ? moment(lastPunch).format("YYYY-MM-DD hh:mm A")
+  : "N/A";
+
+console.log(
+  `👤 ${user.signupName} | 📅 ${date} | IN: ${inTimeIST} | OUT: ${outTimeIST}`
+);
+
       // ✅ OUT only if 2+ punches
       if (sorted.length >= 2) {
         const candidate = sorted[sorted.length - 1];
@@ -1065,13 +1075,16 @@ async function processAttendance(records) {
       );
 
       // 🔥 FIXED LATE LOGIC (CLONE)
-      const first = moment(firstPunch).utcOffset("+05:30");
+      // const first = moment(firstPunch).utcOffset("+05:30");
+      const first = moment(firstPunch).utc();
 
-      const lateThreshold = first.clone().set({
-        hour: 10,
-        minute: 30,
-        second: 0,
-      });
+      // const lateThreshold = first.clone().set({
+      //   hour: 10,
+      //   minute: 30,
+      //   second: 0,
+      // });
+
+      const lateThreshold = moment(firstPunch).utc().startOf("day").add(10, "hours").add(30, "minutes");
 
       const isLate = first.isAfter(lateThreshold);
 

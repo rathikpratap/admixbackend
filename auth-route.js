@@ -8253,7 +8253,9 @@ router.get('/attendance', async (req, res) => {
     return res.status(400).json({ success: false, message: "Year and month are required." });
   }
   try {
-    const users = await User.find({}).exec();
+    const users = await User.find({
+      cardNo: { $exists: true, $ne: ""}
+    }).exec();
     const daysInMonth = new Date(year, month, 0).getDate();
     const attendancePromises = users.map(async user => {
       let currentAttendance;
@@ -8442,7 +8444,9 @@ router.get("/attendance-new", async (req, res) => {
   }
 
   try {
-    const users = await User.find();
+    const users = await User.find({
+      cardNo: { $exists: true, $ne: null, $ne: "" }
+    });
 
     const monthKey = String(month).padStart(2, "0");
     const daysInMonth = new Date(year, month, 0).getDate();
