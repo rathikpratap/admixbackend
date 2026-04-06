@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const cors = require('cors');
 const cron = require('node-cron');
-const sql = require('mssql');
+// const sql = require('mssql');
 
 const http = require('http');
 const { Server } = require('socket.io');
@@ -68,7 +68,7 @@ io.on('connection', (socket) => {
                 newReminderTime.setMinutes(newReminderTime.getMinutes() + 15);
                 lead.callReminderDate = newReminderTime;
                 await lead.save();
-    
+
                 socket.emit('snooze-success', { message: `Reminder snoozed for 15 minutes.` });
             } else {
                 socket.emit('snooze-error', { message: `Lead not found.` });
@@ -94,9 +94,9 @@ const authRoute = require('./auth-route');
 //const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
 const reminder = require('./auth-route').reminder;
 
-const { fetchAttendance } = require('./attendance-job');
+// const { fetchAttendance } = require('./attendance-job');
 
-console.log("DEBUG fetchAttendance:", fetchAttendance);
+// console.log("DEBUG fetchAttendance:", fetchAttendance);
 // const fetchAttendance = require('./auth-route').fetchAttendance;
 app.use('/auth', authRoute);
 
@@ -143,10 +143,10 @@ cron.schedule('* * * * *', async () => {
     reminder();
 });
 
-cron.schedule("* * * * *", async () => {
-  console.log("⏳ Fetching attendance...");
-  await fetchAttendance();
-});
+// cron.schedule("* * * * *", async () => {
+//   console.log("⏳ Fetching attendance...");
+//   await fetchAttendance();
+// });
 // app.listen(port, () => {
 //     console.log("Server Connected!!!!")
 // });
@@ -168,9 +168,9 @@ cron.schedule("* * * * *", async () => {
 //     await sql.connect(config);
 
 //     const result = await sql.query(`
-//       SELECT TOP 50 
-//         cardno, 
-//         punchdatetime 
+//       SELECT TOP 50
+//         cardno,
+//         punchdatetime
 //       FROM tran_machinerawpunch
 //       ORDER BY punchdatetime DESC
 //     `);

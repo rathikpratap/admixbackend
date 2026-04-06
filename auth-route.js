@@ -43,6 +43,7 @@ const crypto = require('crypto');
 const io = global.io;
 const path = require('path');
 const { format } = require('date-fns');
+const { fetchAttendance } = require('./attendance-job');
 
 const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 const SCOPES = [MESSAGING_SCOPE];
@@ -3124,7 +3125,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04_rL7_7fmg3oCgYIARAAGAQSNwF-L9IrONFB-KiEXl4-aG5Db6w0tkBf-JQOcbFu6pIVFz8CU8EKZoUNVdLBJNSa_o5GzrdQGIc';
+const REFERESH_TOKEN = '1//04jEHd-Kg2P45CgYIARAAGAQSNwF-L9IrKjbZzXysxoWvpmM0dshtR58y4LxJWawQ3EQ--vboW2mTzQ84VJ724VwWGUivyXF_4gU';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -8469,6 +8470,9 @@ router.get("/attendance-new", async (req, res) => {
 
         const status = dayData?.status || "Select";
         const reason = dayData?.reason || "";
+        // const inTime = dayData?.inTime ? dayData.inTime.split("T")[1].substring(0,5) : "";
+        const inTime = dayData?.inTime ? dayData.inTime.toISOString().slice(11, 16) : "";
+        const outTime = dayData?.outTime ? dayData.outTime.toISOString().slice(11, 16) : "";
 
         if (status.includes("Present")) totalPresent++;
         if (status === "Absent") totalAbsent++;
@@ -8478,6 +8482,8 @@ router.get("/attendance-new", async (req, res) => {
           date: `${year}-${monthKey}-${dayKey}`,
           status,
           reason,
+          inTime,
+          outTime
         });
       }
 
@@ -8571,6 +8577,77 @@ router.get('/usersAttendance',checkAuth, async (req, res) => {
   } catch (err) {
     console.error("Error fetching or updating attendance data:", err);
     res.status(500).json({ success: false, message: "Error fetching or updating attendance data." });
+  }
+});
+
+//NEW MACHINE ATTENDANCE LALALA
+
+router.get('/usersAttendance-new', checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({
+      success: false,
+      message: "Year and month are required."
+    });
+  }
+
+  try {
+    const users = await User.find({ signupUsername: person1 });
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const monthKey = String(month).padStart(2, "0");
+    const yearKey = String(year);
+
+    const attendanceData = users.map(user => {
+
+      const attendanceMap =
+        user.attendanceNew?.[yearKey]?.[monthKey] || {};
+
+      let totalPresent = 0;
+      let totalAbsent = 0;
+      let totalHalfDay = 0;
+
+      const attendanceArray = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+
+        const dayKey = String(day).padStart(2, "0");
+
+        const dayData = attendanceMap[dayKey];
+
+        const status = dayData?.status || "Select";
+        const reason = dayData?.reason || "";
+
+        if (status.includes("Present")) totalPresent++;
+        if (status === "Absent") totalAbsent++;
+        if (status.includes("Half Day")) totalHalfDay++;
+
+        attendanceArray.push({
+          date: `${yearKey}-${monthKey}-${dayKey}`,
+          status,
+          reason
+        });
+      }
+
+      return {
+        username: user.signupUsername,
+        attendance: attendanceArray,
+        totalPresent,
+        totalAbsent,
+        totalHalfDay
+      };
+    });
+
+    res.json({ success: true, data: attendanceData });
+
+  } catch (err) {
+    console.error("Error fetching attendance:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching attendance"
+    });
   }
 });
 
@@ -12195,6 +12272,17 @@ router.get('/rangeTotalEntriesRestDownloadAdmin/:startDate/:endDate',async(req,r
   }catch(err){
     console.error('Error Downloading File', err);
     res.status(500).json({error: 'Failed to download File'});
+  }
+});
+
+router.post('/fetch-attendance', async(req,res)=>{
+  try{
+    console.log('Manual Attendance Fetch Triggered');
+    await fetchAttendance();
+    res.json({success: true, message: 'Attendance Fetched Successfull'});
+  }catch(error){
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error fetching attendance"});
   }
 });
 
