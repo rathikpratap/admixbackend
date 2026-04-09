@@ -8255,7 +8255,7 @@ router.get('/attendance', async (req, res) => {
   }
   try {
     const users = await User.find({
-      cardNo: { $exists: true, $ne: ""}
+      cardNo: { $exists: true, $ne: "" }
     }).exec();
     const daysInMonth = new Date(year, month, 0).getDate();
     const attendancePromises = users.map(async user => {
@@ -8506,7 +8506,7 @@ router.get("/attendance-new", async (req, res) => {
 
 // salesPerson wise Attendance
 
-router.get('/usersAttendance',checkAuth, async (req, res) => {
+router.get('/usersAttendance', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
   const { year, month } = req.query;
   if (!year || !month) {
@@ -8611,6 +8611,19 @@ router.get('/usersAttendance-new', checkAuth, async (req, res) => {
 
       const attendanceArray = [];
 
+      const formatTime = (time) => {
+        if (!time) return "";
+
+        const date = new Date(time);
+
+        return date.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: 'UTC'
+        });
+      };
+
       for (let day = 1; day <= daysInMonth; day++) {
 
         const dayKey = String(day).padStart(2, "0");
@@ -8619,6 +8632,8 @@ router.get('/usersAttendance-new', checkAuth, async (req, res) => {
 
         const status = dayData?.status || "Select";
         const reason = dayData?.reason || "";
+        const inTime = formatTime(dayData?.inTime);
+        const outTime = formatTime(dayData?.outTime);
 
         if (status.includes("Present")) totalPresent++;
         if (status === "Absent") totalAbsent++;
@@ -8627,7 +8642,9 @@ router.get('/usersAttendance-new', checkAuth, async (req, res) => {
         attendanceArray.push({
           date: `${yearKey}-${monthKey}-${dayKey}`,
           status,
-          reason
+          reason,
+          inTime,
+          outTime
         });
       }
 
@@ -12227,21 +12244,21 @@ router.post('/updateModelSubStatus', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-router.get('/rangeTotalEntriesRestDownloadAdmin/:startDate/:endDate',async(req,res)=>{
+router.get('/rangeTotalEntriesRestDownloadAdmin/:startDate/:endDate', async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
-  try{
+  try {
     let query;
     query = {
       restPaymentDate: {
         $gte: startDate, $lte: endDate
       },
-      $or:[
-        {closingDate: {$lt: startDate}},
-        {closingDate: {$gt: endDate}},
-        {closingDate: { $exists: false}},
-        {closingDate: null}
+      $or: [
+        { closingDate: { $lt: startDate } },
+        { closingDate: { $gt: endDate } },
+        { closingDate: { $exists: false } },
+        { closingDate: null }
       ]
     };
     const rangeFileData = await Customer.find(query);
@@ -12266,23 +12283,23 @@ router.get('/rangeTotalEntriesRestDownloadAdmin/:startDate/:endDate',async(req,r
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws, 'Customers');
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
     XLSX.writeFile(wb, 'RangeRestAmountCustomers.xlsx');
     res.download('RangeRestAmountCustomers.xlsx');
-  }catch(err){
+  } catch (err) {
     console.error('Error Downloading File', err);
-    res.status(500).json({error: 'Failed to download File'});
+    res.status(500).json({ error: 'Failed to download File' });
   }
 });
 
-router.post('/fetch-attendance', async(req,res)=>{
-  try{
+router.post('/fetch-attendance', async (req, res) => {
+  try {
     console.log('Manual Attendance Fetch Triggered');
     await fetchAttendance();
-    res.json({success: true, message: 'Attendance Fetched Successfull'});
-  }catch(error){
+    res.json({ success: true, message: 'Attendance Fetched Successfull' });
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Error fetching attendance"});
+    res.status(500).json({ success: false, message: "Error fetching attendance" });
   }
 });
 
