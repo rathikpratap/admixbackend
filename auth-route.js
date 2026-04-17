@@ -94,11 +94,19 @@ const otpStore = {};
 //   }
 // });
 
+// const transporter1 = nodemailer.createTransport({
+//   service: 'gmail',
+//   auth: {
+//     user: 'admixmediaindia@gmail.com',
+//     pass: 'kxkc veum szkc nfom'
+//   }
+// });
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'admixmediaindia@gmail.com',
-    pass: 'cnhw bntn nbjz lfab'
+    user: 'admixmediavideo@gmail.com',
+    pass: 'cqfg wbxq pega nhrm' 
   }
 });
 
