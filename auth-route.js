@@ -2778,12 +2778,14 @@ router.post('/downloadRangeFileExMa', checkAuth, async (req, res) => {
 
 // Download Sales Range Data
 
-router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
+router.get('/downloadSalesRangeFile/:startDate/:endDate',checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
   endDate.setDate(endDate.getDate() + 1);
   try {
+    const person1 = req.userData?.name;
     let query = {
+      salesPersonn: person1,
       closingDate: {
         $gte: startDate, $lte: endDate
       }
@@ -2800,7 +2802,8 @@ router.get('/downloadSalesRangeFile/:startDate/:endDate', async (req, res) => {
       'state': customer.state,
       'projectStatus': customer.projectStatus,
       'salesTeam': customer.salesTeam,
-      'remark': customer.remark
+      'remark': customer.remark,
+      'salesPerson': customer.salesPerson
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
