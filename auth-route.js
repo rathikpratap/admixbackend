@@ -6912,9 +6912,13 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
         { _id: `mainInvoice_${financialYear}` },
         // { $inc: { [field]: 1 } },
         {
-          $setOnInsert: isGST
-            ? { NonGSTnum: 812 }   // ❗ GST run → NonGST init only
-            : { GSTNum: 795 },     // ❗ Non-GST run → GST init only
+          // $setOnInsert: isGST
+          //   ? { NonGSTnum: 812 }   // ❗ GST run → NonGST init only
+          //   : { GSTNum: 795 },     // ❗ Non-GST run → GST init only
+          $setOnInsert: {
+            GSTNum: 0,
+            nonGSTnum: 0
+          },
 
           $inc: { [field]: 1 }
         },
