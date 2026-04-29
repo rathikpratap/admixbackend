@@ -7267,10 +7267,10 @@ router.post('/invoice', checkAuth, async (req, res) => {
   try {
     const {
       custGST, custAddLine1, custAddLine2, custAddLine3,
-      billType: incomingBillType, gstType, custName, custNumb,
+      billType, gstType, custName, custNumb,
       invoiceCateg, customCateg, rows,
       invoiceDate, GSTAmount, totalAmount,
-      billFormat: incomingBillFormat, financialYear,
+      billFormat, financialYear,
       discountValue, afterDiscountTotal, state,
       allowUpdate, allowNewDateEntry,
       salesLeadId, customerId, QrCheck,
@@ -7362,10 +7362,10 @@ router.post('/invoice', checkAuth, async (req, res) => {
       const counter = await Counter.findOneAndUpdate(
         { _id: `mainInvoice_${financialYear}` },
         {
-          $setOnInsert: {
-            GSTNum: 0,
-            NonGSTnum: 0
-          },
+          $setOnInsert: isGST 
+            ? {NonGSTnum: 0}
+            : {GSTNum: 0}
+          ,
           $inc: { [field]: 1 }
         },
         { new: true, upsert: true }
