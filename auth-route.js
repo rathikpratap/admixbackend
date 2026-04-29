@@ -1436,10 +1436,95 @@ const addHeadersToSheet = async (spreadsheetId, sheetTitle) => {
   }
 };
 
+// router.post('/customer', async (req, res) => {
+//   try {
+//     const {
+//       //custCode,
+//       custName,
+//       closingDate,
+//       graphicsCount = 0,
+//       videosCount = 0,
+//       reelsCount = 0,
+//       custBussiness,
+//       salesPerson,
+//       companyName,
+//       priority,
+//       ...restFields
+//     } = req.body;
+
+//     // === 1. Yahan se THREAD-SAFE custCode generate hoga ===
+//     const counter = await Counter.findOneAndUpdate(
+//       { _id: 'customer' },
+//       { $inc: { seq: 1 } },
+//       { new: true, upsert: true }
+//     );
+
+//     const baseCustCode = counter.seq;
+
+//     // const baseCustCode = parseInt(custCode, 10);
+//     // if (isNaN(baseCustCode)) {
+//     //   return res.status(400).json({ success: false, message: "Invalid custCode" });
+//     // }
+
+//     let nextCustCode = 1;
+//     const subEntries = [];
+
+//     const createSubEntries = (count, type) => {
+//       for (let i = 1; i <= count; i++) {
+//         subEntries.push({
+//           // custCode: `${custCode}.${nextCustCode++}`,
+//           custCode: `${baseCustCode}.${nextCustCode++}`,
+//           custName: `${custName} (${type} ${i})`,
+//           entryType: type,
+//           custBussiness: custBussiness,
+//           salesPerson: salesPerson,
+//           companyName: companyName,
+//           priority: priority
+//         });
+//       }
+//     };
+
+//     createSubEntries(graphicsCount, "Graphic");
+//     createSubEntries(videosCount, "Video");
+//     createSubEntries(reelsCount, "Reel");
+
+//     const customerData = {
+//       custCode: baseCustCode,
+//       custName,
+//       closingDate,
+//       graphicsCount,
+//       videosCount,
+//       reelsCount,
+//       entryType: "Main",
+//       subEntries,
+//       salesPerson,
+//       companyName,
+//       custBussiness,
+//       priority,
+//       ...restFields
+//     };
+
+//     const customer = new Customer(customerData);
+//     await customer.save();
+
+//     await appendToGoogleSheet(customer);
+
+//     res.json({
+//       success: true,
+//       message: "Customer added with sub-entries.",
+//       data: customer
+//     });
+
+//   } catch (error) {
+//     console.error("Error adding customer:", error);
+//     res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+//   }
+// });
+
 router.post('/customer', async (req, res) => {
   try {
     const {
-      //custCode,
+      custCode, // 👈 ignore from frontend
       custName,
       closingDate,
       graphicsCount = 0,
@@ -1452,34 +1537,44 @@ router.post('/customer', async (req, res) => {
       ...restFields
     } = req.body;
 
-    // === 1. Yahan se THREAD-SAFE custCode generate hoga ===
+    // 🔴 VALIDATION
+    if (!custName || !closingDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing"
+      });
+    }
+
+    // ✅ GENERATE custCode
     const counter = await Counter.findOneAndUpdate(
       { _id: 'customer' },
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
 
+    if (!counter || typeof counter.seq !== 'number') {
+      return res.status(500).json({
+        success: false,
+        message: "custCode generation failed"
+      });
+    }
+
     const baseCustCode = counter.seq;
 
-    // const baseCustCode = parseInt(custCode, 10);
-    // if (isNaN(baseCustCode)) {
-    //   return res.status(400).json({ success: false, message: "Invalid custCode" });
-    // }
-
-    let nextCustCode = 1;
+    // ✅ CREATE SUB ENTRIES
+    let next = 1;
     const subEntries = [];
 
     const createSubEntries = (count, type) => {
       for (let i = 1; i <= count; i++) {
         subEntries.push({
-          // custCode: `${custCode}.${nextCustCode++}`,
-          custCode: `${baseCustCode}.${nextCustCode++}`,
+          custCode: `${baseCustCode}.${next++}`,
           custName: `${custName} (${type} ${i})`,
           entryType: type,
-          custBussiness: custBussiness,
-          salesPerson: salesPerson,
-          companyName: companyName,
-          priority: priority
+          custBussiness,
+          salesPerson,
+          companyName,
+          priority
         });
       }
     };
@@ -1488,8 +1583,10 @@ router.post('/customer', async (req, res) => {
     createSubEntries(videosCount, "Video");
     createSubEntries(reelsCount, "Reel");
 
+    // ✅ FINAL OBJECT (NO OVERWRITE ISSUE)
     const customerData = {
-      custCode: baseCustCode,
+      ...restFields,
+      custCode: baseCustCode, // 👈 always last
       custName,
       closingDate,
       graphicsCount,
@@ -1497,27 +1594,30 @@ router.post('/customer', async (req, res) => {
       reelsCount,
       entryType: "Main",
       subEntries,
+      custBussiness,
       salesPerson,
       companyName,
-      custBussiness,
-      priority,
-      ...restFields
+      priority
     };
 
-    const customer = new Customer(customerData);
-    await customer.save();
+    console.log("Saving:", customerData);
 
-    await appendToGoogleSheet(customer);
+    // ✅ SAVE
+    const customer = await Customer.create(customerData);
 
     res.json({
       success: true,
-      message: "Customer added with sub-entries.",
+      message: "Customer added successfully",
       data: customer
     });
 
   } catch (error) {
-    console.error("Error adding customer:", error);
-    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    console.error("ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
@@ -3136,7 +3236,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04F0XXmEUvAFMCgYIARAAGAQSNwF-L9Irkcf9C1uLukRSPSKcdDSqrbHS2vlAgSB4BqsQIasH6eEhbdGAX2xj3Gp-ZRZNg07-pVM';
+const REFERESH_TOKEN = '1//04xt316Sidan4CgYIARAAGAQSNwF-L9Ir97eVk15rcz58VSR9ROS2afsx1o5OReoGcTiB1V6xMTgvwwK1-l6qCOnEEueSLZLVl8c';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6912,13 +7012,9 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
         { _id: `mainInvoice_${financialYear}` },
         // { $inc: { [field]: 1 } },
         {
-          // $setOnInsert: isGST
-          //   ? { NonGSTnum: 812 }   // ❗ GST run → NonGST init only
-          //   : { GSTNum: 795 },     // ❗ Non-GST run → GST init only
-          $setOnInsert: {
-            GSTNum: 0,
-            nonGSTnum: 0
-          },
+          $setOnInsert: isGST
+            ? { NonGSTnum: 812 }   // ❗ GST run → NonGST init only
+            : { GSTNum: 795 },     // ❗ Non-GST run → GST init only
 
           $inc: { [field]: 1 }
         },
@@ -7020,6 +7116,320 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server Error' });
+  }
+});
+
+// Main Invoices
+
+// router.post('/invoice', checkAuth, async (req,res) =>{
+//   const person1 = req.userData.name;
+//   try{
+//     const {
+//       custName, custNumb, invoiceDate, financialYear, billType, billFormat, allowUpdate, allowDateEntry, customerId
+//       // custGST, custAddLine1, custAddLine2, custAddLine3,
+//       // billType: incomingBillType, gstType, custName, custNumb,
+//       // invoiceCateg, customCateg, rows,
+//       // invoiceDate, GSTAmount, totalAmount,
+//       // billFormat: incomingBillFormat, financialYear,
+//       // discountValue, afterDiscountTotal, state,
+//       // allowUpdate, allowNewDateEntry,
+//       // salesLeadId, customerId, QrCheck,
+//       // noteText, noteHtml, termsHtml, termsList,
+//       // packageIncludesHtml, packageIncludesList,
+//       // paymentTermsHtml, paymentTermsList,
+//       // additionalNotesHtml, additionalNotesList,
+//       // visibilityFlags
+//     } = req.body;
+
+//     const date = new Date(invoiceDate);
+//     const dateStr = date.toISOString().split('T')[0];
+
+//     const sameMonthInvoices = await EstInvoice.find({
+//       custName,
+//       custNumb,
+//       salesPerson : person1,
+//       $expr: {
+//         $and: [
+//           { $eq: [{ $month: "$date"}, date.getMonth() + 1]},
+//           { $eq: [{ $year: "$date"}, date.getFullYear()]}
+//         ]
+//       }
+//     });
+
+//     // const sameDateInvoice = sameMonthInvoices.find(
+//     //   inv => inv.date.toISOString().split('T')[0] === dateStr
+//     // );
+
+//     const sameDateInvoice = sameMonthInvoices.find(
+//       inv => inv.date.toISOString().split('T')[0] === dateStr
+//     );
+
+//     if(sameDateInvoice && !allowUpdate) {
+//       return res.json({
+//         success: false,
+//         sameDateExists: true,
+//         message: 'Invoice already exists on same Date'
+//       });
+//     }
+//     // SAME MONTH BLOCK
+//     if(!sameDateInvoice && sameMonthInvoices.length && !allowNewDateEntry) {
+//       return res.json({
+//         success: false,
+//         differentDateExists: true,
+//         message: 'Invoice already exists this month'
+//       });
+//     }
+
+//     // UPDATE EXISTING
+//     if(sameDateInvoice && allowUpdate){
+//       Object.assign(sameDateInvoice, req.body);
+//       await sameDateinvoice.save();
+
+//       return res.json({
+//         success: true,
+//         invoice: sameDateInvoice
+//       });
+//     }
+
+//     //Number GENERATION
+
+//     let billNumber = null;
+//     let invoiceNumber = [];
+//     let quotationNumber = null;
+
+//     if(billFormat === 'Estimate') {
+//       const counter = await Counter.findOneAndUpdate(
+//         { _id: `estInvoice_${financialYear}`},
+//         {
+//           $setOnInsert: {quotationNum: 0},
+//           $inc: { quotationNum: 1}
+//         },
+//         { new: true, upsert: true}
+//       );
+
+//       billNumber = counter.quotationNum;
+//       quotationNumber = `ADM-${financialYear}/${billNumber}`;
+//     }
+
+//     if(billFormat === 'Main'){
+//       const isGST = billType === 'GST';
+//       const field = isGST ? 'GSTNum' : 'NonGSTnum';
+
+//       const counter = await Counter.findOneAndUpdate(
+//         { _id: `mainInvoice_${financialYear}`},
+//         {
+//           $setOnInsert: {
+//             GSTNum: 0,
+//             NonGSTnum: 0
+//           },
+//           $inc: { [field]: 1}
+//         },
+//         {new: true, upsert: true}
+//       );
+
+//       billNumber = counter[field];
+
+//       const invNo = isGST ? `ADMIX=${financialYear}/${billNumber}` : `ADM-${financialYear}/${billNumber}`;
+//       invoiceNumber: push({
+//         InvoiceNo: invNo,
+//         invoiceDate: date
+//       });
+//     }
+
+//     // SAVE
+
+//     const invoice = new EstInvoice({
+//       ...req.body, billNumber, invoiceNumber, quotationNumber, date
+//     });
+//     await invoice.save();
+
+//     //UPDATE CUSTOMER
+
+//     if(customerId && billFormat === 'Main' && invoiceNumber.length) {
+//       await Customer.findByIdAndUpdate(customerId, {
+//         $push: { invoiceNumber: invoiceNumber[0] }
+//       });
+//     }
+
+//     return res.json({
+//       success: true,
+//       invoice
+//     });
+//   } catch(err){
+//     console.error(err);
+//     res.status(500).json({ success: false});
+//   }
+// });
+
+router.post('/invoice', checkAuth, async (req, res) => {
+  const person1 = req.userData.name;
+
+  try {
+    const {
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billType: incomingBillType, gstType, custName, custNumb,
+      invoiceCateg, customCateg, rows,
+      invoiceDate, GSTAmount, totalAmount,
+      billFormat: incomingBillFormat, financialYear,
+      discountValue, afterDiscountTotal, state,
+      allowUpdate, allowNewDateEntry,
+      salesLeadId, customerId, QrCheck,
+      noteText, noteHtml, termsHtml, termsList,
+      packageIncludesHtml, packageIncludesList,
+      paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList,
+      visibilityFlags
+    } = req.body;
+
+    const date = new Date(invoiceDate);
+    const dateStr = date.toISOString().split('T')[0];
+
+    const sameMonthInvoices = await EstInvoice.find({
+      custName,
+      custNumb,
+      salesPerson: person1,
+      $expr: {
+        $and: [
+          { $eq: [{ $month: "$date" }, date.getMonth() + 1] },
+          { $eq: [{ $year: "$date" }, date.getFullYear()] }
+        ]
+      }
+    });
+
+    const sameDateInvoice = sameMonthInvoices.find(
+      inv => inv.date.toISOString().split('T')[0] === dateStr
+    );
+
+    if (sameDateInvoice && !allowUpdate) {
+      return res.json({
+        success: false,
+        sameDateExists: true,
+        message: 'Invoice already exists on same Date'
+      });
+    }
+
+    if (!sameDateInvoice && sameMonthInvoices.length && !allowNewDateEntry) {
+      return res.json({
+        success: false,
+        differentDateExists: true,
+        message: 'Invoice already exists this month'
+      });
+    }
+
+    /* ================= UPDATE ================= */
+
+    if (sameDateInvoice && allowUpdate) {
+
+      Object.assign(sameDateInvoice, {
+        ...req.body,
+        billNumber: sameDateInvoice.billNumber,
+        invoiceNumber: sameDateInvoice.invoiceNumber,
+        quotationNumber: sameDateInvoice.quotationNumber
+      });
+
+      await sameDateInvoice.save();
+
+      return res.json({
+        success: true,
+        invoice: sameDateInvoice
+      });
+    }
+
+    /* ================= NUMBER ================= */
+
+    let billNumber = null;
+    let invoiceNumber = [];
+    let quotationNumber = null;
+
+    if (billFormat === 'Estimate') {
+      const counter = await Counter.findOneAndUpdate(
+        { _id: `estInvoice_${financialYear}` },
+        {
+          $setOnInsert: { quotationNum: 0 },
+          $inc: { quotationNum: 1 }
+        },
+        { new: true, upsert: true }
+      );
+
+      billNumber = counter.quotationNum;
+      quotationNumber = `ADM-${financialYear}/${billNumber}`;
+    }
+
+    if (billFormat === 'Main') {
+      const isGST = billType === 'GST';
+      const field = isGST ? 'GSTNum' : 'NonGSTnum';
+
+      const counter = await Counter.findOneAndUpdate(
+        { _id: `mainInvoice_${financialYear}` },
+        {
+          $setOnInsert: {
+            GSTNum: 0,
+            NonGSTnum: 0
+          },
+          $inc: { [field]: 1 }
+        },
+        { new: true, upsert: true }
+      );
+
+      billNumber = counter[field];
+
+      const invNo = isGST
+        ? `ADMIX-${financialYear}/${billNumber}`
+        : `ADM-${financialYear}/${billNumber}`;
+
+      invoiceNumber.push({
+        InvoiceNo: invNo,
+        invoiceDate: date
+      });
+    }
+
+    /* ================= SAVE ================= */
+
+    const invoice = new EstInvoice({
+      // ...req.body,
+      // billNumber,
+      // invoiceNumber,
+      // quotationNumber,
+      // date,
+      // salesPerson: person1
+      custGST, custAddLine1, custAddLine2, custAddLine3,
+      billFormat, billType,
+      billNumber,
+      invoiceNumber,
+      quotationNumber,
+      custName, custNumb,
+      invoiceCateg, customCateg, rows,
+      date,
+      GSTAmount, totalAmount,
+      financialYear,
+      discountValue, afterDiscountTotal, state,
+      noteText, noteHtml, termsHtml, termsList,
+      packageIncludesHtml, packageIncludesList,
+      paymentTermsHtml, paymentTermsList,
+      additionalNotesHtml, additionalNotesList,
+      visibilityFlags,
+      salesPerson: person1,
+      QrCheck
+    });
+
+    await invoice.save();
+
+    /* ================= CUSTOMER ================= */
+
+    if (customerId && billFormat === 'Main' && invoiceNumber.length) {
+      await Customer.findByIdAndUpdate(customerId, {
+        $push: { invoiceNumber: invoiceNumber[0] }
+      });
+    }
+
+    return res.json({
+      success: true,
+      invoice
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 
@@ -11926,6 +12336,93 @@ router.get('/verify-quotation', async (req, res) => {
   } catch (err) {
     console.error('verify-quotation error', err);
     return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+router.get('/verify-invoices', async (req, res) => {
+  try{
+    const { financialYear,invoiceNumber, custName, custNumb, billType} = req.query;
+
+    if(!financialYear || !invoiceNumber || !billType) {
+      return res.status(400).json({ ok: false, message: 'Financial Year, invoiceNumber and billType are required'});
+    }
+
+    const prefix = billType === 'GST Bill' ? `ADMIX-${financialYear}/`:`ADM-${financialYear}/`;
+
+    // const fullInvoiceNumber = `${prefix}-${invoiceNumber}`;
+
+    // const invoice = await EstInvoice.findOne({
+    //   invoiceNumber: { $in: [fullInvoiceNumber] }
+    // });
+
+    const fullInvoiceNumber = `${prefix}${invoiceNumber}`;
+    const invoice = await EstInvoice.findOne({
+      "invoiceNumber.InvoiceNo": fullInvoiceNumber
+    });
+
+    
+
+    if(!invoice) {
+      return res.json({ ok: true, found: false, match: false, message: 'Invoice not found'});
+    }
+
+    const last10 = (input) => {
+      if(!input) return '';
+      const digits = String(input).replace(/\D/g, '');
+      return digits.length > 10 ? digits.slice(-10) : digits;
+    };
+
+    const dbNumberRaw = (invoice.custNumb && invoice.custNumb.toString()) || '';
+    // const dbNumberCandidates = dbNumbersRaw.split(/[\s,;|]+/).filter(Boolean);
+    const dbNumberCandidates = dbNumberRaw.split(/[\s,;|]+/).filter(Boolean);
+    const dbLast10Set = new Set(dbNumberCandidates.map(n => last10(n)).filter(Boolean));
+
+    const reqLast10 = last10(custNumb || '');
+
+    let mismatchFields = [];
+
+    const dbName = String(invoice.custName || '').trim().toLowerCase();
+    const reqName = String(custName || '').trim().toLowerCase();
+
+    if(!(dbName && reqName && dbName === reqName)){
+      mismatchFields.push('Customer Name');
+    }
+
+    let phoneMatches = false;
+
+    if(reqLast10){
+      if(dbLast10Set.has(reqLast10)) {
+        phoneMatches = true;
+      } else {
+        // const dbSingleLast10 = last10(dbNumbersRaw);
+        const dbSingleLast10 = last10(dbNumberRaw);
+        if(dbSingleLast10 && dbSingleLast10 === reqLast10) {
+          phoneMatches = true;
+        }
+      }
+    }
+
+    if (!phoneMatches) mismatchFields.push('Customer Number');
+
+    const isMatch = mismatchFields.length === 0;
+
+    return res.json({
+      ok: true,
+      found: true,
+      match: isMatch,
+      mismatchFields,
+      message: isMatch
+        ? 'Invoice matches this customer'
+        : `${mismatchFields.join(' and ')} do not match`,
+      invoice: {
+        invoiceNumber: fullInvoiceNumber,
+        custName: invoice.custName,
+        custNumb: invoice.custNumb
+      }
+    });
+  } catch (err) {
+    console.error('verify-invoice error', err);
+    return res.status(500).json({ ok: false, message: 'Server error'});
   }
 });
 
