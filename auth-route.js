@@ -12430,7 +12430,8 @@ router.get('/verify-invoices', async (req, res) => {
         ? 'Invoice matches this customer'
         : `${mismatchFields.join(' and ')} do not match`,
       invoice: {
-        invoiceNumber: fullInvoiceNumber,
+        // invoiceNumber: fullInvoiceNumber,
+        invoiceNumber: invoice.invoiceNumber?.[0]?.InvoiceNo || '',
         custName: invoice.custName,
         custNumb: invoice.custNumb
       }
