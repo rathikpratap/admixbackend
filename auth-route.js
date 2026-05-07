@@ -12364,9 +12364,15 @@ router.get('/verify-invoices', async (req, res) => {
     //   invoiceNumber: { $in: [fullInvoiceNumber] }
     // });
 
-    const fullInvoiceNumber = `${prefix}${invoiceNumber}`;
+    // const fullInvoiceNumber = `${prefix}${invoiceNumber}`;
+    // const invoice = await EstInvoice.findOne({
+    //   "invoiceNumber.InvoiceNo": fullInvoiceNumber
+    // });
+
     const invoice = await EstInvoice.findOne({
-      "invoiceNumber.InvoiceNo": fullInvoiceNumber
+      "invoiceNumber.InvoiceNo": {
+        $regex: `^${prefix}.*\/${invoiceNumber}$`
+      }
     });
 
     
