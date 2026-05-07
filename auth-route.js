@@ -12341,13 +12341,22 @@ router.get('/verify-quotation', async (req, res) => {
 
 router.get('/verify-invoices', async (req, res) => {
   try{
+    // const { financialYear,invoiceNumber, custName, custNumb, billType} = req.query;
     const { financialYear,invoiceNumber, custName, custNumb, billType} = req.query;
 
-    if(!financialYear || !invoiceNumber || !billType) {
-      return res.status(400).json({ ok: false, message: 'Financial Year, invoiceNumber and billType are required'});
+    // if(!financialYear || !invoiceNumber || !billType) {
+    //   return res.status(400).json({ ok: false, message: 'Financial Year, invoiceNumber and billType are required'});
+    // }
+
+    if (!invoiceNumber || !billType) {
+      return res.status(400).json({
+        ok: false,
+        message: 'invoiceNumber and billType are required'
+      });
     }
 
-    const prefix = billType === 'GST Bill' ? `ADMIX-${financialYear}/`:`ADM-${financialYear}/`;
+    // const prefix = billType === 'GST Bill' ? `ADMIX-${financialYear}/`:`ADM-${financialYear}/`;
+    const prefix = billType === 'GST Bill' ? 'ADMIX-' : 'ADM-';
 
     // const fullInvoiceNumber = `${prefix}-${invoiceNumber}`;
 
