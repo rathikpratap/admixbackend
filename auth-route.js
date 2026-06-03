@@ -11831,6 +11831,30 @@ router.post('/filter', async (req, res) => {
   }
 });
 
+router.post('/filterAdmin', async (req,res) => {
+  try{
+    const { startDate, endDate, salesPerson, projectStatus } = req.body;
+    let query = {};
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23,59,59,999);
+      query.closingDate = { $gte: start, $lte: end};
+    }
+    if(salesPerson){
+      query.salesPerson = salesPerson;
+    }
+    if(projectStatus){
+      query.projectStatus = projectStatus;
+    }
+    const leads = await salesLead.find(query);
+    res.json(leads);
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ message: 'Server Error'});
+  }
+});
+
 router.get('/allSalesLeads', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
