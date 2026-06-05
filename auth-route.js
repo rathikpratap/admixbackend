@@ -3331,7 +3331,7 @@ async function processAndSaveLead(leadData, meta = {}) {
         if (fieldName === 'full name' || fieldName === 'name') leadObj.custName = value;
         else if (fieldName === 'email') leadObj.custEmail = value;
         else if (fieldName === 'company name') leadObj.custBussiness = value;
-        else if (fieldName === 'phone number' || fieldName === 'phone no.' || fieldName === 'phone') leadObj.custNumb = value;
+        else if (fieldName === 'phone number' || fieldName === 'phone no.' || fieldName === 'phone' || fieldName === 'number' || fieldName === 'Number' || fieldName === 'Phone Number' || fieldName === 'Phone number') leadObj.custNumb = value;
         else if (fieldName === 'state') leadObj.state = value;
         else leadObj.additionalFields[fieldName] = value;
       }
