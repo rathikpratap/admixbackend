@@ -31,6 +31,8 @@ const salesLeadSchema = new mongoose.Schema({
     tag: String,
     quotationNumber: {type: String},
     quotationDate: {type: Date},
+    leadType: {type: String},
+    custCode: {type: Number}
 });
 
 module.exports = mongoose.model('salesLead', salesLeadSchema);

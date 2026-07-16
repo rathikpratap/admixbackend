@@ -99,6 +99,7 @@ const customerSchema = new mongoose.Schema({
     quotationNumber: {type: String},
     quotationDate: {type: Date},
     modelName: {type: String},
+    leadType: {type: String},
     status:[{ code: {type:String},date:{type: Date}}],
     invoiceNumber: [
         {

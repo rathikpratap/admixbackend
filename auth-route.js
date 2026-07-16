@@ -1605,12 +1605,49 @@ router.post('/customer', async (req, res) => {
     // ✅ SAVE
     const customer = await Customer.create(customerData);
 
+    //New Update Sales Leads as closing
+
+    const normalizeNumber = (num) => {
+      if(!num) return null;
+      return String(num).replace(/\D/g, "").slice(-10);
+    };
+
+    const customerNumber = normalizeNumber(customer.custNumb);
+
+    if(customerNumber) {
+      const numbersToMatch = [
+        Number(customerNumber),
+        Number(`91${customerNumber}`)
+      ];
+
+      const latestLead = await salesLead.findOne({
+        custNumb: { $in: numbersToMatch }
+      }).sort({ _id: -1});
+
+      if(latestLead && latestLead.projectStatus !== "Closing"){
+        latestLead.projectStatus = "Closing";
+        latestLead.leadsCreatedDate = customer.closingDate;
+        latestLead.custCode = customer.custCode;
+        await latestLead.save();
+
+      } else {
+        await salesLead.create({
+          custName: customer.custName,
+          custNumb: Number(customerNumber),
+          leadsCreatedDate: customer.leadDate,
+          closingDate: customer.closingDate,
+          projectStatus: "Closing",
+          salesPerson: customer.salesPerson,
+          custCode: customer.custCode,
+          leadType: customer.leadType
+        });
+      }
+    }
     res.json({
       success: true,
       message: "Customer added successfully",
       data: customer
     });
-
   } catch (error) {
     console.error("ERROR:", error);
 
@@ -1621,7 +1658,43 @@ router.post('/customer', async (req, res) => {
   }
 });
 
+router.get("/checkNumber/:custNumb", async (req, res) => {
+  try{
+    console.log("HELLO CHECK NUMBER");
+    const normalizeNumber = (num) =>{
+      if (!num) return null;
+      return String(num).replace(/\D/g, "").slice(-10);
+    };
+    console.log("normalizeNum:",normalizeNumber);
 
+    const customerNumber = normalizeNumber(req.params.custNumb);
+
+    console.log("customerNum:",customerNumber);
+    if(!customerNumber){
+      return res.json({success: true, latestLead: null});
+    }
+
+    const numbersToMatch = [
+      Number(customerNumber),
+      Number(`91${customerNumber}`)
+    ];
+
+    console.log("MatchNum:",numbersToMatch);
+
+    const latestLead = await salesLead.findOne({
+      custNumb: { $in: numbersToMatch }
+    }).sort({ leadsCreatedDate: -1, _id: -1 });
+
+    console.log("leaddd:",latestLead);
+
+    res.json({
+      // showLeadDate: latestLead?.projectStatus === "Closing"
+      success: true, latestLead, showLeadDate: latestLead?.projectStatus === 'Closing'
+    });
+  }catch(err){
+    res.status(500).json({ success: false, message: err.message});
+  }
+});
 
 // Country State City
 
@@ -2301,14 +2374,14 @@ router.get('/dataByRange/:startDate/:endDate', checkAuth, async (req, res) => {
     if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
         closingDate: {
-          $gte: startDate, $lte: endDate
+          $gte: startDate, $lt: endDate
         }
       };
     } else {
       query = {
         salesPerson: person1,
         closingDate: {
-          $gte: startDate, $lte: endDate
+          $gte: startDate, $lt: endDate
         }
       };
     }
@@ -2337,7 +2410,7 @@ router.get('/onGoingRange/:startDate/:endDate', async (req, res) => {
     if (role === 'Admin' || role === 'Manager') {
       query = {
         closingDate: {
-          $gte: startDate, $lte: endDate
+          $gte: startDate, $lt: endDate
         },
         projectStatus: { $ne: 'Completed' }
       };
@@ -2345,7 +2418,7 @@ router.get('/onGoingRange/:startDate/:endDate', async (req, res) => {
       query = {
         salesPerson: person,
         closingDate: {
-          $gte: startDate, $lte: endDate
+          $gte: startDate, $lt: endDate
         },
         projectStatus: { $ne: 'Completed' }
       };
@@ -2367,7 +2440,7 @@ router.get('/rangeTopPerformer/:startDate/:endDate', async (req, res) => {
       {
         $match: {
           closingDate: {
-            $gte: startDate, $lte: endDate
+            $gte: startDate, $lt: endDate
           }
         }
       },
@@ -2461,7 +2534,7 @@ router.get('/rangeTotalRecvAmount/:startDate/:endDate', async (req, res) => {
       // restAmountDate selected range me
       restPaymentDate: {
         $gte: startDate,
-        $lte: endDate
+        $lt: endDate
       },
 
       // closingDate selected range me NA ho
@@ -2597,14 +2670,14 @@ router.get('/downloadRangeFile/:startDate/:endDate', checkAuth, async (req, res)
     if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
       query = {
         closingDate: {
-          $gte: startDate, $lte: endDate
+          $gte: startDate, $lt: endDate
         }
       };
     } else {
       query = {
         salesPerson: person1,
         closingDate: {
-          $gte: startDate, $lte: endDate
+          $gte: startDate, $lt: endDate
         }
       };
     }
@@ -3236,7 +3309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04VQsNvYVfU_UCgYIARAAGAQSNwF-L9IrdSFp_41wyVysXfMXwWBvY1Xt-mpcgLbXF-S7wPfTUiLS8EpofR0vzSAQsv6o4Y0WW_M';
+const REFERESH_TOKEN = '1//043Ie2pfm0VStCgYIARAAGAQSNwF-L9IrHhXzCIdnPWElk7QzFoQ6yGzMNJxlDY8ydY7nJbMa_xIikUuoqbsQozOoSdXoOtyE268';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -5992,7 +6065,7 @@ router.post('/customLead', async (req, res) => {
   try {
     const customer = new salesLead({
       campaign_Name: req.body.campaign_Name,
-      closingDate: req.body.closingDate,
+      //closingDate: req.body.closingDate,
       custName: req.body.custName,
       custEmail: req.body.custEmail,
       custBussiness: req.body.custBussiness,
@@ -6000,10 +6073,11 @@ router.post('/customLead', async (req, res) => {
       state: req.body.state,
       salesTeam: 'Sales Team 1',
       salesPerson: req.body.salesPerson,
-      leadsCreatedDate: req.body.leadsCreatedDate,
+      leadsCreatedDate: req.body.leadDate,
       companyName: req.body.companyName,
       projectStatus: req.body.projectStatus,
-      remark: req.body.remark
+      remark: req.body.remark,
+      leadType: req.body.leadType
     })
     await customer.save();
     function formatDate(timestamp) {
@@ -12852,6 +12926,117 @@ router.post('/fetch-attendance', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Error fetching attendance" });
+  }
+});
+
+// common lead and closing
+
+router.get('/customerLeadReport', async(req,res) => {
+  try{
+    const data = await Customer.aggregate([
+      {
+        $lookup: {
+          from: "salesleads",
+          localField: "custCode",
+          foreignField: "custCode",
+          as: "lead"
+        }
+      },
+      {
+        // $unwind: {
+        //   path: "$lead",
+        //   preserveNullAndEmptyArrays: true
+        // }
+        $unwind: "$lead"
+      },
+      {
+        $project: {
+          _id: 0,
+
+          custCode: 1,
+          custName: 1,
+          custNumb: 1,
+
+          closingPrice: "$closingPrice",
+          closingDate: 1,
+
+          leadsCreatedDate: "$lead.leadsCreatedDate",
+          leadType: "$lead.leadType",
+          tag: "$lead.tag"
+        }
+      },
+      {
+        $sort: {
+          closingDate: -1
+        }
+      }
+    ]);
+    res.json({ success: true, data});
+  } catch(err){
+    console.log(err);
+
+    res.status(500).json({ success: false, message: err.message});
+  }
+});
+
+router.get('/customerLeadReportRange', async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+
+    let match = {};
+
+    if (fromDate && toDate) {
+      match.closingDate = {
+        $gte: new Date(fromDate),
+        $lte: new Date(toDate)
+      };
+    }
+
+    const data = await Customer.aggregate([
+      {
+        $match: match
+      },
+      {
+        $lookup: {
+          from: "salesleads",
+          localField: "custCode",
+          foreignField: "custCode",
+          as: "lead"
+        }
+      },
+      {
+        $unwind: "$lead"
+      },
+      {
+        $project: {
+          _id: 0,
+          custCode: 1,
+          custName: 1,
+          custNumb: 1,
+          closingPrice: 1,
+          closingDate: 1,
+          leadsCreatedDate: "$lead.leadsCreatedDate",
+          leadType: "$lead.leadType",
+          tag: "$lead.tag"
+        }
+      },
+      {
+        $sort: {
+          closingDate: -1
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 });
 
