@@ -6627,8 +6627,8 @@ router.get('/getWhatsApp-leads/:name', async (req, res) => {
   const name = req.params.name;
   try {
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
     const todayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -6650,8 +6650,8 @@ router.get('/getYesterdayWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -6673,8 +6673,8 @@ router.get('/getOneYesterdayWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 2);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -6696,8 +6696,8 @@ router.get('/getTwoYesterdayWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 3);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -6719,8 +6719,8 @@ router.get('/getThreeYesterdayWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 4);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -6742,8 +6742,8 @@ router.get('/getFourYesterdayWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 5);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
@@ -6765,8 +6765,8 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name', async (req, res) => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 6);
-    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate() + 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),0,0,0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesTeam: personTeam,
       closingDate: {
