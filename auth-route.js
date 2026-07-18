@@ -6632,10 +6632,20 @@ router.get('/getWhatsApp-leads/:name',checkAuth, async (req, res) => {
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
     const todayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfToday,
-        $lt: endOfToday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfToday,
+            $lt: endOfToday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfToday,
+            $lt: endOfToday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(todayLeads);
@@ -6656,10 +6666,20 @@ router.get('/getYesterdayWhatsApp-leads/:name',checkAuth, async (req, res) => {
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfYesterday,
-        $lte: endOfYesterday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
@@ -6680,10 +6700,20 @@ router.get('/getOneYesterdayWhatsApp-leads/:name',checkAuth, async (req, res) =>
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfYesterday,
-        $lte: endOfYesterday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
@@ -6704,10 +6734,20 @@ router.get('/getTwoYesterdayWhatsApp-leads/:name',checkAuth, async (req, res) =>
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfYesterday,
-        $lte: endOfYesterday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
@@ -6728,10 +6768,20 @@ router.get('/getThreeYesterdayWhatsApp-leads/:name',checkAuth, async (req, res) 
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfYesterday,
-        $lte: endOfYesterday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
@@ -6752,10 +6802,20 @@ router.get('/getFourYesterdayWhatsApp-leads/:name',checkAuth, async (req, res) =
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfYesterday,
-        $lte: endOfYesterday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
@@ -6776,10 +6836,20 @@ router.get('/getFiveYesterdayWhatsApp-leads/:name',checkAuth, async (req, res) =
     const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(),23,59,59);
     const yesterdayLeads = await salesLead.find({
       salesPerson: person1,
-      closingDate: {
-        $gte: startOfYesterday,
-        $lte: endOfYesterday
-      },
+      $or: [
+        {
+          closingDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: startOfYesterday,
+            $lt: endOfYesterday
+          }
+        }
+      ],
       campaign_Name: { $regex: new RegExp(name, 'i') }
     }).sort({ closingDate: -1 });
     return res.json(yesterdayLeads);
