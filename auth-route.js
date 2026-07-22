@@ -13010,6 +13010,8 @@ router.post('/fetch-attendance', async (req, res) => {
 
 router.get('/customerLeadReport', async(req,res) => {
   try{
+    const count = await Customer.countDocuments();
+    console.log("Customer Count:", count);
     const data = await Customer.aggregate([
       {
         $lookup: {
@@ -13048,6 +13050,9 @@ router.get('/customerLeadReport', async(req,res) => {
         }
       }
     ]);
+    console.log("Total Records:", data.length);
+    console.log(JSON.stringify(data.slice(0, 3), null, 2));
+
     res.json({ success: true, data});
   } catch(err){
     console.log(err);
