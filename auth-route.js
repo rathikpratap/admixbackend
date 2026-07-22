@@ -1626,7 +1626,7 @@ router.post('/customer', async (req, res) => {
 
       if(latestLead && latestLead.projectStatus !== "Closing"){
         latestLead.projectStatus = "Closing";
-        latestLead.leadsCreatedDate = customer.closingDate;
+        // latestLead.leadsCreatedDate = customer.closingDate;
         latestLead.custCode = customer.custCode;
         await latestLead.save();
 
@@ -13008,11 +13008,91 @@ router.post('/fetch-attendance', async (req, res) => {
 
 // common lead and closing
 
-router.get('/customerLeadReport', async(req,res) => {
-  try{
-    const count = await Customer.countDocuments();
+// router.get('/customerLeadReport', async(req,res) => {
+//   try{
+//     const count = await Customer.countDocuments();
+//     console.log("Customer Count:", count);
+//     const data = await Customer.aggregate([
+//       {
+//         $lookup: {
+//           from: "salesleads",
+//           localField: "custCode",
+//           foreignField: "custCode",
+//           as: "lead"
+//         }
+//       },
+//       {
+//         // $unwind: {
+//         //   path: "$lead",
+//         //   preserveNullAndEmptyArrays: true
+//         // }
+//         $unwind: "$lead"
+//       },
+//       {
+//         $project: {
+//           _id: 0,
+
+//           custCode: 1,
+//           custName: 1,
+//           custNumb: 1,
+
+//           closingPrice: "$closingPrice",
+//           closingDate: 1,
+
+//           leadsCreatedDate: "$lead.leadsCreatedDate",
+//           leadType: "$lead.leadType",
+//           tag: "$lead.tag"
+//         }
+//       },
+//       {
+//         $sort: {
+//           closingDate: -1
+//         }
+//       }
+//     ]);
+//     console.log("Total Records:", data.length);
+//     console.log(JSON.stringify(data.slice(0, 3), null, 2));
+
+//     res.json({ success: true, data});
+//   } catch(err){
+//     console.log(err);
+
+//     res.status(500).json({ success: false, message: err.message});
+//   }
+// });
+
+router.get('/customerLeadReport', async (req, res) => {
+  try {
+    // Current month start & end
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    endOfMonth.setDate(1);
+    endOfMonth.setHours(0, 0, 0, 0);
+
+    const startTime = Date.now();
+
+    const count = await Customer.countDocuments({
+      closingDate: {
+        $gte: startOfMonth,
+        $lt: endOfMonth
+      }
+    });
+
     console.log("Customer Count:", count);
+
     const data = await Customer.aggregate([
+      {
+        $match: {
+          closingDate: {
+            $gte: startOfMonth,
+            $lt: endOfMonth
+          }
+        }
+      },
       {
         $lookup: {
           from: "salesleads",
@@ -13022,23 +13102,16 @@ router.get('/customerLeadReport', async(req,res) => {
         }
       },
       {
-        // $unwind: {
-        //   path: "$lead",
-        //   preserveNullAndEmptyArrays: true
-        // }
         $unwind: "$lead"
       },
       {
         $project: {
           _id: 0,
-
           custCode: 1,
           custName: 1,
           custNumb: 1,
-
-          closingPrice: "$closingPrice",
+          closingPrice: 1,
           closingDate: 1,
-
           leadsCreatedDate: "$lead.leadsCreatedDate",
           leadType: "$lead.leadType",
           tag: "$lead.tag"
@@ -13050,14 +13123,23 @@ router.get('/customerLeadReport', async(req,res) => {
         }
       }
     ]);
+
     console.log("Total Records:", data.length);
+    
+    console.log(`Execution Time : ${Date.now() - startTime} ms`);
     console.log(JSON.stringify(data.slice(0, 3), null, 2));
 
-    res.json({ success: true, data});
-  } catch(err){
-    console.log(err);
+    res.json({
+      success: true,
+      data
+    });
 
-    res.status(500).json({ success: false, message: err.message});
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 });
 
