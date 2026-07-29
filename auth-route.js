@@ -12534,22 +12534,23 @@ router.get('/verify-invoices', async (req, res) => {
     // const prefix = billType === 'GST Bill' ? `ADMIX-${financialYear}/`:`ADM-${financialYear}/`;
     const prefix = billType === 'GST Bill' ? 'ADMIX-' : 'ADM-';
 
-    // const fullInvoiceNumber = `${prefix}-${invoiceNumber}`;
+    const fullInvoiceNumber = `${prefix}${financialYear}/${invoiceNumber}`;
 
     // const invoice = await EstInvoice.findOne({
     //   invoiceNumber: { $in: [fullInvoiceNumber] }
     // });
 
     // const fullInvoiceNumber = `${prefix}${invoiceNumber}`;
-    // const invoice = await EstInvoice.findOne({
-    //   "invoiceNumber.InvoiceNo": fullInvoiceNumber
-    // });
-
     const invoice = await EstInvoice.findOne({
-      "invoiceNumber.InvoiceNo": {
-        $regex: `^${prefix}.*\/${invoiceNumber}$`
-      }
+      billFormat: "Main",
+      "invoiceNumber.InvoiceNo": fullInvoiceNumber
     });
+
+    // const invoice = await EstInvoice.findOne({
+    //   "invoiceNumber.InvoiceNo": {
+    //     $regex: `^${prefix}.*\/${invoiceNumber}$`
+    //   }
+    // });
 
     console.log('invoice Found:', invoice);
 
