@@ -12522,6 +12522,7 @@ router.get('/verify-invoices', async (req, res) => {
     // if(!financialYear || !invoiceNumber || !billType) {
     //   return res.status(400).json({ ok: false, message: 'Financial Year, invoiceNumber and billType are required'});
     // }
+    console.log("Incoming Query:", req.query);
 
     if (!invoiceNumber || !billType) {
       return res.status(400).json({
@@ -12550,6 +12551,8 @@ router.get('/verify-invoices', async (req, res) => {
       }
     });
 
+    console.log('invoice Found:', invoice);
+
     
 
     if(!invoice) {
@@ -12573,6 +12576,8 @@ router.get('/verify-invoices', async (req, res) => {
 
     const dbName = String(invoice.custName || '').trim().toLowerCase();
     const reqName = String(custName || '').trim().toLowerCase();
+
+    console.log({dbName, reqName, dbNumberRaw, dbLast10Set, reqLast10});
 
     if(!(dbName && reqName && dbName === reqName)){
       mismatchFields.push('Customer Name');
