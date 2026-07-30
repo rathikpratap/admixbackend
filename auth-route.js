@@ -11959,7 +11959,15 @@ router.post('/filter', async (req, res) => {
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
-      query.closingDate = { $gte: start, $lte: end };
+      // query.closingDate = { $gte: start, $lte: end };
+      query.$or = [
+        {
+          closingDate = { $gte: start, $lte: end}
+        },
+        {
+          leadsCreatedDate = { $gte: start, $lte: end}
+        }
+      ];
     }
     //Campaign filter
     if (campaign) {
@@ -11990,7 +11998,15 @@ router.post('/filterAdmin', async (req,res) => {
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23,59,59,999);
-      query.closingDate = { $gte: start, $lte: end};
+      // query.closingDate = { $gte: start, $lte: end};
+      query.$or = [
+        {
+          closingDate = { $gte: start, $lte: end}
+        },
+        {
+          leadsCreatedDate = { $gte: start, $lte: end}
+        }
+      ];
     }
     if(salesPerson){
       query.salesPerson = salesPerson;
@@ -12010,10 +12026,20 @@ router.get('/allSalesLeads', async (req, res) => {
   const currentMonth = new Date().getMonth() + 1;
   try {
     const products = await salesLead.find({
-      closingDate: {
-        $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
-        $lte: new Date(new Date().getFullYear(), currentMonth + 2, 0)
-      }
+      $or: [
+        {
+          closingDate: {
+            $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+            $lte: new Date(new Date().getFullYear(), currentMonth + 2, 0)
+          }
+        },
+        {
+          leadsCreatedDate: {
+            $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+            $lte: new Date(new Date().getFullYear(), currentMonth + 2, 0)
+          }
+        }
+      ]
     }).sort({ closingDate: -1 });
 
     if (products.length > 0) {
