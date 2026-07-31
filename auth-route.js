@@ -3462,6 +3462,7 @@ async function processAndSaveLead(leadData, meta = {}) {
       salesPerson: selectedSalesperson,
       projectStatus: 'New Lead',
       tag: campaignTag,
+      leadType: 'MetaForms'
     });
 
     await newLead.save();
