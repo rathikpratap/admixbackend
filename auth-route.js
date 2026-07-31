@@ -3309,7 +3309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//047I71lRtNlECCgYIARAAGAQSNwF-L9Ir30NaaVmTKyi4hG3S9iBtkqvnM6H6mDjz1KcNdRLClAfZzoeFG3GLh6FfPH9POEE64nk';
+const REFERESH_TOKEN = '1//04s4MpBPiLjaKCgYIARAAGAQSNwF-L9IrfY0s9FQgJ2PmSCEf3eC4GWel8TIOz505J7LiMUPdfoy393oVSOOzx4pZ5jPxoKlx2Uw';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -11962,10 +11962,10 @@ router.post('/filter', async (req, res) => {
       // query.closingDate = { $gte: start, $lte: end };
       query.$or = [
         {
-          closingDate = { $gte: start, $lte: end}
+          closingDate : { $gte: start, $lte: end}
         },
         {
-          leadsCreatedDate = { $gte: start, $lte: end}
+          leadsCreatedDate : { $gte: start, $lte: end}
         }
       ];
     }
@@ -12001,10 +12001,10 @@ router.post('/filterAdmin', async (req,res) => {
       // query.closingDate = { $gte: start, $lte: end};
       query.$or = [
         {
-          closingDate = { $gte: start, $lte: end}
+          closingDate : { $gte: start, $lte: end}
         },
         {
-          leadsCreatedDate = { $gte: start, $lte: end}
+          leadsCreatedDate : { $gte: start, $lte: end}
         }
       ];
     }
