@@ -12568,8 +12568,11 @@ router.get('/verify-invoices', async (req, res) => {
     // });
 
     // const fullInvoiceNumber = `${prefix}${invoiceNumber}`;
+
+    const dbBillType = billType === "GST Bill" ? "GST" : "Non-GST";
     const invoice = await EstInvoice.findOne({
       billFormat: "Main",
+      billType: dbBillType,
       "invoiceNumber.InvoiceNo": fullInvoiceNumber
     });
 
