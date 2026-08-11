@@ -3309,7 +3309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04s4MpBPiLjaKCgYIARAAGAQSNwF-L9IrfY0s9FQgJ2PmSCEf3eC4GWel8TIOz505J7LiMUPdfoy393oVSOOzx4pZ5jPxoKlx2Uw';
+const REFERESH_TOKEN = '1//04VJnyUNNfejICgYIARAAGAQSNwF-L9IrelDb5_W3yvq4i1z7We8yxvh0Tff0mJReBDuMmsNGpqAoDr_-2yYCooc4UTRo2JHu5oA';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -13150,7 +13150,8 @@ router.get('/customerLeadReport', async (req, res) => {
           closingDate: 1,
           leadsCreatedDate: "$lead.leadsCreatedDate",
           leadType: "$lead.leadType",
-          tag: "$lead.tag"
+          tag: "$lead.tag",
+          salesPerson: "$lead.salesPerson"
         }
       },
       {

@@ -125,7 +125,7 @@ async function processAttendance(records) {
       //   second: 0,
       // });
 
-      const lateThreshold = moment(firstPunch).utc().startOf("day").add(10, "hours").add(30, "minutes");
+      const lateThreshold = moment(firstPunch).utc().startOf("day").add(10, "hours").add(20, "minutes");
 
       const isLate = first.isAfter(lateThreshold);
 
