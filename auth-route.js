@@ -3309,7 +3309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04VJnyUNNfejICgYIARAAGAQSNwF-L9IrelDb5_W3yvq4i1z7We8yxvh0Tff0mJReBDuMmsNGpqAoDr_-2yYCooc4UTRo2JHu5oA';
+const REFERESH_TOKEN = '1//04KonQTOQ83HoCgYIARAAGAQSNwF-L9IrFjiUaE_vMRmf0n672Fy9vggPWk8fseP6Rlw0LNk9-X6P4xOu2TTfRdb47gINr7-lQc4';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -5584,31 +5584,194 @@ router.get('/voCompleteList', async (req, res) => {
 
 // update Project Status from Admin Panel
 
+// router.post('/update-projectStatus', checkAuth, async (req, res) => {
+//   try {
+//     const person1 = req.userData?.name;
+//     const items = req.body.items;
+//     for (const item of items) {
+//       console.log("Processing item:", item);
+//       let existingItem = await salesLead.findById(item._id);
+//       if (existingItem) {
+//         existingItem.projectStatus = item.projectStatus;
+//         existingItem.remark = item.remark;
+//         existingItem.custBussiness = item.custBussiness;
+//         existingItem.followup1 = item.followup1;
+//         existingItem.followup2 = item.followup2;
+//         existingItem.followup3 = item.followup3;
+//         existingItem.followup4 = item.followup4;
+//         existingItem.callReminderDate = item.callReminderDate;
+//         existingItem.salesPerson = person1;
+//         await existingItem.save();
+//       }
+//     }
+//     return res.json(items);
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message })
+//   }
+// });
+
 router.post('/update-projectStatus', checkAuth, async (req, res) => {
+
   try {
+
     const person1 = req.userData?.name;
+
     const items = req.body.items;
-    for (const item of items) {
-      console.log("Processing item:", item);
-      let existingItem = await salesLead.findById(item._id);
-      if (existingItem) {
-        existingItem.projectStatus = item.projectStatus;
-        existingItem.remark = item.remark;
-        existingItem.custBussiness = item.custBussiness;
-        existingItem.followup1 = item.followup1;
-        existingItem.followup2 = item.followup2;
-        existingItem.followup3 = item.followup3;
-        existingItem.followup4 = item.followup4;
-        existingItem.callReminderDate = item.callReminderDate;
-        existingItem.salesPerson = person1;
-        await existingItem.save();
-      }
+
+    if (!Array.isArray(items)) {
+
+      return res.status(400).json({
+        success: false,
+        message: 'items must be an array'
+      });
+
     }
-    return res.json(items);
+
+
+    for (const item of items) {
+
+      console.log(
+        'Processing item:',
+        item._id
+      );
+
+
+      const existingItem =
+        await salesLead.findById(item._id);
+
+
+      if (!existingItem) {
+
+        console.log(
+          'Lead not found:',
+          item._id
+        );
+
+        continue;
+      }
+
+
+      /*
+       * Existing reminder ko preserve karo.
+       */
+      const oldReminder =
+        existingItem.callReminderDate
+          ? new Date(
+              existingItem.callReminderDate
+            ).getTime()
+          : null;
+
+
+      const newReminder =
+        item.callReminderDate
+          ? new Date(
+              item.callReminderDate
+            ).getTime()
+          : null;
+
+
+      /*
+       * Normal fields
+       */
+
+      existingItem.projectStatus =
+        item.projectStatus;
+
+      existingItem.remark =
+        item.remark;
+
+      existingItem.custBussiness =
+        item.custBussiness;
+
+      existingItem.followup1 =
+        item.followup1;
+
+      existingItem.followup2 =
+        item.followup2;
+
+      existingItem.followup3 =
+        item.followup3;
+
+      existingItem.followup4 =
+        item.followup4;
+
+
+      /*
+       * Reminder date
+       */
+
+      existingItem.callReminderDate =
+        item.callReminderDate
+          ? new Date(item.callReminderDate)
+          : null;
+
+
+      /*
+       * Agar reminder date change hui
+       * to naya reminder send hona chahiye.
+       */
+      if (oldReminder !== newReminder) {
+
+        existingItem.reminderSent = false;
+
+        console.log(
+          '🔔 New reminder set:',
+          existingItem.callReminderDate
+        );
+
+      }
+
+
+      /*
+       * Salesperson
+       */
+
+      existingItem.salesPerson =
+        person1;
+
+
+      await existingItem.save();
+
+
+      console.log(
+        '✅ Lead updated:',
+        existingItem._id
+      );
+    }
+
+
+    return res.json({
+
+      success: true,
+
+      message:
+        'Project status updated successfully',
+
+      items: items
+
+    });
+
+
   } catch (error) {
-    return res.status(500).json({ error: error.message })
+
+    console.error(
+      '❌ update-projectStatus error:',
+      error
+    );
+
+
+    return res.status(500).json({
+
+      success: false,
+
+      error: error.message
+
+    });
+
   }
+
 });
+
 // server: routes file
 router.post('/update-projectStatusManagement', checkAuth, async (req, res) => {
   try {
@@ -5675,31 +5838,212 @@ router.post('/update-projectStatusManagement', checkAuth, async (req, res) => {
 
 //Leads Reminder
 
-const reminder = async () => {
+// const reminder = async () => {
+//   try {
+//     const now = new Date();
+//     now.setSeconds(0, 0);
+//     const nextMinute = new Date(now);
+//     nextMinute.setMinutes(now.getMinutes() + 1);
+
+//     const leads = await salesLead.find({
+//       callReminderDate: {
+//         $gte: now,
+//         $lt: nextMinute
+//       }
+//     });
+
+//     leads.forEach(lead => {
+//       console.log(`Reminder: Call ${lead.custName} at ${lead.custNumb}`);
+//       io.to(lead.salesPerson).emit('call-reminder', {
+//         name: lead.custName,
+//         number: lead.custNumb,
+//         time: lead.callReminderDate,
+//       });
+//     });
+//   } catch (error) {
+//     console.error('Error Reminder: ', error.message);
+//   }
+// };
+
+const reminder = async (io) => {
+
   try {
+
     const now = new Date();
-    now.setSeconds(0, 0);
-    const nextMinute = new Date(now);
-    nextMinute.setMinutes(now.getMinutes() + 1);
+
+    console.log(
+      '======================================'
+    );
+
+    console.log(
+      '⏰ Reminder check:',
+      now.toISOString()
+    );
+
+
+    /*
+     * Pending reminders find karo.
+     *
+     * $lte:
+     * Agar cron 2-3 seconds late bhi chala
+     * to reminder miss nahi hoga.
+     *
+     * reminderSent:
+     * Same reminder baar-baar nahi jayega.
+     */
 
     const leads = await salesLead.find({
+
       callReminderDate: {
-        $gte: now,
-        $lt: nextMinute
-      }
+        $lte: now
+      },
+
+      /*
+       * false OR field missing
+       */
+      $or: [
+        { reminderSent: false },
+        { reminderSent: { $exists: false } }
+      ]
+
     });
 
-    leads.forEach(lead => {
-      console.log(`Reminder: Call ${lead.custName} at ${lead.custNumb}`);
-      io.to(lead.salesPerson).emit('call-reminder', {
-        name: lead.custName,
-        number: lead.custNumb,
-        time: lead.callReminderDate,
-      });
-    });
+
+    console.log(
+      `🔎 Pending reminders found: ${leads.length}`
+    );
+
+
+    for (const lead of leads) {
+
+      console.log(
+        '--------------------------------------'
+      );
+
+      console.log(
+        'Lead:',
+        lead.custName
+      );
+
+      console.log(
+        'Number:',
+        lead.custNumb
+      );
+
+      console.log(
+        'Sales Person:',
+        lead.salesPerson
+      );
+
+      console.log(
+        'Reminder Date:',
+        lead.callReminderDate
+      );
+
+
+      /*
+       * Salesperson available hai?
+       */
+
+      if (!lead.salesPerson) {
+
+        console.warn(
+          '⚠️ Salesperson missing:',
+          lead._id
+        );
+
+        continue;
+      }
+
+
+      /*
+       * Socket room mein user hai ya nahi
+       */
+
+      const sockets =
+        await io
+          .in(lead.salesPerson)
+          .fetchSockets();
+
+
+      console.log(
+        `👥 ${lead.salesPerson} room sockets:`,
+        sockets.length
+      );
+
+
+      /*
+       * User online nahi hai.
+       *
+       * reminderSent false hi rahega.
+       * User later login karega to pending reminder
+       * bhej sakte hain.
+       */
+
+      if (sockets.length === 0) {
+
+        console.log(
+          `⚠️ User ${lead.salesPerson} is offline`
+        );
+
+        continue;
+      }
+
+
+      /*
+       * Reminder bhejo
+       */
+
+      io.to(lead.salesPerson)
+        .emit('call-reminder', {
+
+          _id: lead._id.toString(),
+
+          name: lead.custName,
+
+          number: lead.custNumb,
+
+          time: lead.callReminderDate
+
+        });
+
+
+      /*
+       * Important:
+       * Reminder send ho gaya.
+       */
+
+      lead.reminderSent = true;
+
+      await lead.save();
+
+
+      console.log(
+        `🔔 Reminder sent to ${lead.salesPerson}`
+      );
+
+    }
+
+
+    console.log(
+      '======================================'
+    );
+
+
   } catch (error) {
-    console.error('Error Reminder: ', error.message);
+
+    console.error(
+      '❌ Error Reminder:',
+      error
+    );
+
   }
+
+};
+
+
+module.exports = {
+  reminder
 };
 
 //random quotes
@@ -6089,7 +6433,7 @@ router.post('/customLead', async (req, res) => {
       return `${day}${month}${year}`;
     }
     const contact = {
-      names: [{ givenName: `${formatDate(req.body.closingDate)} ${req.body.custName}` }],
+      names: [{ givenName: `${formatDate(req.body.leadsCreatedDate)} ${req.body.custName}` }],
       emailAddresses: [{ value: req.body.custEmail }],
       phoneNumbers: [{ value: req.body.custNumb.toString() }],
       organizations: [{

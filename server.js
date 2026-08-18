@@ -48,40 +48,363 @@ const io = new Server(server, {
 });
 
 // Make Socket.IO globally accessible
+// global.io = io;
+
+// io.on('connection', (socket) => {
+//     console.log('🔌 Client connected:', socket.id);
+
+//     socket.on('register-user', (username) =>{
+//         socket.username = username;
+//         socket.join(username);
+//         console.log(`📌 ${username} joined their room`);
+//     });
+
+//     socket.on('snooze-reminder', async (data) => {
+//         const { number, name } = data;
+//         try {
+//             const lead = await salesLead.findOne({ custName: name, custNumb: number });
+//             if (lead) {
+//                 const newReminderTime = new Date();
+//                 newReminderTime.setMinutes(newReminderTime.getMinutes() + 15);
+//                 lead.callReminderDate = newReminderTime;
+//                 await lead.save();
+
+//                 socket.emit('snooze-success', { message: `Reminder snoozed for 15 minutes.` });
+//             } else {
+//                 socket.emit('snooze-error', { message: `Lead not found.` });
+//             }
+//         } catch (err) {
+//             socket.emit('snooze-error', { message: `Failed to snooze reminder.` });
+//             console.error('Snooze error:', err);
+//         }
+//     });
+
+//     socket.on('disconnect', () => {
+//         console.log('❌ Client disconnected:', socket.id);
+//     });
+// });
+
+
 global.io = io;
 
+
+// const salesLead =
+//   require('./models/salesLead');
+
+
+/*
+ * ================================
+ * SOCKET CONNECTION
+ * ================================
+ */
+
 io.on('connection', (socket) => {
-    console.log('🔌 Client connected:', socket.id);
 
-    socket.on('register-user', (username) =>{
-        socket.username = username;
-        socket.join(username);
-        console.log(`📌 ${username} joined their room`);
-    });
+  console.log(
+    '🔌 Client connected:',
+    socket.id
+  );
 
-    socket.on('snooze-reminder', async (data) => {
-        const { number, name } = data;
-        try {
-            const lead = await salesLead.findOne({ custName: name, custNumb: number });
-            if (lead) {
-                const newReminderTime = new Date();
-                newReminderTime.setMinutes(newReminderTime.getMinutes() + 15);
-                lead.callReminderDate = newReminderTime;
-                await lead.save();
 
-                socket.emit('snooze-success', { message: `Reminder snoozed for 15 minutes.` });
-            } else {
-                socket.emit('snooze-error', { message: `Lead not found.` });
-            }
-        } catch (err) {
-            socket.emit('snooze-error', { message: `Failed to snooze reminder.` });
-            console.error('Snooze error:', err);
+  /*
+   * USER REGISTER
+   */
+
+  socket.on(
+    'register-user',
+    async (username) => {
+
+      try {
+
+        if (!username) {
+
+          console.warn(
+            '⚠️ register-user without username'
+          );
+          console.log(`📌 ${username} joined their room`);
+
+          return;
         }
-    });
 
-    socket.on('disconnect', () => {
-        console.log('❌ Client disconnected:', socket.id);
-    });
+
+        /*
+         * Store username
+         */
+
+        socket.username =
+          username;
+
+
+        /*
+         * Join salesperson room
+         */
+
+        socket.join(username);
+
+
+        console.log(
+          `📌 ${username} joined room`
+        );
+
+        console.log(
+          `📌 Socket ID: ${socket.id}`
+        );
+
+
+        /*
+         * ====================================
+         * PENDING REMINDERS
+         * ====================================
+         *
+         * Agar reminder ke time user offline tha
+         * aur baad mein app open karta hai,
+         * to pending reminder yahan bhejo.
+         */
+
+        const pendingReminders =
+          await salesLead.find({
+
+            salesPerson: username,
+
+            callReminderDate: {
+              $lte: new Date()
+            },
+
+            $or: [
+              { reminderSent: false },
+              {
+                reminderSent: {
+                  $exists: false
+                }
+              }
+            ]
+
+          });
+
+
+        console.log(
+          `🔎 Pending reminders for ${username}: ${pendingReminders.length}`
+        );
+
+
+        for (
+          const lead
+          of pendingReminders
+        ) {
+
+          socket.emit(
+            'call-reminder',
+            {
+
+              _id:
+                lead._id.toString(),
+
+              name:
+                lead.custName,
+
+              number:
+                lead.custNumb,
+
+              time:
+                lead.callReminderDate
+
+            }
+          );
+
+
+          lead.reminderSent =
+            true;
+
+
+          await lead.save();
+
+
+          console.log(
+            `🔔 Pending reminder sent: ${lead.custName}`
+          );
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          '❌ register-user error:',
+          error
+        );
+
+      }
+
+    }
+  );
+
+
+  /*
+   * ====================================
+   * SNOOZE REMINDER
+   * ====================================
+   */
+
+  socket.on(
+    'snooze-reminder',
+    async (data) => {
+
+      try {
+
+        const {
+          _id
+        } = data;
+
+
+        if (!_id) {
+
+          socket.emit(
+            'snooze-error',
+            {
+              message:
+                'Reminder ID is required.'
+            }
+          );
+
+          return;
+        }
+
+
+        /*
+         * Lead find
+         */
+
+        const lead =
+          await salesLead.findById(_id);
+
+
+        if (!lead) {
+
+          socket.emit(
+            'snooze-error',
+            {
+              message:
+                'Lead not found.'
+            }
+          );
+
+          return;
+        }
+
+
+        /*
+         * Security:
+         *
+         * Check karo ki current socket
+         * same salesperson ka hai.
+         */
+
+        if (
+          lead.salesPerson &&
+          socket.username &&
+          lead.salesPerson !== socket.username
+        ) {
+
+          socket.emit(
+            'snooze-error',
+            {
+              message:
+                'You are not authorized for this reminder.'
+            }
+          );
+
+          return;
+        }
+
+
+        /*
+         * 15 minutes future
+         */
+
+        const newReminderTime =
+          new Date(
+            Date.now() +
+            (15 * 60 * 1000)
+          );
+
+
+        lead.callReminderDate =
+          newReminderTime;
+
+
+        /*
+         * Snooze ke baad dobara reminder
+         * bhejna hai.
+         */
+
+        lead.reminderSent =
+          false;
+
+
+        await lead.save();
+
+
+        console.log(
+          `😴 Reminder snoozed for ${lead.custName}`
+        );
+
+        console.log(
+          `⏰ New time: ${newReminderTime.toISOString()}`
+        );
+
+
+        socket.emit(
+          'snooze-success',
+          {
+
+            message:
+              'Reminder snoozed for 15 minutes.',
+
+            time:
+              newReminderTime
+
+          }
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          '❌ Snooze error:',
+          error
+        );
+
+
+        socket.emit(
+          'snooze-error',
+          {
+            message:
+              'Failed to snooze reminder.'
+          }
+        );
+
+      }
+
+    }
+  );
+
+
+  /*
+   * DISCONNECT
+   */
+
+  socket.on(
+    'disconnect',
+    (reason) => {
+
+      console.log(
+        '❌ Client disconnected:',
+        socket.id,
+        reason
+      );
+
+    }
+  );
+
 });
 
 const authRoute = require('./auth-route');
@@ -92,7 +415,11 @@ const authRoute = require('./auth-route');
 
 
 //const fetchAndSyncGoogleSheet = require('./auth-route').fetchAndSyncGoogleSheet;
-const reminder = require('./auth-route').reminder;
+//---------------------------------------------------------------//
+const {
+  reminder
+} = require('./middleware/reminder');
+// const reminder = require('./auth-route').reminder;
 
 // const { fetchAttendance } = require('./attendance-job');
 
@@ -139,8 +466,9 @@ console.log('✅ Lead fetcher scheduled. Waiting for cron...');
 //Reminder
 
 cron.schedule('* * * * *', async () => {
-    console.log("Running Reminder.............");
-    reminder();
+    console.log("Running Reminder Corn.............");
+    // reminder();
+    await reminder(io);
 });
 
 // cron.schedule("* * * * *", async () => {
