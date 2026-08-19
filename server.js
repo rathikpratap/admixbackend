@@ -23,8 +23,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const salesLead = require('./models/salesLead');
 app.use(cors({
-    origin: 'https://www.login.admixmedia.in',
-    credentials:true,
+  origin: 'https://www.login.admixmedia.in',
+  credentials: true,
 }));
 
 // app.use(cors({
@@ -38,13 +38,13 @@ const port = process.env.PORT || 3000;
 
 // Setup Socket.IO
 const io = new Server(server, {
-    cors: {
-        //origin: 'http://localhost:4200', // Change this in production
-        origin: 'https://www.login.admixmedia.in',
-        methods: ['GET', 'POST'],
-        credentials: true
-    },
-    transports: ['websocket']
+  cors: {
+    //origin: 'http://localhost:4200', // Change this in production
+    origin: 'https://www.login.admixmedia.in',
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket']
 });
 
 // Make Socket.IO globally accessible
@@ -116,14 +116,51 @@ io.on('connection', (socket) => {
     'register-user',
     async (username) => {
 
-       console.log(
-            '📥 register-user:',
-            username,
-            'PID:',
-            process.pid,
-            'Socket:',
-            socket.id
+      console.log(
+        '📥 register-user:',
+        username,
+        'PID:',
+        process.pid,
+        'Socket:',
+        socket.id
+      );
+      if (
+        !username ||
+        username === 'undefined' ||
+        username === 'null'
+      ) {
+        console.log(
+          '❌ Invalid username. Socket registration skipped:',
+          socket.id
         );
+
+        return;
+      }
+
+      const cleanUsername = username.trim();
+
+      socket.username = cleanUsername;
+
+      socket.join(cleanUsername);
+
+      const room =
+        io.sockets.adapter.rooms.get(
+            cleanUsername
+        );
+
+      console.log(
+        `🔑 ${cleanUsername} joined room`
+      );
+
+      console.log(
+        `🔌 Socket ID: ${socket.id}`
+      );
+
+      console.log(
+        `👥 Room size after join: ${
+            room ? room.size : 0
+        }`
+    );
 
       try {
 
@@ -439,7 +476,7 @@ const {
 app.use('/auth', authRoute);
 
 app.get('/', (req, res) => {
-    res.send('Welcome Rathik')
+  res.send('Welcome Rathik')
 });
 
 // Run the job every 1 minute
@@ -477,13 +514,13 @@ console.log('✅ Lead fetcher scheduled. Waiting for cron...');
 //Reminder
 
 cron.schedule('* * * * *', async () => {
-    console.log(
-        '⏰ Running Reminder Cron',
-        'PID:',
-        process.pid
-    );
-    // reminder();
-    await reminder(io);
+  console.log(
+    '⏰ Running Reminder Cron',
+    'PID:',
+    process.pid
+  );
+  // reminder();
+  await reminder(io);
 });
 
 // cron.schedule("* * * * *", async () => {
@@ -528,5 +565,5 @@ cron.schedule('* * * * *', async () => {
 // fetchAttendance2();
 
 server.listen(port, () => {
-    console.log(`✅ Server running on port ${port}`);
+  console.log(`✅ Server running on port ${port}`);
 });
