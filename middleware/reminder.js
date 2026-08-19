@@ -6,6 +6,11 @@ const reminder = async (io) => {
 
   try {
 
+    console.log(
+        '🔎 Reminder process PID:',
+        process.pid
+    );
+
     const now = new Date();
 
 

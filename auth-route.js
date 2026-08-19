@@ -3300,16 +3300,16 @@ router.get('/facebook-leads', async (req, res) => {
 // sales automatic facebook leads
 
 //itwebdeveloper
-// const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
-// const CLIENT_SECRET = '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';
-// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-// const REFERESH_TOKEN = '1//04SBK6MQijeCRCgYIARAAGAQSNwF-L9IrABSabeovlomKAcbDlyLAbEBHVGVUGIJ6dS6fT9y2rJIbvOxJ8nM7QJeAYaOPG7K8ros';
+const CLIENT_ID = '611503530952-n54spv580ddm2qmkedlohmvcgclns7cc.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+const REFERESH_TOKEN = '1//04SBK6MQijeCRCgYIARAAGAQSNwF-L9IrABSabeovlomKAcbDlyLAbEBHVGVUGIJ6dS6fT9y2rJIbvOxJ8nM7QJeAYaOPG7K8ros';
 
 // AdmixmediaIndia
-const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04KonQTOQ83HoCgYIARAAGAQSNwF-L9IrFjiUaE_vMRmf0n672Fy9vggPWk8fseP6Rlw0LNk9-X6P4xOu2TTfRdb47gINr7-lQc4';
+// const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
+// const CLIENT_SECRET = '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';
+// const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+// const REFERESH_TOKEN = '1//04KonQTOQ83HoCgYIARAAGAQSNwF-L9IrFjiUaE_vMRmf0n672Fy9vggPWk8fseP6Rlw0LNk9-X6P4xOu2TTfRdb47gINr7-lQc4';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,

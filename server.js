@@ -102,7 +102,9 @@ io.on('connection', (socket) => {
 
   console.log(
     '🔌 Client connected:',
-    socket.id
+    socket.id,
+    'PID:',
+    process.pid
   );
 
 
@@ -113,6 +115,15 @@ io.on('connection', (socket) => {
   socket.on(
     'register-user',
     async (username) => {
+
+       console.log(
+            '📥 register-user:',
+            username,
+            'PID:',
+            process.pid,
+            'Socket:',
+            socket.id
+        );
 
       try {
 
@@ -466,7 +477,11 @@ console.log('✅ Lead fetcher scheduled. Waiting for cron...');
 //Reminder
 
 cron.schedule('* * * * *', async () => {
-    console.log("Running Reminder Corn.............");
+    console.log(
+        '⏰ Running Reminder Cron',
+        'PID:',
+        process.pid
+    );
     // reminder();
     await reminder(io);
 });
