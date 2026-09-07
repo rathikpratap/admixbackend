@@ -3309,7 +3309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04B-ojTO2lznCCgYIARAAGAQSNwF-L9IrFwfkuOft7NTsO4s5Ket0R2MIUQO3_95rVqmnHge3SRu_s8A8C5VXGmZDKxXuCoemweA';
+const REFERESH_TOKEN = '1//044QNusiQkTigCgYIARAAGAQSNwF-L9Ir99tL8wqTDJ40Ioh8_-MiWW-O7e35lWiEcElKf-PthJtZclM_Wp-DRo14iZvNBq9Hhu0';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6433,7 +6433,7 @@ router.post('/customLead', async (req, res) => {
       return `${day}${month}${year}`;
     }
     const contact = {
-      names: [{ givenName: `${formatDate(req.body.leadsCreatedDate)} ${req.body.custName}` }],
+      names: [{ givenName: `${formatDate(req.body.leadDate)} ${req.body.custName}` }],
       emailAddresses: [{ value: req.body.custEmail }],
       phoneNumbers: [{ value: req.body.custNumb.toString() }],
       organizations: [{
