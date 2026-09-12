@@ -3309,7 +3309,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//044QNusiQkTigCgYIARAAGAQSNwF-L9Ir99tL8wqTDJ40Ioh8_-MiWW-O7e35lWiEcElKf-PthJtZclM_Wp-DRo14iZvNBq9Hhu0';
+const REFERESH_TOKEN = '1//049MFn70zy3YcCgYIARAAGAQSNwF-L9IrfMwFlV_NUoxq538M61ElX9OZwArQAj5_qiVmLm5zeQ8Ps2DdrK5erE96IQJ5RQlR8x0';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -6424,6 +6424,7 @@ router.post('/customLead', async (req, res) => {
       remark: req.body.remark,
       leadType: req.body.leadType
     })
+    console.log('SAVED DATA===>>', customer);
     await customer.save();
     function formatDate(timestamp) {
       const date = new Date(timestamp);
