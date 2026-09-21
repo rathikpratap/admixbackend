@@ -949,6 +949,7 @@ router.put('/update/:id', checkAuth, async (req, res) => {
         salesPerson,
         companyName,
         priority,
+        restPayments,
         ...restFields
       } = req.body;
 
@@ -961,6 +962,63 @@ router.put('/update/:id', checkAuth, async (req, res) => {
         priority,
         ...restFields
       };
+
+      // if(Array.isArray(restPayments)) {
+      //   updateData.restPayments = restPayments.map(payment => ({
+      //     amount: Number(payment.amount || 0),
+      //     date: payment.date
+      //   }));
+      // }
+
+      if (Array.isArray(restPayments)) {
+
+        updateData.restPayments = restPayments
+          .filter(payment =>
+            payment &&
+            payment.amount !== undefined &&
+            payment.amount !== null &&
+            payment.amount !== '' &&
+            payment.date
+          )
+          .map(payment => ({
+            amount: Number(payment.amount),
+            date: payment.date,
+            // qr: payment.qr || ''
+          }));
+
+      }
+
+      const closingPrice = Number(
+        req.body.closingPrice || 0
+      );
+
+      const advancePayment = Number(
+        req.body.AdvPay || 0
+      );
+
+      let totalRestAmount = 0;
+
+      if(Array.isArray(restPayments)) {
+        totalRestAmount = restPayments.reduce(
+          (total, payment) => {
+            return total + Number(
+              payment.amount || 0
+            );
+          },
+          0
+        );
+      }
+      else if (
+        req.body.restAmount !== undefined && req.body.restAmount !== null && req.body.restAmount !== ''
+      ){
+        totalRestAmount = Number(req.body.restAmount || 0);
+      }
+
+      const remainingAmount = Math.max(
+        closingPrice - advancePayment - totalRestAmount, 0
+      );
+
+      updateData.remainingAmount = remainingAmount;
 
       // ✅ Only regenerate subEntries if counts provided
       if (
@@ -3309,7 +3367,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//049MFn70zy3YcCgYIARAAGAQSNwF-L9IrfMwFlV_NUoxq538M61ElX9OZwArQAj5_qiVmLm5zeQ8Ps2DdrK5erE96IQJ5RQlR8x0';
+const REFERESH_TOKEN = '1//04glz4ewxsFt5CgYIARAAGAQSNwF-L9Ir-s2fmJHgwoBIIlVv7lneKvxWu-_gS-dcg40LiBP-Gff6yQK_wgflHaAemf4Fh557bIo';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -7758,46 +7816,1243 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
 //   }
 // });
 
+// router.post('/invoice', checkAuth, async (req, res) => {
+//   const person1 = req.userData.name;
+
+//   try {
+//     const {
+//       custGST, custAddLine1, custAddLine2, custAddLine3,
+//       billType, gstType, custName, custNumb,
+//       invoiceCateg, customCateg, rows,
+//       invoiceDate, GSTAmount, totalAmount,
+//       billFormat, financialYear,
+//       discountValue, afterDiscountTotal, state,
+//       allowUpdate, allowNewDateEntry,
+//       salesLeadId, customerId, QrCheck,
+//       isRestPaymentInvoice, restPaymentIndex, restPaymentAmount, restPaymentDate,
+//       noteText, noteHtml, termsHtml, termsList,
+//       packageIncludesHtml, packageIncludesList,
+//       paymentTermsHtml, paymentTermsList,
+//       additionalNotesHtml, additionalNotesList,
+//       visibilityFlags
+//     } = req.body;
+
+//     const date = new Date(invoiceDate);
+//     //new
+//     if(isNan(date.getTime())){
+//       return res.status(400).json({ success: false, message: 'Invalid invoice date'});
+//     }
+//     const dateStr = date.toISOString().split('T')[0];
+
+//     const sameMonthInvoices = await EstInvoice.find({
+//       custName,
+//       custNumb,
+//       salesPerson: person1,
+//       $expr: {
+//         $and: [
+//           { $eq: [{ $month: "$date" }, date.getMonth() + 1] },
+//           { $eq: [{ $year: "$date" }, date.getFullYear()] }
+//         ]
+//       }
+//     });
+
+//     const sameDateInvoice = sameMonthInvoices.find(
+//       inv => inv.date.toISOString().split('T')[0] === dateStr
+//     );
+
+//     if (sameDateInvoice && !allowUpdate) {
+//       return res.json({
+//         success: false,
+//         sameDateExists: true,
+//         message: 'Invoice already exists on same Date'
+//       });
+//     }
+
+//     if (!sameDateInvoice && sameMonthInvoices.length > 0 && !allowNewDateEntry) {
+//       return res.json({
+//         success: false,
+//         differentDateExists: true,
+//         message: 'Invoice already exists this month'
+//       });
+//     }
+
+//     /* ================= UPDATE ================= */
+
+//     if (sameDateInvoice && allowUpdate) {
+
+//       Object.assign(sameDateInvoice, {
+//         ...req.body,
+//         billNumber: sameDateInvoice.billNumber,
+//         invoiceNumber: sameDateInvoice.invoiceNumber,
+//         quotationNumber: sameDateInvoice.quotationNumber
+//       });
+
+//       await sameDateInvoice.save();
+
+//       // REST PAYMENT UPDATE
+
+//       if( isRestPaymentInvoice === true && customerId && restPaymentIndex !== undefined && restPaymentIndex !== null){
+//         const customer = await Customer.findById(customerId);
+
+//         if(!customer){
+//           return res.status(404).json({
+//             success: false, message: 'Customer not found'
+//           });
+//         }
+//         const index = Number(restPaymentIndex);
+
+//         if( !Array.isArray(customer.restPayments) || !customer.restPayments[index]){
+//           return res.status(400).json({ success: false, message: 'Selected rest ament not found'});
+//         }
+//         const payment = customer.restPayments[index];
+//         //Already invoice created
+//         if(payment.invoiceCreated === true){
+//           return res.status(400).json({
+//             success: false,
+//             message: 'Invoice already created for this rest payment',
+//             invoiceNumber: payment.invoiceNumber || ''
+//           });
+//         }
+//         //Mark Invoice Created
+//         payment.invoiceCreated = true;
+//         //Invoice Number
+//         if( sameDateInvoice.invoiceNumber && sameDateInvoice.invoiceNumber.length){
+//           payment.invoiceNumber = sameDateInvoice.invoiceNumber[0].InvoiceNo;
+//         }
+//         //Invoice Date
+//         payment.invoiceDate = sameDateInvocie.date;
+//         await customer.save();
+//       }
+//       //Customer Main Invoice
+//       if( customerId && billFormat === 'Main' && sameDateInvoice.invoiceNumber && sameDateInvoice.invoiceNumber.length){
+//         await Customer.findByIdAndUpdate(
+//           customerId,
+//           {
+//             $push: {
+//               invoiceNumber: sameDateInvoice.invoiceNumber[0]
+//             }
+//           }
+//         );
+//       }
+
+//       return res.json({
+//         success: true,
+//         invoice: sameDateInvoice
+//       });
+//     }
+
+//     /* ================= NUMBER ================= */
+
+//     let billNumber = null;
+//     let invoiceNumber = [];
+//     let quotationNumber = null;
+
+//     if (billFormat === 'Estimate') {
+//       const counter = await Counter.findOneAndUpdate(
+//         { _id: `estInvoice_${financialYear}` },
+//         {
+//           $setOnInsert: { quotationNum: 0 },
+//           $inc: { quotationNum: 1 }
+//         },
+//         { new: true, upsert: true }
+//       );
+
+//       billNumber = counter.quotationNum;
+//       quotationNumber = `ADM-${financialYear}/${billNumber}`;
+//     }
+
+//     if (billFormat === 'Main') {
+//       const isGST = billType === 'GST';
+//       const field = isGST ? 'GSTNum' : 'NonGSTnum';
+
+//       const counter = await Counter.findOneAndUpdate(
+//         { _id: `mainInvoice_${financialYear}` },
+//         {
+//           $setOnInsert: isGST 
+//             ? {NonGSTnum: 0}
+//             : {GSTNum: 0}
+//           ,
+//           $inc: { [field]: 1 }
+//         },
+//         { new: true, upsert: true }
+//       );
+
+//       billNumber = counter[field];
+
+//       const invNo = isGST
+//         ? `ADMIX-${financialYear}/${billNumber}`
+//         : `ADM-${financialYear}/${billNumber}`;
+
+//       invoiceNumber.push({
+//         InvoiceNo: invNo,
+//         invoiceDate: date
+//       });
+//     }
+
+//     /* ================= SAVE ================= */
+
+//     const invoice = new EstInvoice({
+//       // ...req.body,
+//       // billNumber,
+//       // invoiceNumber,
+//       // quotationNumber,
+//       // date,
+//       // salesPerson: person1
+//       custGST, custAddLine1, custAddLine2, custAddLine3,
+//       billFormat, billType,
+//       billNumber,
+//       invoiceNumber,
+//       quotationNumber,
+//       custName, custNumb,
+//       invoiceCateg, customCateg, rows,
+//       date,
+//       GSTAmount, totalAmount,
+//       financialYear,
+//       discountValue, afterDiscountTotal, state,
+//       noteText, noteHtml, termsHtml, termsList,
+//       packageIncludesHtml, packageIncludesList,
+//       paymentTermsHtml, paymentTermsList,
+//       additionalNotesHtml, additionalNotesList,
+//       visibilityFlags,
+//       salesPerson: person1,
+//       QrCheck
+//     });
+
+//     await invoice.save();
+
+//     //=======REST PAYMENT========
+
+//     if(
+//       isRestPaymentInvoice === true && customerId && restPaymentIndex !== undefined && restPaymentIndex !== null){
+//         const customer = await Customer.findById(customerId);
+//         if(!customer){
+//           return res.status(404).json({
+//             success: false, message: 'Customer not found'
+//           });
+//         }
+//         const index = Number(restPaymentIndex);
+//         if(!Array.isArray(customer.restPayments) || !customer.restPayments[index]){
+//           return res.status(400).json({ success: false, message: 'Selected rest payment not found'});
+//         }
+//         const payment = customer.restPayments[index];
+
+//         if(payment.invoiceCreated === true){
+//           return res.status(400).json({ success: false, messsage: 'Invoice already created for the rest payment',
+//             invoiceNumber: payment.invoiceNumber || ''
+//           });
+//         }
+//         payment.invoiceCreated = true;
+//         if(invoiceNumber.length){
+//           payment.invoiceNumber = invoiceNumber[0].InvoiceNo;
+//         }else if(quotationNumber){
+//           payment.invoiceNumber = quotationNumber;
+//         }
+//         payment.invoiceDate = date;
+
+//         await customer.save();
+//       }
+    
+
+//     /* ================= CUSTOMER ================= */
+
+//     if (customerId && billFormat === 'Main' && invoiceNumber.length) {
+//       await Customer.findByIdAndUpdate(customerId, {
+//         $push: { invoiceNumber: invoiceNumber[0] }
+//       });
+//     }
+
+//     return res.json({
+//       success: true,
+//       invoice
+//     });
+
+//   } catch (err) {
+//     console.error('Invoice save error: ',err);
+//     res.status(500).json({ success: false, message: 'Failed to save invoice', error: err.message });
+//   }
+// });
+
+// router.post('/invoice', checkAuth, async (req, res) => {
+//   const person1 = req.userData.name;
+
+//   try {
+//     // ============================================================
+//     // GET DATA FROM REQUEST
+//     // ============================================================
+
+//     const {
+//       custGST,
+//       custAddLine1,
+//       custAddLine2,
+//       custAddLine3,
+
+//       billType,
+//       gstType,
+
+//       custName,
+//       custNumb,
+
+//       invoiceCateg,
+//       customCateg,
+//       rows,
+
+//       invoiceDate,
+//       GSTAmount,
+//       totalAmount,
+
+//       billFormat,
+//       financialYear,
+
+//       discountValue,
+//       afterDiscountTotal,
+//       state,
+
+//       allowUpdate,
+//       allowNewDateEntry,
+
+//       salesLeadId,
+//       customerId,
+//       QrCheck,
+
+//       // ==========================================================
+//       // REST PAYMENT DATA
+//       // ==========================================================
+
+//       isRestPaymentInvoice,
+//       restPaymentIndex,
+//       restPaymentAmount,
+//       restPaymentDate,
+
+//       // ==========================================================
+//       // NOTES / TERMS
+//       // ==========================================================
+
+//       noteText,
+//       noteHtml,
+
+//       termsHtml,
+//       termsList,
+
+//       packageIncludesHtml,
+//       packageIncludesList,
+
+//       paymentTermsHtml,
+//       paymentTermsList,
+
+//       additionalNotesHtml,
+//       additionalNotesList,
+
+//       visibilityFlags
+//     } = req.body;
+
+
+//     // ============================================================
+//     // VALIDATE INVOICE DATE
+//     // ============================================================
+
+//     const date = new Date(invoiceDate);
+
+//     if (isNaN(date.getTime())) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid invoice date'
+//       });
+//     }
+
+//     const dateStr = date.toISOString().split('T')[0];
+
+
+//     // ============================================================
+//     // FIND SAME MONTH INVOICES
+//     // ============================================================
+
+//     const sameMonthInvoices = await EstInvoice.find({
+//       custName,
+//       custNumb,
+//       salesPerson: person1,
+
+//       $expr: {
+//         $and: [
+//           {
+//             $eq: [
+//               { $month: '$date' },
+//               date.getMonth() + 1
+//             ]
+//           },
+//           {
+//             $eq: [
+//               { $year: '$date' },
+//               date.getFullYear()
+//             ]
+//           }
+//         ]
+//       }
+//     });
+
+
+//     // ============================================================
+//     // FIND SAME DATE INVOICE
+//     // ============================================================
+
+//     const sameDateInvoice = sameMonthInvoices.find((inv) => {
+
+//       if (!inv.date) {
+//         return false;
+//       }
+
+//       return (
+//         inv.date.toISOString().split('T')[0] === dateStr
+//       );
+//     });
+
+
+//     // ============================================================
+//     // SAME DATE INVOICE EXISTS
+//     // ============================================================
+
+//     if (sameDateInvoice && !allowUpdate) {
+
+//       return res.json({
+//         success: false,
+//         sameDateExists: true,
+//         message: 'Invoice already exists on same Date'
+//       });
+//     }
+
+
+//     // ============================================================
+//     // DIFFERENT DATE INVOICE EXISTS IN SAME MONTH
+//     // ============================================================
+
+//     if (
+//       !sameDateInvoice &&
+//       sameMonthInvoices.length > 0 &&
+//       !allowNewDateEntry
+//     ) {
+
+//       return res.json({
+//         success: false,
+//         differentDateExists: true,
+//         message: 'Invoice already exists this month'
+//       });
+//     }
+
+
+//     // ============================================================
+//     // SAME DATE + ALLOW UPDATE
+//     // ============================================================
+
+//     if (sameDateInvoice && allowUpdate) {
+
+//       // ----------------------------------------------------------
+//       // Update existing invoice
+//       // ----------------------------------------------------------
+
+//       Object.assign(sameDateInvoice, {
+//         ...req.body,
+
+//         // Existing numbers remain unchanged
+//         billNumber: sameDateInvoice.billNumber,
+//         invoiceNumber: sameDateInvoice.invoiceNumber,
+//         quotationNumber: sameDateInvoice.quotationNumber
+//       });
+
+
+//       await sameDateInvoice.save();
+
+
+//       // ==========================================================
+//       // REST PAYMENT UPDATE FOR EXISTING INVOICE
+//       // ==========================================================
+
+//       if (
+//         isRestPaymentInvoice === true &&
+//         customerId &&
+//         restPaymentIndex !== undefined &&
+//         restPaymentIndex !== null
+//       ) {
+
+//         const customer = await Customer.findById(customerId);
+
+
+//         if (!customer) {
+//           return res.status(404).json({
+//             success: false,
+//             message: 'Customer not found'
+//           });
+//         }
+
+
+//         const index = Number(restPaymentIndex);
+
+
+//         if (isNaN(index) || index < 0) {
+//           return res.status(400).json({
+//             success: false,
+//             message: 'Invalid rest payment index'
+//           });
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Make sure array exists
+//         // --------------------------------------------------------
+
+//         if (!Array.isArray(customer.restPayments)) {
+//           customer.restPayments = [];
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Get selected payment
+//         // --------------------------------------------------------
+
+//         let payment = customer.restPayments[index];
+
+
+//         // --------------------------------------------------------
+//         // If payment doesn't exist in DB,
+//         // create it from frontend draft data
+//         // --------------------------------------------------------
+
+//         if (!payment) {
+
+//           if (
+//             restPaymentAmount === undefined ||
+//             restPaymentAmount === null ||
+//             !restPaymentDate
+//           ) {
+
+//             return res.status(400).json({
+//               success: false,
+//               message: 'Rest payment amount/date missing'
+//             });
+//           }
+
+
+//           payment = {
+//             amount: Number(restPaymentAmount),
+//             date: new Date(restPaymentDate),
+
+//             invoiceCreated: false,
+//             invoiceNumber: '',
+//             invoiceDate: null
+//           };
+
+
+//           // ------------------------------------------------------
+//           // Fill missing indexes if necessary
+//           // ------------------------------------------------------
+
+//           while (customer.restPayments.length < index) {
+
+//             customer.restPayments.push({
+//               amount: 0,
+//               date: new Date(),
+
+//               invoiceCreated: false,
+//               invoiceNumber: '',
+//               invoiceDate: null
+//             });
+//           }
+
+
+//           // ------------------------------------------------------
+//           // Put selected payment at index
+//           // ------------------------------------------------------
+
+//           customer.restPayments[index] = payment;
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Prevent duplicate invoice
+//         // --------------------------------------------------------
+
+//         if (payment.invoiceCreated === true) {
+
+//           return res.status(400).json({
+//             success: false,
+//             message: 'Invoice already created for this rest payment',
+//             invoiceNumber: payment.invoiceNumber || ''
+//           });
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Update amount
+//         // --------------------------------------------------------
+
+//         if (
+//           restPaymentAmount !== undefined &&
+//           restPaymentAmount !== null
+//         ) {
+
+//           payment.amount = Number(restPaymentAmount);
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Update payment date
+//         // --------------------------------------------------------
+
+//         if (restPaymentDate) {
+
+//           payment.date = new Date(restPaymentDate);
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Mark invoice created
+//         // --------------------------------------------------------
+
+//         payment.invoiceCreated = true;
+
+
+//         // --------------------------------------------------------
+//         // Invoice number
+//         // --------------------------------------------------------
+
+//         if (
+//           sameDateInvoice.invoiceNumber &&
+//           sameDateInvoice.invoiceNumber.length > 0
+//         ) {
+
+//           payment.invoiceNumber =
+//             sameDateInvoice.invoiceNumber[0].InvoiceNo;
+
+//         } else if (sameDateInvoice.quotationNumber) {
+
+//           payment.invoiceNumber =
+//             sameDateInvoice.quotationNumber;
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Invoice date
+//         // --------------------------------------------------------
+
+//         payment.invoiceDate = sameDateInvoice.date;
+
+
+//         // --------------------------------------------------------
+//         // Save Customer
+//         // --------------------------------------------------------
+
+//         await customer.save();
+//       }
+
+
+//       // ==========================================================
+//       // CUSTOMER MAIN INVOICE NUMBER
+//       // ==========================================================
+
+//       if (
+//         customerId &&
+//         billFormat === 'Main' &&
+//         sameDateInvoice.invoiceNumber &&
+//         sameDateInvoice.invoiceNumber.length > 0
+//       ) {
+
+//         await Customer.findByIdAndUpdate(
+//           customerId,
+//           {
+//             $push: {
+//               invoiceNumber:
+//                 sameDateInvoice.invoiceNumber[0]
+//             }
+//           }
+//         );
+//       }
+
+
+//       // ==========================================================
+//       // RESPONSE
+//       // ==========================================================
+
+//       return res.json({
+//         success: true,
+//         invoice: sameDateInvoice
+//       });
+//     }
+
+
+//     // ============================================================
+//     // NEW INVOICE NUMBER
+//     // ============================================================
+
+//     let billNumber = null;
+//     let invoiceNumber = [];
+//     let quotationNumber = null;
+
+
+//     // ============================================================
+//     // ESTIMATE NUMBER
+//     // ============================================================
+
+//     if (billFormat === 'Estimate') {
+
+//       const counter = await Counter.findOneAndUpdate(
+//         {
+//           _id: `estInvoice_${financialYear}`
+//         },
+
+//         {
+//           $setOnInsert: {
+//             quotationNum: 0
+//           },
+
+//           $inc: {
+//             quotationNum: 1
+//           }
+//         },
+
+//         {
+//           new: true,
+//           upsert: true
+//         }
+//       );
+
+
+//       billNumber = counter.quotationNum;
+
+
+//       quotationNumber =
+//         `ADM-${financialYear}/${billNumber}`;
+//     }
+
+
+//     // ============================================================
+//     // MAIN INVOICE NUMBER
+//     // ============================================================
+
+//     if (billFormat === 'Main') {
+
+//       const isGST = billType === 'GST';
+
+//       const field = isGST
+//         ? 'GSTNum'
+//         : 'NonGSTnum';
+
+
+//       const counter = await Counter.findOneAndUpdate(
+//         {
+//           _id: `mainInvoice_${financialYear}`
+//         },
+
+//         {
+//           $setOnInsert: isGST
+//             ? {
+//                 NonGSTnum: 0
+//               }
+//             : {
+//                 GSTNum: 0
+//               },
+
+//           $inc: {
+//             [field]: 1
+//           }
+//         },
+
+//         {
+//           new: true,
+//           upsert: true
+//         }
+//       );
+
+
+//       billNumber = counter[field];
+
+
+//       const invNo = isGST
+//         ? `ADMIX-${financialYear}/${billNumber}`
+//         : `ADM-${financialYear}/${billNumber}`;
+
+
+//       invoiceNumber.push({
+//         InvoiceNo: invNo,
+//         invoiceDate: date
+//       });
+//     }
+
+
+//     // ============================================================
+//     // CREATE ESTINVOICE DOCUMENT
+//     // ============================================================
+
+//     const invoice = new EstInvoice({
+
+//       custGST,
+//       custAddLine1,
+//       custAddLine2,
+//       custAddLine3,
+
+//       billFormat,
+//       billType,
+
+//       billNumber,
+
+//       invoiceNumber,
+
+//       quotationNumber,
+
+//       custName,
+//       custNumb,
+
+//       invoiceCateg,
+//       customCateg,
+//       rows,
+
+//       date,
+
+//       GSTAmount,
+//       totalAmount,
+
+//       financialYear,
+
+//       discountValue,
+//       afterDiscountTotal,
+
+//       state,
+
+//       noteText,
+//       noteHtml,
+
+//       termsHtml,
+//       termsList,
+
+//       packageIncludesHtml,
+//       packageIncludesList,
+
+//       paymentTermsHtml,
+//       paymentTermsList,
+
+//       additionalNotesHtml,
+//       additionalNotesList,
+
+//       visibilityFlags,
+
+//       salesPerson: person1,
+
+//       QrCheck
+//     });
+
+
+//     // ============================================================
+//     // SAVE INVOICE IN ESTINVOICE
+//     // ============================================================
+
+//     await invoice.save();
+
+
+//     // ============================================================
+//     // REST PAYMENT
+//     // ============================================================
+
+//     if (
+//       isRestPaymentInvoice === true &&
+//       customerId &&
+//       restPaymentIndex !== undefined &&
+//       restPaymentIndex !== null
+//     ) {
+
+//       const customer = await Customer.findById(customerId);
+
+
+//       if (!customer) {
+//         return res.status(404).json({
+//           success: false,
+//           message: 'Customer not found'
+//         });
+//       }
+
+
+//       const index = Number(restPaymentIndex);
+
+
+//       if (isNaN(index) || index < 0) {
+//         return res.status(400).json({
+//           success: false,
+//           message: 'Invalid rest payment index'
+//         });
+//       }
+
+
+//       // ==========================================================
+//       // MAKE SURE REST PAYMENTS ARRAY EXISTS
+//       // ==========================================================
+
+//       if (!Array.isArray(customer.restPayments)) {
+//         customer.restPayments = [];
+//       }
+
+
+//       // ==========================================================
+//       // GET SELECTED PAYMENT
+//       // ==========================================================
+
+//       let payment = customer.restPayments[index];
+
+
+//       // ==========================================================
+//       // PAYMENT DOES NOT EXIST IN DATABASE
+//       //
+//       // This is the important part for your unsaved form.
+//       // ==========================================================
+
+//       if (!payment) {
+
+//         if (
+//           restPaymentAmount === undefined ||
+//           restPaymentAmount === null ||
+//           !restPaymentDate
+//         ) {
+
+//           return res.status(400).json({
+//             success: false,
+//             message: 'Rest payment amount/date missing'
+//           });
+//         }
+
+
+//         payment = {
+//           amount: Number(restPaymentAmount),
+
+//           date: new Date(restPaymentDate),
+
+//           invoiceCreated: false,
+
+//           invoiceNumber: '',
+
+//           invoiceDate: null
+//         };
+
+
+//         // --------------------------------------------------------
+//         // Fill missing indexes
+//         // --------------------------------------------------------
+
+//         while (customer.restPayments.length < index) {
+
+//           customer.restPayments.push({
+//             amount: 0,
+
+//             date: new Date(),
+
+//             invoiceCreated: false,
+
+//             invoiceNumber: '',
+
+//             invoiceDate: null
+//           });
+//         }
+
+
+//         // --------------------------------------------------------
+//         // Add selected payment
+//         // --------------------------------------------------------
+
+//         customer.restPayments[index] = payment;
+//       }
+
+
+//       // ==========================================================
+//       // DUPLICATE CHECK
+//       // ==========================================================
+
+//       if (payment.invoiceCreated === true) {
+
+//         return res.status(400).json({
+//           success: false,
+//           message: 'Invoice already created for this rest payment',
+//           invoiceNumber: payment.invoiceNumber || ''
+//         });
+//       }
+
+
+//       // ==========================================================
+//       // UPDATE PAYMENT AMOUNT
+//       // ==========================================================
+
+//       if (
+//         restPaymentAmount !== undefined &&
+//         restPaymentAmount !== null
+//       ) {
+
+//         payment.amount =
+//           Number(restPaymentAmount);
+//       }
+
+
+//       // ==========================================================
+//       // UPDATE PAYMENT DATE
+//       // ==========================================================
+
+//       if (restPaymentDate) {
+
+//         payment.date =
+//           new Date(restPaymentDate);
+//       }
+
+
+//       // ==========================================================
+//       // MARK INVOICE CREATED
+//       // ==========================================================
+
+//       payment.invoiceCreated = true;
+
+
+//       // ==========================================================
+//       // SAVE INVOICE NUMBER
+//       // ==========================================================
+
+//       if (invoiceNumber.length > 0) {
+
+//         payment.invoiceNumber =
+//           invoiceNumber[0].InvoiceNo;
+
+//       } else if (quotationNumber) {
+
+//         payment.invoiceNumber =
+//           quotationNumber;
+//       }
+
+
+//       // ==========================================================
+//       // SAVE INVOICE DATE
+//       // ==========================================================
+
+//       payment.invoiceDate = date;
+
+
+//       // ==========================================================
+//       // SAVE CUSTOMER
+//       // ==========================================================
+
+//       await customer.save();
+//     }
+
+
+//     // ============================================================
+//     // CUSTOMER MAIN INVOICE
+//     // ============================================================
+
+//     if (
+//       customerId &&
+//       billFormat === 'Main' &&
+//       invoiceNumber.length > 0
+//     ) {
+
+//       await Customer.findByIdAndUpdate(
+//         customerId,
+//         {
+//           $push: {
+//             invoiceNumber: invoiceNumber[0]
+//           }
+//         }
+//       );
+//     }
+
+
+//     // ============================================================
+//     // FINAL SUCCESS RESPONSE
+//     // ============================================================
+
+//     return res.json({
+//       success: true,
+//       invoice
+//     });
+
+
+//   } catch (err) {
+
+//     console.error('====================================');
+//     console.error('INVOICE API ERROR');
+//     console.error('====================================');
+//     console.error(err);
+//     console.error('====================================');
+
+
+//     return res.status(500).json({
+//       success: false,
+//       message: 'Failed to save invoice',
+//       error: err.message
+//     });
+//   }
+// });
+
 router.post('/invoice', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
 
   try {
+
+    // ============================================================
+    // REQUEST DATA
+    // ============================================================
+
     const {
-      custGST, custAddLine1, custAddLine2, custAddLine3,
-      billType, gstType, custName, custNumb,
-      invoiceCateg, customCateg, rows,
-      invoiceDate, GSTAmount, totalAmount,
-      billFormat, financialYear,
-      discountValue, afterDiscountTotal, state,
-      allowUpdate, allowNewDateEntry,
-      salesLeadId, customerId, QrCheck,
-      noteText, noteHtml, termsHtml, termsList,
-      packageIncludesHtml, packageIncludesList,
-      paymentTermsHtml, paymentTermsList,
-      additionalNotesHtml, additionalNotesList,
+      custGST,
+      custAddLine1,
+      custAddLine2,
+      custAddLine3,
+
+      billType,
+      gstType,
+
+      custName,
+      custNumb,
+
+      invoiceCateg,
+      customCateg,
+      rows,
+
+      invoiceDate,
+      GSTAmount,
+      totalAmount,
+
+      billFormat,
+      financialYear,
+
+      discountValue,
+      afterDiscountTotal,
+      state,
+
+      allowUpdate,
+      allowNewDateEntry,
+
+      salesLeadId,
+      customerId,
+      QrCheck,
+
+      // REST PAYMENT
+      isRestPaymentInvoice,
+      restPaymentIndex,
+      restPaymentAmount,
+      restPaymentDate,
+
+      // NOTES
+      noteText,
+      noteHtml,
+
+      // TERMS
+      termsHtml,
+      termsList,
+
+      // PACKAGE
+      packageIncludesHtml,
+      packageIncludesList,
+
+      // PAYMENT TERMS
+      paymentTermsHtml,
+      paymentTermsList,
+
+      // ADDITIONAL NOTES
+      additionalNotesHtml,
+      additionalNotesList,
+
+      // VISIBILITY
       visibilityFlags
     } = req.body;
 
+
+    // ============================================================
+    // NORMALIZE REST PAYMENT FLAG
+    // ============================================================
+
+    const isRestPayment =
+      isRestPaymentInvoice === true ||
+      isRestPaymentInvoice === 'true' ||
+      isRestPaymentInvoice === 1 ||
+      isRestPaymentInvoice === '1';
+
+
+    console.log('==========================================');
+    console.log('INVOICE REQUEST');
+    console.log('isRestPaymentInvoice RAW:', isRestPaymentInvoice);
+    console.log('isRestPayment:', isRestPayment);
+    console.log('customerId:', customerId);
+    console.log('restPaymentIndex:', restPaymentIndex);
+    console.log('restPaymentAmount:', restPaymentAmount);
+    console.log('restPaymentDate:', restPaymentDate);
+    console.log('billFormat:', billFormat);
+    console.log('billType:', billType);
+    console.log('==========================================');
+
+
+    // ============================================================
+    // VALIDATE INVOICE DATE
+    // ============================================================
+
     const date = new Date(invoiceDate);
+
+    if (isNaN(date.getTime())) {
+
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid invoice date'
+      });
+    }
+
+
     const dateStr = date.toISOString().split('T')[0];
 
+
+    // ============================================================
+    // FIND SAME MONTH INVOICES
+    // ============================================================
+
     const sameMonthInvoices = await EstInvoice.find({
+
       custName,
+
       custNumb,
+
       salesPerson: person1,
+
       $expr: {
         $and: [
-          { $eq: [{ $month: "$date" }, date.getMonth() + 1] },
-          { $eq: [{ $year: "$date" }, date.getFullYear()] }
+
+          {
+            $eq: [
+              { $month: '$date' },
+              date.getMonth() + 1
+            ]
+          },
+
+          {
+            $eq: [
+              { $year: '$date' },
+              date.getFullYear()
+            ]
+          }
+
         ]
       }
     });
 
-    const sameDateInvoice = sameMonthInvoices.find(
-      inv => inv.date.toISOString().split('T')[0] === dateStr
-    );
+
+    // ============================================================
+    // FIND SAME DATE INVOICE
+    // ============================================================
+
+    const sameDateInvoice = sameMonthInvoices.find((inv) => {
+
+      if (!inv.date) {
+        return false;
+      }
+
+      return (
+        inv.date.toISOString().split('T')[0] === dateStr
+      );
+    });
+
+
+    // ============================================================
+    // SAME DATE EXISTS
+    // ============================================================
 
     if (sameDateInvoice && !allowUpdate) {
+
       return res.json({
         success: false,
         sameDateExists: true,
@@ -7805,7 +9060,17 @@ router.post('/invoice', checkAuth, async (req, res) => {
       });
     }
 
-    if (!sameDateInvoice && sameMonthInvoices.length && !allowNewDateEntry) {
+
+    // ============================================================
+    // DIFFERENT DATE EXISTS IN SAME MONTH
+    // ============================================================
+
+    if (
+      !sameDateInvoice &&
+      sameMonthInvoices.length > 0 &&
+      !allowNewDateEntry
+    ) {
+
       return res.json({
         success: false,
         differentDateExists: true,
@@ -7813,18 +9078,267 @@ router.post('/invoice', checkAuth, async (req, res) => {
       });
     }
 
-    /* ================= UPDATE ================= */
+
+    // ============================================================
+    // SAME DATE + ALLOW UPDATE
+    // ============================================================
 
     if (sameDateInvoice && allowUpdate) {
 
+      console.log('Updating existing invoice:', sameDateInvoice._id);
+
+
+      // ==========================================================
+      // UPDATE EXISTING ESTINVOICE
+      // ==========================================================
+
       Object.assign(sameDateInvoice, {
+
         ...req.body,
+
+        // Existing invoice numbers should remain same
         billNumber: sameDateInvoice.billNumber,
+
         invoiceNumber: sameDateInvoice.invoiceNumber,
+
         quotationNumber: sameDateInvoice.quotationNumber
       });
 
+
       await sameDateInvoice.save();
+
+
+      // ==========================================================
+      // REST PAYMENT
+      // ==========================================================
+
+      if (
+        isRestPayment &&
+        customerId &&
+        restPaymentIndex !== undefined &&
+        restPaymentIndex !== null
+      ) {
+
+        console.log('==========================================');
+        console.log('REST PAYMENT UPDATE - EXISTING INVOICE');
+        console.log('==========================================');
+
+
+        const customer = await Customer.findById(customerId);
+
+
+        if (!customer) {
+
+          return res.status(404).json({
+            success: false,
+            message: 'Customer not found'
+          });
+        }
+
+
+        const index = Number(restPaymentIndex);
+
+
+        if (isNaN(index) || index < 0) {
+
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid rest payment index'
+          });
+        }
+
+
+        // --------------------------------------------------------
+        // Make sure restPayments exists
+        // --------------------------------------------------------
+
+        if (!Array.isArray(customer.restPayments)) {
+          customer.restPayments = [];
+        }
+
+
+        // --------------------------------------------------------
+        // Get selected payment
+        // --------------------------------------------------------
+
+        let payment = customer.restPayments[index];
+
+
+        // --------------------------------------------------------
+        // If payment does not exist in DB
+        // create it from frontend draft
+        // --------------------------------------------------------
+
+        if (!payment) {
+
+          if (
+            restPaymentAmount === undefined ||
+            restPaymentAmount === null ||
+            !restPaymentDate
+          ) {
+
+            return res.status(400).json({
+              success: false,
+              message: 'Rest payment amount/date missing'
+            });
+          }
+
+
+          // If selected index is exactly next index
+          if (index === customer.restPayments.length) {
+
+            customer.restPayments.push({
+              amount: Number(restPaymentAmount),
+
+              date: new Date(restPaymentDate),
+
+              invoiceCreated: false,
+
+              invoiceNumber: '',
+
+              invoiceDate: null
+            });
+
+          } else {
+
+            return res.status(400).json({
+              success: false,
+              message:
+                'Rest payment index does not match customer data'
+            });
+          }
+
+
+          payment = customer.restPayments[index];
+        }
+
+
+        // --------------------------------------------------------
+        // Duplicate check
+        // --------------------------------------------------------
+
+        if (payment.invoiceCreated === true) {
+
+          return res.status(400).json({
+            success: false,
+            message:
+              'Invoice already created for this rest payment',
+
+            invoiceNumber:
+              payment.invoiceNumber || ''
+          });
+        }
+
+
+        // --------------------------------------------------------
+        // Update amount
+        // --------------------------------------------------------
+
+        if (
+          restPaymentAmount !== undefined &&
+          restPaymentAmount !== null
+        ) {
+
+          payment.amount =
+            Number(restPaymentAmount);
+        }
+
+
+        // --------------------------------------------------------
+        // Update date
+        // --------------------------------------------------------
+
+        if (restPaymentDate) {
+
+          payment.date =
+            new Date(restPaymentDate);
+        }
+
+
+        // --------------------------------------------------------
+        // Mark invoice created
+        // --------------------------------------------------------
+
+        payment.invoiceCreated = true;
+
+
+        // --------------------------------------------------------
+        // Invoice number
+        // --------------------------------------------------------
+
+        if (
+          sameDateInvoice.invoiceNumber &&
+          Array.isArray(sameDateInvoice.invoiceNumber) &&
+          sameDateInvoice.invoiceNumber.length > 0
+        ) {
+
+          payment.invoiceNumber =
+            sameDateInvoice.invoiceNumber[0].InvoiceNo;
+
+        } else if (sameDateInvoice.quotationNumber) {
+
+          payment.invoiceNumber =
+            sameDateInvoice.quotationNumber;
+        }
+
+
+        // --------------------------------------------------------
+        // Invoice date
+        // --------------------------------------------------------
+
+        payment.invoiceDate =
+          sameDateInvoice.date;
+
+
+        // --------------------------------------------------------
+        // Mark modified
+        // --------------------------------------------------------
+
+        customer.markModified('restPayments');
+
+
+        // --------------------------------------------------------
+        // Save customer
+        // --------------------------------------------------------
+
+        await customer.save();
+
+
+        console.log(
+          'REST PAYMENT SAVED:',
+          customer.restPayments[index]
+        );
+      }
+
+
+      // ==========================================================
+      // MAIN INVOICE -> CUSTOMER
+      // ==========================================================
+
+      if (
+        customerId &&
+        billFormat === 'Main' &&
+        sameDateInvoice.invoiceNumber &&
+        Array.isArray(sameDateInvoice.invoiceNumber) &&
+        sameDateInvoice.invoiceNumber.length > 0
+      ) {
+
+        await Customer.findByIdAndUpdate(
+          customerId,
+
+          {
+            $push: {
+              invoiceNumber:
+                sameDateInvoice.invoiceNumber[0]
+            }
+          }
+        );
+      }
+
+
+      // ==========================================================
+      // SUCCESS
+      // ==========================================================
 
       return res.json({
         success: true,
@@ -7832,101 +9346,544 @@ router.post('/invoice', checkAuth, async (req, res) => {
       });
     }
 
-    /* ================= NUMBER ================= */
+
+    // ============================================================
+    // NEW INVOICE
+    // ============================================================
 
     let billNumber = null;
+
     let invoiceNumber = [];
+
     let quotationNumber = null;
 
+
+    // ============================================================
+    // ESTIMATE NUMBER
+    // ============================================================
+
     if (billFormat === 'Estimate') {
+
       const counter = await Counter.findOneAndUpdate(
-        { _id: `estInvoice_${financialYear}` },
+
         {
-          $setOnInsert: { quotationNum: 0 },
-          $inc: { quotationNum: 1 }
+          _id: `estInvoice_${financialYear}`
         },
-        { new: true, upsert: true }
+
+        {
+          $setOnInsert: {
+            quotationNum: 0
+          },
+
+          $inc: {
+            quotationNum: 1
+          }
+        },
+
+        {
+          new: true,
+          upsert: true
+        }
       );
+
 
       billNumber = counter.quotationNum;
-      quotationNumber = `ADM-${financialYear}/${billNumber}`;
+
+
+      quotationNumber =
+        `ADM-${financialYear}/${billNumber}`;
     }
 
+
+    // ============================================================
+    // MAIN INVOICE NUMBER
+    // ============================================================
+
     if (billFormat === 'Main') {
-      const isGST = billType === 'GST';
-      const field = isGST ? 'GSTNum' : 'NonGSTnum';
 
-      const counter = await Counter.findOneAndUpdate(
-        { _id: `mainInvoice_${financialYear}` },
-        {
-          $setOnInsert: isGST 
-            ? {NonGSTnum: 0}
-            : {GSTNum: 0}
-          ,
-          $inc: { [field]: 1 }
-        },
-        { new: true, upsert: true }
-      );
+      const isGST =
+        billType === 'GST';
 
-      billNumber = counter[field];
 
-      const invNo = isGST
-        ? `ADMIX-${financialYear}/${billNumber}`
-        : `ADM-${financialYear}/${billNumber}`;
+      const field =
+        isGST
+          ? 'GSTNum'
+          : 'NonGSTnum';
+
+
+      const counter =
+        await Counter.findOneAndUpdate(
+
+          {
+            _id:
+              `mainInvoice_${financialYear}`
+          },
+
+          {
+            $setOnInsert:
+              isGST
+                ? {
+                    NonGSTnum: 0
+                  }
+                : {
+                    GSTNum: 0
+                  },
+
+            $inc: {
+              [field]: 1
+            }
+          },
+
+          {
+            new: true,
+            upsert: true
+          }
+        );
+
+
+      billNumber =
+        counter[field];
+
+
+      const invNo =
+        isGST
+          ? `ADMIX-${financialYear}/${billNumber}`
+          : `ADM-${financialYear}/${billNumber}`;
+
 
       invoiceNumber.push({
+
         InvoiceNo: invNo,
+
         invoiceDate: date
       });
     }
 
-    /* ================= SAVE ================= */
 
-    const invoice = new EstInvoice({
-      // ...req.body,
-      // billNumber,
-      // invoiceNumber,
-      // quotationNumber,
-      // date,
-      // salesPerson: person1
-      custGST, custAddLine1, custAddLine2, custAddLine3,
-      billFormat, billType,
-      billNumber,
-      invoiceNumber,
-      quotationNumber,
-      custName, custNumb,
-      invoiceCateg, customCateg, rows,
-      date,
-      GSTAmount, totalAmount,
-      financialYear,
-      discountValue, afterDiscountTotal, state,
-      noteText, noteHtml, termsHtml, termsList,
-      packageIncludesHtml, packageIncludesList,
-      paymentTermsHtml, paymentTermsList,
-      additionalNotesHtml, additionalNotesList,
-      visibilityFlags,
-      salesPerson: person1,
-      QrCheck
-    });
+    // ============================================================
+    // CREATE ESTINVOICE
+    // ============================================================
+
+    const invoice =
+      new EstInvoice({
+
+        custGST,
+
+        custAddLine1,
+
+        custAddLine2,
+
+        custAddLine3,
+
+
+        billFormat,
+
+        billType,
+
+
+        billNumber,
+
+
+        invoiceNumber,
+
+
+        quotationNumber,
+
+
+        custName,
+
+        custNumb,
+
+
+        invoiceCateg,
+
+        customCateg,
+
+        rows,
+
+
+        date,
+
+
+        GSTAmount,
+
+        totalAmount,
+
+
+        financialYear,
+
+
+        discountValue,
+
+        afterDiscountTotal,
+
+
+        state,
+
+
+        noteText,
+
+        noteHtml,
+
+
+        termsHtml,
+
+        termsList,
+
+
+        packageIncludesHtml,
+
+        packageIncludesList,
+
+
+        paymentTermsHtml,
+
+        paymentTermsList,
+
+
+        additionalNotesHtml,
+
+        additionalNotesList,
+
+
+        visibilityFlags,
+
+
+        salesPerson: person1,
+
+
+        QrCheck
+      });
+
+
+    // ============================================================
+    // SAVE ESTINVOICE
+    // ============================================================
 
     await invoice.save();
 
-    /* ================= CUSTOMER ================= */
 
-    if (customerId && billFormat === 'Main' && invoiceNumber.length) {
-      await Customer.findByIdAndUpdate(customerId, {
-        $push: { invoiceNumber: invoiceNumber[0] }
-      });
+    console.log('==========================================');
+    console.log('ESTINVOICE SAVED');
+    console.log('Invoice ID:', invoice._id);
+    console.log('Invoice Number:', invoiceNumber);
+    console.log('Quotation Number:', quotationNumber);
+    console.log('==========================================');
+
+
+    // ============================================================
+    // REST PAYMENT - NEW INVOICE
+    // ============================================================
+
+    if (
+      isRestPayment &&
+      customerId &&
+      restPaymentIndex !== undefined &&
+      restPaymentIndex !== null
+    ) {
+
+      console.log('==========================================');
+      console.log('REST PAYMENT UPDATE - NEW INVOICE');
+      console.log('==========================================');
+
+
+      const customer =
+        await Customer.findById(customerId);
+
+
+      if (!customer) {
+
+        return res.status(404).json({
+          success: false,
+          message: 'Customer not found'
+        });
+      }
+
+
+      const index =
+        Number(restPaymentIndex);
+
+
+      if (isNaN(index) || index < 0) {
+
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid rest payment index'
+        });
+      }
+
+
+      // ==========================================================
+      // MAKE SURE ARRAY EXISTS
+      // ==========================================================
+
+      if (!Array.isArray(customer.restPayments)) {
+        customer.restPayments = [];
+      }
+
+
+      // ==========================================================
+      // GET SELECTED PAYMENT
+      // ==========================================================
+
+      let payment =
+        customer.restPayments[index];
+
+
+      // ==========================================================
+      // PAYMENT NOT IN DATABASE
+      // CREATE IT
+      // ==========================================================
+
+      if (!payment) {
+
+        if (
+          restPaymentAmount === undefined ||
+          restPaymentAmount === null ||
+          !restPaymentDate
+        ) {
+
+          return res.status(400).json({
+            success: false,
+            message:
+              'Rest payment amount/date missing'
+          });
+        }
+
+
+        // --------------------------------------------------------
+        // Only allow adding next index
+        // --------------------------------------------------------
+
+        if (
+          index === customer.restPayments.length
+        ) {
+
+          customer.restPayments.push({
+
+            amount:
+              Number(restPaymentAmount),
+
+            date:
+              new Date(restPaymentDate),
+
+            invoiceCreated:
+              false,
+
+            invoiceNumber:
+              '',
+
+            invoiceDate:
+              null
+          });
+
+        } else {
+
+          return res.status(400).json({
+            success: false,
+            message:
+              'Rest payment index does not match customer data'
+          });
+        }
+
+
+        payment =
+          customer.restPayments[index];
+      }
+
+
+      // ==========================================================
+      // DUPLICATE CHECK
+      // ==========================================================
+
+      if (payment.invoiceCreated === true) {
+
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            'Invoice already created for this rest payment',
+
+          invoiceNumber:
+            payment.invoiceNumber || ''
+        });
+      }
+
+
+      // ==========================================================
+      // UPDATE AMOUNT
+      // ==========================================================
+
+      if (
+        restPaymentAmount !== undefined &&
+        restPaymentAmount !== null
+      ) {
+
+        payment.amount =
+          Number(restPaymentAmount);
+      }
+
+
+      // ==========================================================
+      // UPDATE DATE
+      // ==========================================================
+
+      if (restPaymentDate) {
+
+        payment.date =
+          new Date(restPaymentDate);
+      }
+
+
+      // ==========================================================
+      // MARK INVOICE CREATED
+      // ==========================================================
+
+      payment.invoiceCreated =
+        true;
+
+
+      // ==========================================================
+      // SAVE INVOICE NUMBER
+      // ==========================================================
+
+      if (
+        invoiceNumber &&
+        Array.isArray(invoiceNumber) &&
+        invoiceNumber.length > 0 &&
+        invoiceNumber[0].InvoiceNo
+      ) {
+
+        payment.invoiceNumber =
+          invoiceNumber[0].InvoiceNo;
+
+      } else if (quotationNumber) {
+
+        payment.invoiceNumber =
+          quotationNumber;
+
+      } else {
+
+        payment.invoiceNumber = '';
+      }
+
+
+      // ==========================================================
+      // SAVE INVOICE DATE
+      // ==========================================================
+
+      payment.invoiceDate =
+        date;
+
+
+      // ==========================================================
+      // MARK ARRAY MODIFIED
+      // ==========================================================
+
+      customer.markModified(
+        'restPayments'
+      );
+
+
+      // ==========================================================
+      // SAVE CUSTOMER
+      // ==========================================================
+
+      await customer.save();
+
+
+      console.log('==========================================');
+      console.log('REST PAYMENT SAVED SUCCESSFULLY');
+      console.log(
+        'Index:',
+        index
+      );
+      console.log(
+        'Amount:',
+        customer.restPayments[index].amount
+      );
+      console.log(
+        'Invoice Created:',
+        customer.restPayments[index].invoiceCreated
+      );
+      console.log(
+        'Invoice Number:',
+        customer.restPayments[index].invoiceNumber
+      );
+      console.log(
+        'Invoice Date:',
+        customer.restPayments[index].invoiceDate
+      );
+      console.log('==========================================');
     }
 
+
+    // ============================================================
+    // CUSTOMER MAIN INVOICE NUMBER
+    // ============================================================
+
+    if (
+      customerId &&
+      billFormat === 'Main' &&
+      invoiceNumber &&
+      Array.isArray(invoiceNumber) &&
+      invoiceNumber.length > 0
+    ) {
+
+      await Customer.findByIdAndUpdate(
+
+        customerId,
+
+        {
+          $push: {
+            invoiceNumber:
+              invoiceNumber[0]
+          }
+        }
+      );
+    }
+
+
+    // ============================================================
+    // FINAL RESPONSE
+    // ============================================================
+
     return res.json({
+
       success: true,
+
       invoice
     });
 
+
   } catch (err) {
+
+    console.error(
+      '=========================================='
+    );
+
+    console.error(
+      'INVOICE API ERROR'
+    );
+
     console.error(err);
-    res.status(500).json({ success: false });
+
+    console.error(
+      '=========================================='
+    );
+
+
+    return res.status(500).json({
+
+      success: false,
+
+      message:
+        'Failed to save invoice',
+
+      error:
+        err.message
+    });
   }
 });
 
@@ -13386,6 +15343,107 @@ router.post('/fetch-attendance', async (req, res) => {
     res.status(500).json({ success: false, message: "Error fetching attendance" });
   }
 });
+
+//Customer Invoice combinatin
+
+router.put('/update-rest-payment-invoice/:id',checkAuth, async (req, res) => {
+
+    try {
+      const {
+        restPaymentIndex,
+        restPaymentInvoiceCreated,
+        restPaymentInvoiceNumber,
+        restPaymentInvoiceDate
+      } = req.body;
+
+      if (
+        restPaymentIndex === undefined ||
+        restPaymentIndex === null
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message: 'Rest payment index is required'
+        });
+      }
+
+      const customer =
+        await Customer.findById(req.params.id);
+
+      if (!customer) {
+
+        return res.status(404).json({
+          success: false,
+          message: 'Customer not found'
+        });
+      }
+
+      if (
+        !Array.isArray(customer.restPayments) ||
+        !customer.restPayments[restPaymentIndex]
+      ) {
+
+        return res.status(404).json({
+          success: false,
+          message: 'Rest payment not found'
+        });
+      }
+
+      const payment =
+        customer.restPayments[restPaymentIndex];
+
+      // ============================================
+      // PREVENT DUPLICATE INVOICE
+      // ============================================
+
+      if (payment.invoiceCreated === true) {
+
+        return res.status(400).json({
+          success: false,
+          message: 'Invoice already created for this rest payment',
+          invoiceNumber: payment.invoiceNumber
+        });
+      }
+
+      // ============================================
+      // UPDATE ONLY SELECTED PAYMENT
+      // ============================================
+
+      payment.invoiceCreated =
+        restPaymentInvoiceCreated === true;
+
+      payment.invoiceNumber =
+        restPaymentInvoiceNumber || '';
+
+      if (restPaymentInvoiceDate) {
+
+        payment.invoiceDate =
+          new Date(restPaymentInvoiceDate);
+      }
+
+      await customer.save();
+
+      return res.json({
+        success: true,
+        message: 'Rest payment invoice status updated',
+        restPaymentIndex,
+        payment
+      });
+
+    } catch (error) {
+
+      console.error(
+        'Error updating rest payment invoice:',
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+);
 
 // common lead and closing
 

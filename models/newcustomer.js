@@ -26,6 +26,14 @@ const customerSchema = new mongoose.Schema({
     remark: { type: String },
     restAmount: { type: Number },
     restPaymentDate: { type: Date },
+    restPayments: [ {
+        amount: { type: Number, required: true, min: 0},
+        date: { type: Date, required: true},
+        invoiceCreated: { type: Boolean, default: false},
+        invoiceNumber: { type: String, default: ''},
+        invoiceDate: { type: Date},
+        // qr: { type: String}
+    }],
     graphicDesigner: { type: String },
     graphicPassDate: { type: Date },
     graphicStatus: { type: String },
