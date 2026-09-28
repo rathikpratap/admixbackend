@@ -1780,9 +1780,30 @@ router.get('/cities/:countryCode/:stateCode', (req, res) => {
 
 //month-wise data
 
-router.get('/totalEntries', async (req, res) => {
+// router.get('/totalEntries', async (req, res) => {
+//   const currentMonth = new Date().getMonth() + 1;
+//   try {
+//     let query;
+//     query = {
+//       closingDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0, 23, 59, 59, 999)
+//       }
+//     };
+//     const totalEntries = await Customer.find(query);
+//     const totalAmount = totalEntries.reduce((sum, doc) => sum + doc.closingPrice, 0);
+//     const totalRecv = totalEntries.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
+//     const totalDue = totalEntries.reduce((sum, doc) => sum + doc.remainingAmount, 0);
+//     res.json({ totalEntries, totalAmount, totalRecv, totalDue });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
+router.get('/totalEntries', async(req,res) =>{
   const currentMonth = new Date().getMonth() + 1;
-  try {
+  try{
     let query;
     query = {
       closingDate: {
@@ -1791,13 +1812,29 @@ router.get('/totalEntries', async (req, res) => {
       }
     };
     const totalEntries = await Customer.find(query);
-    const totalAmount = totalEntries.reduce((sum, doc) => sum + doc.closingPrice, 0);
-    const totalRecv = totalEntries.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
-    const totalDue = totalEntries.reduce((sum, doc) => sum + doc.remainingAmount, 0);
-    res.json({ totalEntries, totalAmount, totalRecv, totalDue });
-  } catch (error) {
+    const totalAmount = totalEntries.reduce(
+      (sum, doc) => sum + Number(doc.closingPrice || 0), 0
+    );
+    const totalRecv = totalEntries.reduce(
+      (sum, doc) => {
+        const advancePayment = Number(doc.AdvPay || 0);
+        const restPayment = Array.isArray(doc.restPayments) ? doc.restPayments.reduce((restSum, payment) => restSum + Number(payment.amount || 0), 0) : Number(doc.restAmount || 0);
+        return sum + advancePayment + restPayment;
+      },
+    0);
+    const totalDue = totalEntries.reduce((sum, doc) => {
+      const closingPrice = Number(doc.closingPrice || 0);
+      const advancePayment = Number(doc.AdvPay || 0);
+      const restPayment = Array.isArray(doc.restPayments) ? doc.restPayments.reduce((restSum, payment) => restSum + Number(payment.amount || 0),
+      0):Number(doc.restAmount || 0);
+      const due = closingPrice - advancePayment - restPayment;
+      return sum + Math.max(due, 0);
+    },
+  0);
+  res.json({ totalEntries, totalAmount, totalRecv, totalDue});
+  }catch(error){
     console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({message: 'Server Error'});
   }
 });
 
@@ -1931,9 +1968,32 @@ router.get('/totalRecvAmount', async (req, res) => {
   }
 });
 
-router.get('/totalEntriesEmp', checkAuth, async (req, res) => {
+// router.get('/totalEntriesEmp', checkAuth, async (req, res) => {
+//   const currentMonth = new Date().getMonth() + 1;
+//   try {
+//     const person1 = req.userData?.name;
+//     let query;
+//     query = {
+//       salesPerson: person1,
+//       closingDate: {
+//         $gte: new Date(new Date().getFullYear(), currentMonth - 1, 1),
+//         $lte: new Date(new Date().getFullYear(), currentMonth, 0, 23, 59, 59, 999)
+//       }
+//     };
+//     const totalEntries = await Customer.find(query);
+//     const totalAmount = totalEntries.reduce((sum, doc) => sum + doc.closingPrice, 0);
+//     const totalRecv = totalEntries.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
+//     const totalDue = totalEntries.reduce((sum, doc) => sum + doc.remainingAmount, 0);
+//     res.json({ totalEntries, totalAmount, totalRecv, totalDue });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
+router.get('/totalEntriesEmp', checkAuth, async(req,res)=>{
   const currentMonth = new Date().getMonth() + 1;
-  try {
+  try{
     const person1 = req.userData?.name;
     let query;
     query = {
@@ -1944,13 +2004,29 @@ router.get('/totalEntriesEmp', checkAuth, async (req, res) => {
       }
     };
     const totalEntries = await Customer.find(query);
-    const totalAmount = totalEntries.reduce((sum, doc) => sum + doc.closingPrice, 0);
-    const totalRecv = totalEntries.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
-    const totalDue = totalEntries.reduce((sum, doc) => sum + doc.remainingAmount, 0);
-    res.json({ totalEntries, totalAmount, totalRecv, totalDue });
+    const totalAmount = totalEntries.reduce(
+      (sum, doc) => sum + Number(doc.closingPrice || 0), 0
+    );
+    const totalRecv = totalEntries.reduce(
+      (sum, doc) => {
+        const advancePayment = Number(doc.AdvPay || 0);
+        const restPayment = Array.isArray(doc.restPayments) ? doc.restPayments.reduce( (restSum, payment) => restSum + Number(payment.amount || 0), 0) : Number(doc.restAmount || 0);
+        return sum + advancePayment + restPayment;
+      },
+    0);
+    const totalDue = totalEntries.reduce( (sum, doc) => {
+      const closingPrice = Number(doc.closingPrice || 0);
+      const advancePayment = Number(doc.AdvPay || 0);
+      const restPayment = Array.isArray(doc.restPayments) ? doc.restPayments.reduce( (restSum, payment) => restSum + Number(payment.amount || 0),
+    0 ) : Number(doc.restAmount || 0);
+    const due = closingPrice - advancePayment - restPayment;
+    return sum + Math.max(due, 0);
+    },
+  0);
+  res.json({ totalEntries, totalAmount, totalRecv, totalDue});
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Server Error'});
   }
 });
 
@@ -3367,7 +3443,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04glz4ewxsFt5CgYIARAAGAQSNwF-L9Ir-s2fmJHgwoBIIlVv7lneKvxWu-_gS-dcg40LiBP-Gff6yQK_wgflHaAemf4Fh557bIo';
+const REFERESH_TOKEN = '1//04cYRIxI1kfbvCgYIARAAGAQSNwF-L9IrsB5z2qg-uNjaFFxm0SEKzVdoF-QUzBFDUtQ3HswhbL7teDrQVuz0AvdnkgNUqoLL3Vs';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
