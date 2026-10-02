@@ -2497,41 +2497,137 @@ router.get('/todayEntriesEmp', checkAuth, async (req, res) => {
 
 //Data By Date Range
 
+// router.get('/dataByRange/:startDate/:endDate', checkAuth, async (req, res) => {
+//   const startDate = new Date(req.params.startDate);
+//   const endDate = new Date(req.params.endDate);
+//   endDate.setDate(endDate.getDate() + 1);
+//   try {
+//     const person1 = req.userData?.name;
+//     const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
+//     let query;
+//     if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
+//       query = {
+//         closingDate: {
+//           $gte: startDate, $lt: endDate
+//         }
+//       };
+//     } else {
+//       query = {
+//         salesPerson: person1,
+//         closingDate: {
+//           $gte: startDate, $lt: endDate
+//         }
+//       };
+//     }
+//     const rangeTotalData = await Customer.find(query);
+//     const rangeTotalAmount = rangeTotalData.reduce((sum, doc) => sum + doc.closingPrice, 0);
+//     const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
+//     const rangeTotalDue = rangeTotalData.reduce((sum, doc) => sum + doc.remainingAmount, 0);
+//     res.json({
+//       rangeTotalData: rangeTotalData,
+//       rangeTotalAmount: rangeTotalAmount,
+//       rangeTotalRecv: rangeTotalRecv,
+//       rangeTotalDue: rangeTotalDue
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
 router.get('/dataByRange/:startDate/:endDate', checkAuth, async (req, res) => {
   const startDate = new Date(req.params.startDate);
   const endDate = new Date(req.params.endDate);
+
   endDate.setDate(endDate.getDate() + 1);
+
   try {
     const person1 = req.userData?.name;
-    const role1 = Array.isArray(req.userData.signupRole) ? req.userData.signupRole[0] : req.userData.signupRole;
+
+    const role1 = Array.isArray(req.userData.signupRole)
+      ? req.userData.signupRole[0]
+      : req.userData.signupRole;
+
     let query;
-    if (role1 === 'Admin' || role1 === 'Manager' || role1 === 'Team Leader') {
+
+    if (
+      role1 === 'Admin' ||
+      role1 === 'Manager' ||
+      role1 === 'Team Leader'
+    ) {
       query = {
         closingDate: {
-          $gte: startDate, $lt: endDate
+          $gte: startDate,
+          $lt: endDate
         }
       };
     } else {
       query = {
         salesPerson: person1,
         closingDate: {
-          $gte: startDate, $lt: endDate
+          $gte: startDate,
+          $lt: endDate
         }
       };
     }
+
     const rangeTotalData = await Customer.find(query);
-    const rangeTotalAmount = rangeTotalData.reduce((sum, doc) => sum + doc.closingPrice, 0);
-    const rangeTotalRecv = rangeTotalData.reduce((sum, doc) => sum + doc.AdvPay + doc.restAmount, 0);
-    const rangeTotalDue = rangeTotalData.reduce((sum, doc) => sum + doc.remainingAmount, 0);
+
+    const rangeTotalAmount = rangeTotalData.reduce(
+      (sum, doc) => sum + Number(doc.closingPrice || 0),
+      0
+    );
+
+    const rangeTotalRecv = rangeTotalData.reduce(
+      (sum, doc) => {
+        const advancePayment = Number(doc.AdvPay || 0);
+
+        const restPayment = Array.isArray(doc.restPayments)
+          ? doc.restPayments.reduce(
+              (restSum, payment) =>
+                restSum + Number(payment.amount || 0),
+              0
+            )
+          : Number(doc.restAmount || 0);
+
+        return sum + advancePayment + restPayment;
+      },
+      0
+    );
+
+    const rangeTotalDue = rangeTotalData.reduce(
+      (sum, doc) => {
+        const closingPrice = Number(doc.closingPrice || 0);
+        const advancePayment = Number(doc.AdvPay || 0);
+
+        const restPayment = Array.isArray(doc.restPayments)
+          ? doc.restPayments.reduce(
+              (restSum, payment) =>
+                restSum + Number(payment.amount || 0),
+              0
+            )
+          : Number(doc.restAmount || 0);
+
+        const due = closingPrice - advancePayment - restPayment;
+
+        return sum + Math.max(due, 0);
+      },
+      0
+    );
+
     res.json({
       rangeTotalData: rangeTotalData,
       rangeTotalAmount: rangeTotalAmount,
       rangeTotalRecv: rangeTotalRecv,
       rangeTotalDue: rangeTotalDue
     });
+
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Server Error" });
+
+    res.status(500).json({
+      message: "Server Error"
+    });
   }
 });
 
