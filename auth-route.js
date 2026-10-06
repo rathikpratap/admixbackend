@@ -3038,6 +3038,75 @@ router.post('/downloadRangeFileEx', checkAuth, async (req, res) => {
   }
 });
 
+router.post('/downloadRangeFileCategEx',checkAuth, async(req,res) =>{
+  try{
+    const { startDate, endDate, closingCategory } = req.body;
+
+    console.log('Body received for downloadRangeFileCategEx ===> ', req.body);
+
+    if(!startDate || !endDate){
+      return res.status(400).json({ error: 'startDate and endDate are required'});
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if(isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format'});
+    }
+    const endInclusive = new Date(end);
+    endInclusive.setDate(endInclusive.getDate() + 1);
+
+    const person1 = req.userData?.name;
+    const role1 = Array.isArray(req.userData.signupRole)
+      ? req.userData.signupRole[0]
+      : req.userData.signupRole;
+
+      let query = {
+        closingDate: { $gte: start, $lte: endInclusive }
+      };
+      if(!(role1 ===' Admin' || role1 === 'Manager' || role1 === 'Team Leader')){
+        query.salesPerson = person1;
+      }
+      if(closingCategory && Array.isArray(closingCategory) && closingCategory.length > 0){
+        console.log('Status filter for download ===>', closingCategory);
+
+          query.closingCateg = { $in: closingCategory};
+        
+      }
+      console.log('Final download query ===>', JSON.stringify(query));
+      const rangeFileData = await Customer.find(query);
+      console.log('Rows to export ===>', rangeFileData.length);
+
+      const data = rangeFileData.map(customer => ({
+        custName: customer.custName,
+        custNumb: customer.custNumb,
+        custBussiness: customer.custBussiness,
+        closingDate: customer.closingDate,
+        closingPrice: customer.closingPrice,
+        AdvPay: customer.AdvPay,
+        remainingAmount: customer.remainingAmount,
+        salesPerson: customer.salesPerson,
+        projectStatus: customer.projectStatus
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+      const buffer = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="customers.xlsx"'
+      );
+      return res.send(buffer);
+  }catch(err){
+    console.error('Error Downloading File', err);
+    return res.status(500).json({error: 'Failed to download File'});
+  }
+});
+
 router.post('/downloadRangeFileExMa', checkAuth, async (req, res) => {
   try {
     console.log('DOWNLOAD BODY ===>', req.body);
@@ -3539,7 +3608,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04cYRIxI1kfbvCgYIARAAGAQSNwF-L9IrsB5z2qg-uNjaFFxm0SEKzVdoF-QUzBFDUtQ3HswhbL7teDrQVuz0AvdnkgNUqoLL3Vs';
+const REFERESH_TOKEN = '1//04NqJCSCjNQlCCgYIARAAGAQSNwF-L9IrbUogPYYPT846fTqISK11wZEWFmH-t5DfU5YLLsph_Nj7Msl9Hy-ckAhQi4yDrO239Ys';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -4242,6 +4311,110 @@ router.post('/leadsByRangeEx', async (req, res) => {
   } catch (error) {
     console.error('Error in /leadsByRange ===>', error);
     return res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+router.post('/categByRangeEx', async (req, res) => {
+  try {
+    console.log('Body received ===> ', req.body);
+
+    const {
+      startDate,
+      endDate,
+      closingCategory
+    } = req.body;
+
+    // -----------------------------------
+    // Validation
+    // -----------------------------------
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        message: 'startDate and endDate are required'
+      });
+    }
+
+    // -----------------------------------
+    // Convert dates
+    // -----------------------------------
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (
+      isNaN(start.getTime()) ||
+      isNaN(end.getTime())
+    ) {
+      return res.status(400).json({
+        message: 'Invalid date format'
+      });
+    }
+
+    // -----------------------------------
+    // End date inclusive
+    // -----------------------------------
+    const endInclusive = new Date(end);
+    endInclusive.setDate(
+      endInclusive.getDate() + 1
+    );
+
+    // -----------------------------------
+    // Base MongoDB query
+    // -----------------------------------
+    const query = {
+      closingDate: {
+        $gte: start,
+        $lt: endInclusive
+      }
+    };
+
+    // -----------------------------------
+    // Closing Category filter
+    // -----------------------------------
+    if (
+      Array.isArray(closingCategory) &&
+      closingCategory.length > 0
+    ) {
+      query.closingCateg = {
+        $in: closingCategory
+      };
+    }
+
+    console.log(
+      'Mongo query ===> ',
+      JSON.stringify(query)
+    );
+
+    // -----------------------------------
+    // Fetch data
+    // -----------------------------------
+    const rangeDataCateg = await Customer
+      .find(query)
+      .sort({
+        closingDate: -1
+      });
+
+    console.log(
+      'Found count ===>',
+      rangeDataCateg.length
+    );
+
+    // -----------------------------------
+    // Response
+    // -----------------------------------
+    return res.status(200).json({
+      rangeDataCateg
+    });
+
+  } catch (error) {
+
+    console.error(
+      'Error in /categByRangeEx ===>',
+      error
+    );
+
+    return res.status(500).json({
+      message: 'Server Error',
+      error: error.message
+    });
   }
 });
 
