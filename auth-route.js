@@ -2578,42 +2578,77 @@ router.get('/dataByRange/:startDate/:endDate', checkAuth, async (req, res) => {
       0
     );
 
+    // const rangeTotalRecv = rangeTotalData.reduce(
+    //   (sum, doc) => {
+    //     const advancePayment = Number(doc.AdvPay || 0);
+
+    //     const restPayment = Array.isArray(doc.restPayments)
+    //       ? doc.restPayments.reduce(
+    //           (restSum, payment) =>
+    //             restSum + Number(payment.amount || 0),
+    //           0
+    //         )
+    //       : Number(doc.restAmount || 0);
+
+    //     return sum + advancePayment + restPayment;
+    //   },
+    //   0
+    // );
+
     const rangeTotalRecv = rangeTotalData.reduce(
       (sum, doc) => {
         const advancePayment = Number(doc.AdvPay || 0);
-
-        const restPayment = Array.isArray(doc.restPayments)
-          ? doc.restPayments.reduce(
-              (restSum, payment) =>
-                restSum + Number(payment.amount || 0),
-              0
-            )
-          : Number(doc.restAmount || 0);
-
+        let restPayment = 0;
+        if(Array.isArray(doc.restPayments) && doc.restPayments.length > 0){
+          restPayment = doc.restPayments.reduce(
+            (restSum, payment) => {
+              return restSum + Number(payment?.amount || 0);
+            },
+            0
+          );
+        } else {
+          restPayment = Number(doc.restAmount || 0);
+        }
         return sum + advancePayment + restPayment;
       },
       0
     );
 
+    // const rangeTotalDue = rangeTotalData.reduce(
+    //   (sum, doc) => {
+    //     const closingPrice = Number(doc.closingPrice || 0);
+    //     const advancePayment = Number(doc.AdvPay || 0);
+
+    //     const restPayment = Array.isArray(doc.restPayments)
+    //       ? doc.restPayments.reduce(
+    //           (restSum, payment) =>
+    //             restSum + Number(payment.amount || 0),
+    //           0
+    //         )
+    //       : Number(doc.restAmount || 0);
+
+    //     const due = closingPrice - advancePayment - restPayment;
+
+    //     return sum + Math.max(due, 0);
+    //   },
+    //   0
+    // );
+
     const rangeTotalDue = rangeTotalData.reduce(
       (sum, doc) => {
-        const closingPrice = Number(doc.closingPrice || 0);
-        const advancePayment = Number(doc.AdvPay || 0);
-
-        const restPayment = Array.isArray(doc.restPayments)
-          ? doc.restPayments.reduce(
-              (restSum, payment) =>
-                restSum + Number(payment.amount || 0),
-              0
-            )
-          : Number(doc.restAmount || 0);
-
-        const due = closingPrice - advancePayment - restPayment;
-
-        return sum + Math.max(due, 0);
+        return sum + Number(doc.remainingAmount || 0);
       },
       0
     );
+
+    console.log('-----------------------------------');
+    console.log('Range Start:', startDate);
+    console.log('Range End:', endDate);
+    console.log('Total Customers:', rangeTotalData.length);
+
+    console.log("rangeTotalAmount:New ", rangeTotalAmount);
+    console.log("rangeTotalRecv:New ", rangeTotalRecv);
+    console.log("rangeTotalDue:New ", rangeTotalDue);
 
     res.json({
       rangeTotalData: rangeTotalData,
