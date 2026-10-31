@@ -5,7 +5,8 @@ const counterSchema = new mongoose.Schema({
     seq: { type: Number, default: 6469},
     quotationNum: {type: Number, default: 667},
     GSTNum: {type: Number, default: 195},
-    NonGSTnum: {type: Number, default: 197}
+    NonGSTnum: {type: Number, default: 197},
+    NonGSTAdmixNum: {type: Number, default: 0}
 });
 
 module.exports = mongoose.model('Counter', counterSchema);

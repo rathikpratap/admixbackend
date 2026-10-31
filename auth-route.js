@@ -3643,7 +3643,7 @@ router.get('/facebook-leads', async (req, res) => {
 const CLIENT_ID = '163851234056-46n5etsovm4emjmthe5kb6ttmvomt4mt.apps.googleusercontent.com';
 const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFERESH_TOKEN = '1//04iyPcBuipop0CgYIARAAGAQSNwF-L9Ir6fV62tumOXoOrjPzm8SwBcmY5MsbTLS4bTgE2OgYvJoTRPvOFmaJDa87Abg_gsLXBHI';
+const REFERESH_TOKEN = '1//04eYunMeOcF6sCgYIARAAGAQSNwF-L9IrGxMErGojr_GYUzwoQPpMoK7hxC2gJuGZti4aRjbto5H_q_nITLXsx7iWv7Fid7AY1JI';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
@@ -9263,88 +9263,66 @@ router.post('/estInvoice', checkAuth, async (req, res) => {
 
 router.post('/invoice', checkAuth, async (req, res) => {
   const person1 = req.userData.name;
-
   try {
-
     // ============================================================
     // REQUEST DATA
     // ============================================================
-
     const {
       custGST,
       custAddLine1,
       custAddLine2,
       custAddLine3,
-
       billType,
       gstType,
-
       custName,
       custNumb,
-
       invoiceCateg,
       customCateg,
       rows,
-
       invoiceDate,
       GSTAmount,
       totalAmount,
-
       billFormat,
       financialYear,
-
       discountValue,
       afterDiscountTotal,
       state,
-
       allowUpdate,
       allowNewDateEntry,
-
       salesLeadId,
       customerId,
       QrCheck,
-
       // REST PAYMENT
       isRestPaymentInvoice,
       restPaymentIndex,
       restPaymentAmount,
       restPaymentDate,
-
       // NOTES
       noteText,
       noteHtml,
-
       // TERMS
       termsHtml,
       termsList,
-
       // PACKAGE
       packageIncludesHtml,
       packageIncludesList,
-
       // PAYMENT TERMS
       paymentTermsHtml,
       paymentTermsList,
-
       // ADDITIONAL NOTES
       additionalNotesHtml,
       additionalNotesList,
-
       // VISIBILITY
       visibilityFlags
     } = req.body;
-
-
     // ============================================================
     // NORMALIZE REST PAYMENT FLAG
     // ============================================================
-
     const isRestPayment =
       isRestPaymentInvoice === true ||
       isRestPaymentInvoice === 'true' ||
       isRestPaymentInvoice === 1 ||
       isRestPaymentInvoice === '1';
-
 
     console.log('==========================================');
     console.log('INVOICE REQUEST');
@@ -9356,345 +9334,223 @@ router.post('/invoice', checkAuth, async (req, res) => {
     console.log('restPaymentDate:', restPaymentDate);
     console.log('billFormat:', billFormat);
     console.log('billType:', billType);
+    console.log('QrCheck:', QrCheck);
     console.log('==========================================');
-
-
     // ============================================================
     // VALIDATE INVOICE DATE
     // ============================================================
-
     const date = new Date(invoiceDate);
-
     if (isNaN(date.getTime())) {
-
       return res.status(400).json({
         success: false,
         message: 'Invalid invoice date'
       });
     }
-
-
     const dateStr = date.toISOString().split('T')[0];
-
-
     // ============================================================
     // FIND SAME MONTH INVOICES
     // ============================================================
-
     const sameMonthInvoices = await EstInvoice.find({
-
       custName,
-
       custNumb,
-
       salesPerson: person1,
-
       $expr: {
         $and: [
-
           {
             $eq: [
               { $month: '$date' },
               date.getMonth() + 1
             ]
           },
-
           {
             $eq: [
               { $year: '$date' },
               date.getFullYear()
             ]
           }
-
         ]
       }
     });
-
-
     // ============================================================
     // FIND SAME DATE INVOICE
     // ============================================================
-
     const sameDateInvoice = sameMonthInvoices.find((inv) => {
-
       if (!inv.date) {
         return false;
       }
-
       return (
         inv.date.toISOString().split('T')[0] === dateStr
       );
     });
-
-
     // ============================================================
     // SAME DATE EXISTS
     // ============================================================
-
     if (sameDateInvoice && !allowUpdate) {
-
       return res.json({
         success: false,
         sameDateExists: true,
         message: 'Invoice already exists on same Date'
       });
     }
-
-
     // ============================================================
     // DIFFERENT DATE EXISTS IN SAME MONTH
     // ============================================================
-
     if (
       !sameDateInvoice &&
       sameMonthInvoices.length > 0 &&
       !allowNewDateEntry
     ) {
-
       return res.json({
         success: false,
         differentDateExists: true,
         message: 'Invoice already exists this month'
       });
     }
-
-
     // ============================================================
     // SAME DATE + ALLOW UPDATE
     // ============================================================
-
     if (sameDateInvoice && allowUpdate) {
-
       console.log('Updating existing invoice:', sameDateInvoice._id);
-
-
       // ==========================================================
       // UPDATE EXISTING ESTINVOICE
       // ==========================================================
-
       Object.assign(sameDateInvoice, {
-
         ...req.body,
-
         // Existing invoice numbers should remain same
         billNumber: sameDateInvoice.billNumber,
-
         invoiceNumber: sameDateInvoice.invoiceNumber,
-
         quotationNumber: sameDateInvoice.quotationNumber
       });
-
-
       await sameDateInvoice.save();
-
-
       // ==========================================================
       // REST PAYMENT
       // ==========================================================
-
       if (
         isRestPayment &&
         customerId &&
         restPaymentIndex !== undefined &&
         restPaymentIndex !== null
       ) {
-
         console.log('==========================================');
         console.log('REST PAYMENT UPDATE - EXISTING INVOICE');
         console.log('==========================================');
-
-
         const customer = await Customer.findById(customerId);
-
-
         if (!customer) {
-
           return res.status(404).json({
             success: false,
             message: 'Customer not found'
           });
         }
-
-
         const index = Number(restPaymentIndex);
-
-
         if (isNaN(index) || index < 0) {
-
           return res.status(400).json({
             success: false,
             message: 'Invalid rest payment index'
           });
         }
-
-
         // --------------------------------------------------------
         // Make sure restPayments exists
         // --------------------------------------------------------
-
         if (!Array.isArray(customer.restPayments)) {
           customer.restPayments = [];
         }
-
-
         // --------------------------------------------------------
         // Get selected payment
         // --------------------------------------------------------
-
         let payment = customer.restPayments[index];
-
-
         // --------------------------------------------------------
         // If payment does not exist in DB
         // create it from frontend draft
         // --------------------------------------------------------
-
         if (!payment) {
-
           if (
             restPaymentAmount === undefined ||
             restPaymentAmount === null ||
             !restPaymentDate
           ) {
-
             return res.status(400).json({
               success: false,
               message: 'Rest payment amount/date missing'
             });
           }
-
-
           // If selected index is exactly next index
           if (index === customer.restPayments.length) {
-
             customer.restPayments.push({
               amount: Number(restPaymentAmount),
-
               date: new Date(restPaymentDate),
-
               invoiceCreated: false,
-
               invoiceNumber: '',
-
               invoiceDate: null
             });
-
           } else {
-
             return res.status(400).json({
               success: false,
-              message:
-                'Rest payment index does not match customer data'
+              message: 'Rest payment index does not match customer data'
             });
           }
-
-
           payment = customer.restPayments[index];
         }
-
-
         // --------------------------------------------------------
         // Duplicate check
         // --------------------------------------------------------
-
         if (payment.invoiceCreated === true) {
-
           return res.status(400).json({
             success: false,
-            message:
-              'Invoice already created for this rest payment',
-
-            invoiceNumber:
-              payment.invoiceNumber || ''
+            message: 'Invoice already created for this rest payment',
+            invoiceNumber: payment.invoiceNumber || ''
           });
         }
-
-
         // --------------------------------------------------------
         // Update amount
         // --------------------------------------------------------
-
         if (
           restPaymentAmount !== undefined &&
           restPaymentAmount !== null
         ) {
-
-          payment.amount =
-            Number(restPaymentAmount);
+          payment.amount = Number(restPaymentAmount);
         }
-
-
         // --------------------------------------------------------
         // Update date
         // --------------------------------------------------------
-
         if (restPaymentDate) {
-
-          payment.date =
-            new Date(restPaymentDate);
+          payment.date = new Date(restPaymentDate);
         }
-
-
         // --------------------------------------------------------
         // Mark invoice created
         // --------------------------------------------------------
-
         payment.invoiceCreated = true;
-
-
         // --------------------------------------------------------
         // Invoice number
         // --------------------------------------------------------
-
         if (
           sameDateInvoice.invoiceNumber &&
           Array.isArray(sameDateInvoice.invoiceNumber) &&
           sameDateInvoice.invoiceNumber.length > 0
         ) {
-
-          payment.invoiceNumber =
-            sameDateInvoice.invoiceNumber[0].InvoiceNo;
-
+          payment.invoiceNumber = sameDateInvoice.invoiceNumber[0].InvoiceNo;
         } else if (sameDateInvoice.quotationNumber) {
-
-          payment.invoiceNumber =
-            sameDateInvoice.quotationNumber;
+          payment.invoiceNumber = sameDateInvoice.quotationNumber;
         }
-
-
         // --------------------------------------------------------
         // Invoice date
         // --------------------------------------------------------
-
-        payment.invoiceDate =
-          sameDateInvoice.date;
-
-
+        payment.invoiceDate = sameDateInvoice.date;
         // --------------------------------------------------------
         // Mark modified
         // --------------------------------------------------------
-
         customer.markModified('restPayments');
-
-
         // --------------------------------------------------------
         // Save customer
         // --------------------------------------------------------
-
         await customer.save();
-
-
         console.log(
           'REST PAYMENT SAVED:',
           customer.restPayments[index]
         );
       }
-
-
       // ==========================================================
       // MAIN INVOICE -> CUSTOMER
       // ==========================================================
-
       if (
         customerId &&
         billFormat === 'Main' &&
@@ -9702,76 +9558,52 @@ router.post('/invoice', checkAuth, async (req, res) => {
         Array.isArray(sameDateInvoice.invoiceNumber) &&
         sameDateInvoice.invoiceNumber.length > 0
       ) {
-
         await Customer.findByIdAndUpdate(
           customerId,
-
           {
             $push: {
-              invoiceNumber:
-                sameDateInvoice.invoiceNumber[0]
+              invoiceNumber: sameDateInvoice.invoiceNumber[0]
             }
           }
         );
       }
-
-
       // ==========================================================
       // SUCCESS
       // ==========================================================
-
       return res.json({
         success: true,
         invoice: sameDateInvoice
       });
     }
-
-
     // ============================================================
     // NEW INVOICE
     // ============================================================
-
     let billNumber = null;
-
     let invoiceNumber = [];
-
     let quotationNumber = null;
-
-
     // ============================================================
     // ESTIMATE NUMBER
     // ============================================================
-
     if (billFormat === 'Estimate') {
-
       const counter = await Counter.findOneAndUpdate(
-
         {
           _id: `estInvoice_${financialYear}`
         },
-
         {
           $setOnInsert: {
             quotationNum: 0
           },
-
           $inc: {
             quotationNum: 1
           }
         },
-
         {
           new: true,
           upsert: true
         }
       );
-
-
       billNumber = counter.quotationNum;
-
-
-      quotationNumber =
-        `ADM-${financialYear}/${billNumber}`;
+      quotationNumber = `ADM-${financialYear}/${billNumber}`;
     }
 
 
@@ -9779,400 +9611,290 @@ router.post('/invoice', checkAuth, async (req, res) => {
     // MAIN INVOICE NUMBER
     // ============================================================
 
-    if (billFormat === 'Main') {
+    // if (billFormat === 'Main') {
 
-      const isGST =
-        billType === 'GST';
-
-
-      const field =
-        isGST
-          ? 'GSTNum'
-          : 'NonGSTnum';
+    //   const isGST =
+    //     billType === 'GST';
 
 
-      const counter =
-        await Counter.findOneAndUpdate(
+    //   const field =
+    //     isGST
+    //       ? 'GSTNum'
+    //       : 'NonGSTnum';
 
-          {
-            _id:
-              `mainInvoice_${financialYear}`
-          },
 
-          {
-            $setOnInsert:
-              isGST
-                ? {
-                    NonGSTnum: 0
-                  }
-                : {
-                    GSTNum: 0
-                  },
+    //   const counter =
+    //     await Counter.findOneAndUpdate(
 
-            $inc: {
-              [field]: 1
-            }
-          },
+    //       {
+    //         _id:
+    //           `mainInvoice_${financialYear}`
+    //       },
 
-          {
-            new: true,
-            upsert: true
+    //       {
+    //         $setOnInsert:
+    //           isGST
+    //             ? {
+    //                 NonGSTnum: 0
+    //               }
+    //             : {
+    //                 GSTNum: 0
+    //               },
+
+    //         $inc: {
+    //           [field]: 1
+    //         }
+    //       },
+
+    //       {
+    //         new: true,
+    //         upsert: true
+    //       }
+    //     );
+
+
+    //   billNumber =
+    //     counter[field];
+
+
+    //   const invNo =
+    //     isGST
+    //       ? `ADMIX-${financialYear}/${billNumber}`
+    //       : `ADM-${financialYear}/${billNumber}`;
+
+
+    //   invoiceNumber.push({
+
+    //     InvoiceNo: invNo,
+
+    //     invoiceDate: date
+    //   });
+    // }
+
+    if(billFormat === 'Main'){
+      let field;
+      let prefix;
+
+      if(billType === 'GST' && QrCheck === 'Admix Media'){
+        field = 'GSTNum';
+        prefix = 'ADMIX-';
+      }
+      else if(billType === 'Non-GST' && QrCheck === 'Admix Media') {
+        field = 'NonGSTAdmixNum';
+        prefix = 'ADMX-';
+      }
+      else if(billType === 'Non-GST'){
+        field = 'NonGSTnum';
+        prefix = 'ADM-';
+      }
+      else{
+        return res.status(400).json({
+          success: false, message: 'Invalid bill type or QR configuration'
+        });
+      }
+      const counter = await Counter.findOneAndUpdate(
+        {
+          _id: `mainInvoice_${financialYear}`
+        },
+        {
+          $inc: {
+            [field]: 1
           }
-        );
-
-
-      billNumber =
-        counter[field];
-
-
-      const invNo =
-        isGST
-          ? `ADMIX-${financialYear}/${billNumber}`
-          : `ADM-${financialYear}/${billNumber}`;
-
+        },
+        {
+          new: true, upsert: true
+        }
+      );
+      billNumber = counter[field];
+      const invNo = `${prefix}${financialYear}/${billNumber}`;
 
       invoiceNumber.push({
-
-        InvoiceNo: invNo,
-
-        invoiceDate: date
+        InvoiceNo: invNo, invoiceDate: date
       });
     }
-
-
     // ============================================================
     // CREATE ESTINVOICE
     // ============================================================
-
     const invoice =
       new EstInvoice({
-
         custGST,
-
         custAddLine1,
-
         custAddLine2,
-
         custAddLine3,
-
-
         billFormat,
-
         billType,
-
-
         billNumber,
-
-
         invoiceNumber,
-
-
         quotationNumber,
-
-
         custName,
-
         custNumb,
-
-
         invoiceCateg,
-
         customCateg,
-
         rows,
-
-
         date,
-
-
         GSTAmount,
-
         totalAmount,
-
-
         financialYear,
-
-
         discountValue,
-
         afterDiscountTotal,
-
-
         state,
-
-
         noteText,
-
         noteHtml,
-
-
         termsHtml,
-
         termsList,
-
-
         packageIncludesHtml,
-
         packageIncludesList,
-
-
         paymentTermsHtml,
-
         paymentTermsList,
-
-
         additionalNotesHtml,
-
         additionalNotesList,
-
-
         visibilityFlags,
-
-
         salesPerson: person1,
-
-
         QrCheck
       });
-
-
     // ============================================================
     // SAVE ESTINVOICE
     // ============================================================
 
     await invoice.save();
-
-
     console.log('==========================================');
     console.log('ESTINVOICE SAVED');
     console.log('Invoice ID:', invoice._id);
     console.log('Invoice Number:', invoiceNumber);
     console.log('Quotation Number:', quotationNumber);
     console.log('==========================================');
-
-
     // ============================================================
     // REST PAYMENT - NEW INVOICE
     // ============================================================
-
     if (
       isRestPayment &&
       customerId &&
       restPaymentIndex !== undefined &&
       restPaymentIndex !== null
     ) {
-
       console.log('==========================================');
       console.log('REST PAYMENT UPDATE - NEW INVOICE');
       console.log('==========================================');
-
-
-      const customer =
-        await Customer.findById(customerId);
-
+      const customer = await Customer.findById(customerId);
 
       if (!customer) {
-
         return res.status(404).json({
           success: false,
           message: 'Customer not found'
         });
       }
-
-
-      const index =
-        Number(restPaymentIndex);
-
-
+      const index = Number(restPaymentIndex);
       if (isNaN(index) || index < 0) {
-
         return res.status(400).json({
           success: false,
           message: 'Invalid rest payment index'
         });
       }
-
-
       // ==========================================================
       // MAKE SURE ARRAY EXISTS
       // ==========================================================
-
       if (!Array.isArray(customer.restPayments)) {
         customer.restPayments = [];
       }
-
-
       // ==========================================================
       // GET SELECTED PAYMENT
       // ==========================================================
-
-      let payment =
-        customer.restPayments[index];
-
-
+      let payment = customer.restPayments[index];
       // ==========================================================
       // PAYMENT NOT IN DATABASE
       // CREATE IT
       // ==========================================================
-
       if (!payment) {
-
         if (
           restPaymentAmount === undefined ||
           restPaymentAmount === null ||
           !restPaymentDate
         ) {
-
           return res.status(400).json({
             success: false,
-            message:
-              'Rest payment amount/date missing'
+            message: 'Rest payment amount/date missing'
           });
         }
-
-
         // --------------------------------------------------------
         // Only allow adding next index
         // --------------------------------------------------------
-
         if (
           index === customer.restPayments.length
         ) {
-
           customer.restPayments.push({
-
-            amount:
-              Number(restPaymentAmount),
-
-            date:
-              new Date(restPaymentDate),
-
-            invoiceCreated:
-              false,
-
-            invoiceNumber:
-              '',
-
-            invoiceDate:
-              null
+            amount: Number(restPaymentAmount),
+            date: new Date(restPaymentDate),
+            invoiceCreated: false,
+            invoiceNumber: '',
+            invoiceDate: null
           });
-
         } else {
-
           return res.status(400).json({
             success: false,
-            message:
-              'Rest payment index does not match customer data'
+            message: 'Rest payment index does not match customer data'
           });
         }
-
-
-        payment =
-          customer.restPayments[index];
+        payment = customer.restPayments[index];
       }
-
-
       // ==========================================================
       // DUPLICATE CHECK
       // ==========================================================
-
       if (payment.invoiceCreated === true) {
-
         return res.status(400).json({
-
           success: false,
-
-          message:
-            'Invoice already created for this rest payment',
-
-          invoiceNumber:
-            payment.invoiceNumber || ''
+          message: 'Invoice already created for this rest payment',
+          invoiceNumber: payment.invoiceNumber || ''
         });
       }
-
-
       // ==========================================================
       // UPDATE AMOUNT
       // ==========================================================
-
       if (
         restPaymentAmount !== undefined &&
         restPaymentAmount !== null
       ) {
-
-        payment.amount =
-          Number(restPaymentAmount);
+        payment.amount = Number(restPaymentAmount);
       }
-
-
       // ==========================================================
       // UPDATE DATE
       // ==========================================================
-
       if (restPaymentDate) {
-
-        payment.date =
-          new Date(restPaymentDate);
+        payment.date = new Date(restPaymentDate);
       }
-
-
       // ==========================================================
       // MARK INVOICE CREATED
       // ==========================================================
-
-      payment.invoiceCreated =
-        true;
-
-
+      payment.invoiceCreated = true;
       // ==========================================================
       // SAVE INVOICE NUMBER
       // ==========================================================
-
       if (
         invoiceNumber &&
         Array.isArray(invoiceNumber) &&
         invoiceNumber.length > 0 &&
         invoiceNumber[0].InvoiceNo
       ) {
-
-        payment.invoiceNumber =
-          invoiceNumber[0].InvoiceNo;
-
+        payment.invoiceNumber = invoiceNumber[0].InvoiceNo;
       } else if (quotationNumber) {
-
-        payment.invoiceNumber =
-          quotationNumber;
-
+        payment.invoiceNumber = quotationNumber;
       } else {
-
         payment.invoiceNumber = '';
       }
-
-
       // ==========================================================
       // SAVE INVOICE DATE
       // ==========================================================
-
       payment.invoiceDate =
         date;
-
-
       // ==========================================================
       // MARK ARRAY MODIFIED
       // ==========================================================
-
       customer.markModified(
         'restPayments'
       );
-
-
       // ==========================================================
       // SAVE CUSTOMER
       // ==========================================================
-
       await customer.save();
-
-
       console.log('==========================================');
       console.log('REST PAYMENT SAVED SUCCESSFULLY');
       console.log(
@@ -10197,12 +9919,9 @@ router.post('/invoice', checkAuth, async (req, res) => {
       );
       console.log('==========================================');
     }
-
-
     // ============================================================
     // CUSTOMER MAIN INVOICE NUMBER
     // ============================================================
-
     if (
       customerId &&
       billFormat === 'Main' &&
@@ -10210,11 +9929,8 @@ router.post('/invoice', checkAuth, async (req, res) => {
       Array.isArray(invoiceNumber) &&
       invoiceNumber.length > 0
     ) {
-
       await Customer.findByIdAndUpdate(
-
         customerId,
-
         {
           $push: {
             invoiceNumber:
@@ -10223,46 +9939,22 @@ router.post('/invoice', checkAuth, async (req, res) => {
         }
       );
     }
-
-
     // ============================================================
     // FINAL RESPONSE
     // ============================================================
-
     return res.json({
-
       success: true,
-
       invoice
     });
-
-
   } catch (err) {
-
-    console.error(
-      '=========================================='
-    );
-
-    console.error(
-      'INVOICE API ERROR'
-    );
-
+    console.error('==========================================');
+    console.error('INVOICE API ERROR');
     console.error(err);
-
-    console.error(
-      '=========================================='
-    );
-
-
+    console.error('==========================================');
     return res.status(500).json({
-
       success: false,
-
-      message:
-        'Failed to save invoice',
-
-      error:
-        err.message
+      message: 'Failed to save invoice',
+      error: err.message
     });
   }
 });
